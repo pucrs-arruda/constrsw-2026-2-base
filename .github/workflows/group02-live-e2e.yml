@@ -1,0 +1,44 @@
+name: Group 02 live Keycloak E2E
+
+on:
+  push:
+    branches: [grupo02]
+  pull_request:
+    branches: [grupo02]
+
+permissions:
+  contents: read
+
+jobs:
+  live-e2e:
+    runs-on: ubuntu-latest
+    timeout-minutes: 20
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          submodules: recursive
+
+      - uses: actions/setup-java@v4
+        with:
+          distribution: temurin
+          java-version: "21"
+          cache: maven
+          cache-dependency-path: backend/oauth/pom.xml
+
+      - name: Unit, integration, and endpoint test suite
+        working-directory: backend/oauth
+        run: mvn --batch-mode --no-transfer-progress test
+
+      - name: Start Keycloak and OAuth
+        run: docker compose up --build -d keycloak oauth
+
+      - name: End-to-end against live Keycloak
+        env:
+          E2E_BASE_URL: http://localhost:8181
+          E2E_USERNAME: admin@pucrs.br
+          E2E_PASSWORD: ${{ secrets.GROUP02_E2E_PASSWORD }}
+        run: python3 scripts/oauth_live_e2e.py
+
+      - name: Stop test stack
+        if: always()
+        run: docker compose down

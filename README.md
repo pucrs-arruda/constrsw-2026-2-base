@@ -40,6 +40,19 @@ mvn test
 
 The [Group 02 CI workflow](https://github.com/pucrs-constrsw-2026-2/oauth/blob/grupo02/.github/workflows/ci.yml) runs service, adapter, endpoint, and end-to-end test stages before packaging.
 
+## Live end-to-end check
+
+This smoke test calls the running OAuth API and the real local Keycloak. It checks health, login, token refresh, and access to the Group 02 resource /lessons. It does not create or change users or roles, and it does not print tokens.
+
+From the base repository root, start Keycloak and OAuth, then run the script. It prompts for the test user's password if E2E_PASSWORD is not set:
+
+    docker compose up --build -d keycloak oauth
+    E2E_USERNAME=admin@pucrs.br python3 scripts/oauth_live_e2e.py
+
+The Group 02 base workflow runs the OAuth test suite first, starts this local stack, and then runs the live smoke test on pushes and pull requests targeting grupo02. The workflow stops its containers afterward; a local run leaves the services running.
+
+The live E2E workflow reads the test user's password from the GitHub Actions repository secret GROUP02_E2E_PASSWORD.
+
 ## Prometheus and Grafana
 
 To start the Group 02 services with monitoring, use the Prometheus Compose overlay and name only the required services:
