@@ -6,7 +6,7 @@ import os
 import sys
 import time
 import uuid
-from urllib.error import HTTPError, URLError
+from urllib.error import HTTPError
 from urllib.parse import urlencode
 from urllib.request import Request, urlopen
 
@@ -66,7 +66,7 @@ def wait_for_api():
             if status == 200:
                 expect_status(status, 200, "OAuth health")
                 return
-        except (URLError, TimeoutError):
+        except OSError:
             pass
         time.sleep(2)
     raise RuntimeError(f"OAuth API did not become healthy at {BASE_URL}/health")
