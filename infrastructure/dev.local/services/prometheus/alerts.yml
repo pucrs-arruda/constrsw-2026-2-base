@@ -163,14 +163,36 @@ groups:
           description: "O servi?o de gerenciamento de estudantes est? offline"
 
       - alert: AuthServiceDown
-        expr: up{job="auth"} == 0
+        expr: up{job="oauth"} == 0
         for: 1m
         labels:
           severity: critical
-          service: auth
+          service: oauth
         annotations:
-          summary: "Servi?o Auth est? offline"
-          description: "O servi?o de autentica??o (auth) est? offline"
+          summary: "Serviço oauth está offline"
+          description: "O serviço de autenticação (oauth) está offline"
+
+      # oauth não alcança o Keycloak (rede ou timeout) — é o caso que vira 503
+      - alert: OAuthKeycloakUnavailable
+        expr: increase(oauth_keycloak_request_duration_seconds_count{result="unavailable"}[5m]) > 0
+        for: 1m
+        labels:
+          severity: critical
+          service: oauth
+        annotations:
+          summary: "oauth não alcança o Keycloak"
+          description: "Chamadas {{ $labels.operation }} do oauth ao Keycloak estão falhando por rede ou timeout"
+
+      # O prom-client não gera o `_max` do Micrometer, então o HighResponseTime não cobre o oauth
+      - alert: OAuthHighLatency
+        expr: histogram_quantile(0.95, sum by (job, le) (rate(http_server_requests_seconds_bucket{job="oauth"}[5m]))) > 2
+        for: 5m
+        labels:
+          severity: warning
+          service: oauth
+        annotations:
+          summary: "Latência alta no oauth"
+          description: "O p95 das requisições do oauth está acima de 2 segundos há 5 minutos"
 
       - alert: KeycloakDown
         expr: up{job="keycloak"} == 0
@@ -242,14 +264,14 @@ groups:
           description: "O endpoint de health check {{ $labels.instance }} est? demorando mais de 2 segundos para responder"
 
       - alert: AuthHealthCheckFailed
-        expr: probe_success{job="health-checks",instance=~".*auth:3001.*"} == 0
+        expr: probe_success{job="health-checks",instance=~".*oauth:8088.*"} == 0
         for: 1m
         labels:
           severity: critical
-          service: auth
+          service: oauth
         annotations:
-          summary: "Health check do Auth falhou"
-          description: "O endpoint de health check do servi?o Auth est? retornando erro"
+          summary: "Health check do oauth falhou"
+          description: "O endpoint de health check do serviço oauth está retornando erro"
 
       - alert: KeycloakHealthCheckFailed
         expr: probe_success{job="health-checks",instance=~".*keycloak.*"} == 0

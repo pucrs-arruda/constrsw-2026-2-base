@@ -3,6 +3,7 @@ FROM prom/prometheus:latest
 # Copiar configuração personalizada
 COPY prometheus.yml /etc/prometheus/prometheus.yml
 COPY alerts.yml /etc/prometheus/alerts.yml
+COPY recording_rules.yml /etc/prometheus/recording_rules.yml
 
 # Expor porta do Prometheus
 EXPOSE 9090

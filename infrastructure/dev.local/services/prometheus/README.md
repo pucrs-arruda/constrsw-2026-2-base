@@ -142,11 +142,9 @@ groups:
 
 ## Integração com Grafana
 
-Para visualização avançada das métricas, recomenda-se integrar com Grafana:
-
-1. Adicionar serviço Grafana ao docker-compose.yml
-2. Configurar datasource do Prometheus
-3. Criar dashboards para monitoramento
+O Grafana roda no `docker-compose.yml` (http://localhost:3030) com este
+Prometheus como datasource. O datasource e os dashboards são provisionados a
+partir de `../grafana/`; ver a seção Metrics do README da raiz.
 
 ## Troubleshooting
 

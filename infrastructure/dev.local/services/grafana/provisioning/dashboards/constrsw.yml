@@ -1,0 +1,13 @@
+apiVersion: 1
+
+providers:
+  - name: constrsw
+    folder: ConstrSW
+    type: file
+    # Os dashboards vivem no repositório: alterações pela UI não são salvas, o
+    # diálogo de salvar oferece o JSON para colar no arquivo.
+    allowUiUpdates: false
+    disableDeletion: true
+    updateIntervalSeconds: 10
+    options:
+      path: /etc/grafana/dashboards

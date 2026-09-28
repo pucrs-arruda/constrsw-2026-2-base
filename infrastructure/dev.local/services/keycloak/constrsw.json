@@ -634,6 +634,20 @@
 			]
 		},
 		{
+			"username": "service-account-oauth-admin",
+			"enabled": true,
+			"serviceAccountClientId": "oauth-admin",
+			"clientRoles": {
+				"realm-management": [
+					"manage-users",
+					"view-users",
+					"query-users",
+					"manage-realm",
+					"view-realm"
+				]
+			}
+		},
+		{
 			"id": "2db9407c-baa2-4c50-bb01-b90ac89e1d71",
 			"username": "admin@pucrs.br",
 			"firstName": "",
@@ -1327,6 +1341,19 @@
 				],
 				"decisionStrategy": "UNANIMOUS"
 			}
+		},
+		{
+			"clientId": "oauth-admin",
+			"name": "oauth-admin",
+			"description": "Service account usada pelo servico oauth para o Admin API (usuarios e roles).",
+			"enabled": true,
+			"clientAuthenticatorType": "client-secret",
+			"secret": "local-development-admin-secret",
+			"publicClient": false,
+			"standardFlowEnabled": false,
+			"directAccessGrantsEnabled": false,
+			"serviceAccountsEnabled": true,
+			"protocol": "openid-connect"
 		},
 		{
 			"id": "d9555bd0-7a53-4830-86b4-6308fd47de20",

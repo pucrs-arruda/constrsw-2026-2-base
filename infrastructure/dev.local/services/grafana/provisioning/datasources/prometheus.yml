@@ -1,0 +1,14 @@
+apiVersion: 1
+
+datasources:
+  - name: Prometheus
+    # uid fixo: os dashboards em ../../dashboards referenciam o datasource por ele
+    uid: prometheus
+    type: prometheus
+    access: proxy
+    url: http://prometheus:9090
+    isDefault: true
+    editable: false
+    jsonData:
+      # Igual ao scrape_interval global do prometheus.yml; base do $__rate_interval
+      timeInterval: 15s

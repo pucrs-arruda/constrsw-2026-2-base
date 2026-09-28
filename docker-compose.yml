@@ -28,6 +28,7 @@ services:
       - constrsw-prometheus-data:/prometheus
       - ./infrastructure/dev.local/services/prometheus/prometheus.yml:/etc/prometheus/prometheus.yml
       - ./infrastructure/dev.local/services/prometheus/alerts.yml:/etc/prometheus/alerts.yml
+      - ./infrastructure/dev.local/services/prometheus/recording_rules.yml:/etc/prometheus/recording_rules.yml
     networks:
       - constrsw
     ports:
@@ -67,6 +68,33 @@ services:
       - constrsw
     ports:
       - "9115:9115"
+    restart: always
+
+  # Grafana (dashboards sobre o Prometheus)
+  grafana:
+    container_name: grafana
+    build:
+      context: ./infrastructure/dev.local/services/grafana
+      dockerfile: Dockerfile
+    image: constrsw/grafana
+    environment:
+      - GF_SECURITY_ADMIN_USER=${GRAFANA_ADMIN_USER:-admin}
+      - GF_SECURITY_ADMIN_PASSWORD=${GRAFANA_ADMIN_PASSWORD:-a12345678}
+      # Qualquer um vê os dashboards sem login; editar exige o admin
+      - GF_AUTH_ANONYMOUS_ENABLED=true
+      - GF_AUTH_ANONYMOUS_ORG_ROLE=Viewer
+      - GF_DASHBOARDS_DEFAULT_HOME_DASHBOARD_PATH=/etc/grafana/dashboards/overview.json
+    # Sem volume de dados: datasource e dashboards vêm do provisionamento a cada subida
+    volumes:
+      - ./infrastructure/dev.local/services/grafana/provisioning/datasources:/etc/grafana/provisioning/datasources
+      - ./infrastructure/dev.local/services/grafana/provisioning/dashboards:/etc/grafana/provisioning/dashboards
+      - ./infrastructure/dev.local/services/grafana/dashboards:/etc/grafana/dashboards
+    networks:
+      - constrsw
+    ports:
+      - ${GRAFANA_EXTERNAL_PORT:-3030}:3000
+    depends_on:
+      - prometheus
     restart: always
 
   # Keycloak
@@ -118,6 +146,8 @@ services:
       KEYCLOAK_REALM: ${KEYCLOAK_REALM}
       KEYCLOAK_CLIENT_ID: ${KEYCLOAK_CLIENT_ID}
       KEYCLOAK_CLIENT_SECRET: ${KEYCLOAK_CLIENT_SECRET}
+      KEYCLOAK_ADMIN_CLIENT_ID: ${KEYCLOAK_ADMIN_CLIENT_ID}
+      KEYCLOAK_ADMIN_CLIENT_SECRET: ${KEYCLOAK_ADMIN_CLIENT_SECRET}
       KEYCLOAK_TIMEOUT_MS: ${KEYCLOAK_TIMEOUT_MS:-5000}
       SESSION_COOKIE_NAME: ${SESSION_COOKIE_NAME:-closed_cras_session}
       COOKIE_SECURE: ${COOKIE_SECURE:-false}
