@@ -12,7 +12,7 @@ usadas por todos os serviços para validar autenticação e autorização.
 | Item | Valor (dev local) |
 |---|---|
 | Realm | `constrsw` |
-| Console | `http://localhost:8081` (admin `admin` / `a12345678`) |
+| Console | `http://localhost:8180` (admin `admin` / `a12345678`) |
 | Issuer (`iss`) | `http://keycloak:8080/realms/constrsw` (interno) |
 | Client de aplicação | `oauth` (confidencial, Direct Access Grant habilitado) |
 | Audience (`aud`) | **`oauth`** (estrito, em todos os serviços) |

@@ -29,7 +29,7 @@ docker compose ps                               # aguarde tudo "healthy" (~1 min
 | API oauth    | http://localhost:8181                        | Bearer token via `POST /login` |
 | Grafana      | http://localhost:3000                        | leitura anônima; `admin` / `a12345678` |
 | Prometheus   | http://localhost:9090                        | —                              |
-| Keycloak     | http://localhost:8081                        | `admin` / `a12345678`          |
+| Keycloak     | http://localhost:8180                        | `admin` / `a12345678`          |
 
 ## Testes
 
