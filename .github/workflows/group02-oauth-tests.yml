@@ -1,0 +1,32 @@
+name: Group 02 OAuth tests
+
+on:
+  push:
+    branches: [grupo02]
+  pull_request:
+    branches: [grupo02]
+
+permissions:
+  contents: read
+
+jobs:
+  oauth-tests:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          submodules: false
+
+      - name: Initialize Group 02 OAuth submodule
+        run: git submodule update --init --depth=1 backend/oauth
+
+      - uses: actions/setup-java@v4
+        with:
+          distribution: temurin
+          java-version: "21"
+          cache: maven
+          cache-dependency-path: backend/oauth/pom.xml
+
+      - name: Unit, integration, and endpoint test suite
+        working-directory: backend/oauth
+        run: mvn --batch-mode --no-transfer-progress test
