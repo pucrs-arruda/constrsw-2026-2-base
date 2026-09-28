@@ -1,0 +1,137 @@
+global:
+  scrape_interval: 15s
+  evaluation_interval: 15s
+
+rule_files:
+  - "alerts.yml"
+  - "recording_rules.yml"
+
+scrape_configs:
+  # Prometheus próprio
+  - job_name: 'prometheus'
+    static_configs:
+      - targets: ['localhost:9090']
+
+  # OpenTelemetry Collector
+  - job_name: 'otel-collector'
+    static_configs:
+      - targets: ['otel-collector:8889']
+    metrics_path: '/metrics'
+    scrape_interval: 10s
+
+  # oauth (NestJS — OpenTelemetry Prometheus exporter)
+  - job_name: 'oauth'
+    static_configs:
+      - targets: ['oauth:9464']
+    metrics_path: '/metrics'
+    scrape_interval: 10s
+
+  # Courses Service (FastAPI - OpenTelemetry)
+  - job_name: 'courses'
+    static_configs:
+      - targets: ['courses:8080']
+    metrics_path: '/api/v1/metrics'
+    scrape_interval: 10s
+
+  # Professors Service (NestJS — OpenTelemetry Prometheus exporter)
+  - job_name: 'professors'
+    static_configs:
+      - targets: ['professors:9465']
+    scrape_interval: 10s
+
+  # Lessons Service (OpenTelemetry)
+  - job_name: 'lessons'
+    static_configs:
+      - targets: ['lessons:9091']
+    metrics_path: '/metrics'
+    scrape_interval: 10s
+
+  # Reservations Service (OpenTelemetry)
+  - job_name: 'reservations'
+    static_configs:
+      - targets: ['reservations:9091']
+    metrics_path: '/metrics'
+    scrape_interval: 10s
+
+  # Resources Service (OpenTelemetry)
+  - job_name: 'resources'
+    static_configs:
+      - targets: ['resources:9091']
+    metrics_path: '/metrics'
+    scrape_interval: 10s
+
+  # Rooms Service (OpenTelemetry)
+  - job_name: 'rooms'
+    static_configs:
+      - targets: ['rooms:9091']
+    metrics_path: '/metrics'
+    scrape_interval: 10s
+
+  # Students Service (.NET - OpenTelemetry)
+  - job_name: 'students'
+    static_configs:
+      - targets: ['students:8080']
+    metrics_path: '/api/v1/metrics'
+    scrape_interval: 10s
+
+  # Employees Service (Spring Boot Actuator + Micrometer Prometheus)
+  - job_name: 'employees'
+    static_configs:
+      - targets: ['employees:8080']
+    metrics_path: '/actuator/prometheus'
+    scrape_interval: 10s
+
+  # Classes Service (.NET - OpenTelemetry)
+  - job_name: 'classes'
+    static_configs:
+      - targets: ['classes:8080']
+    metrics_path: '/api/v1/metrics'
+    scrape_interval: 10s
+
+  # Keycloak (métricas expostas na porta de management)
+  - job_name: 'keycloak'
+    static_configs:
+      - targets: ['keycloak:9001']
+    metrics_path: '/metrics'
+    scrape_interval: 30s
+
+  # PostgreSQL (se expuser métricas via postgres_exporter)
+  - job_name: 'postgresql'
+    static_configs:
+      - targets: ['postgresql-exporter:9187']
+    metrics_path: '/metrics'
+    scrape_interval: 30s
+
+  # MongoDB (se expuser métricas via mongodb_exporter)
+  - job_name: 'mongodb'
+    static_configs:
+      - targets: ['mongodb-exporter:9216']
+    metrics_path: '/metrics'
+    scrape_interval: 30s
+
+  # Health Checks via Blackbox Exporter
+  - job_name: 'health-checks'
+    metrics_path: /probe
+    params:
+      module: [http_2xx]
+    static_configs:
+      - targets:
+        - http://oauth:3001/health
+        - http://keycloak:9001/health/ready
+        - http://courses:8080/api/v1/health
+        - http://professors:3002/health
+        - http://lessons:3000/api/v1/health
+        - http://reservations:8080/api/v1/health
+        - http://resources:3000/api/v1/health
+        - http://rooms:3000/api/v1/health
+        - http://students:8080/api/v1/health
+        - http://employees:8080/health
+        - http://classes:8080/api/v1/health
+    relabel_configs:
+      - source_labels: [__address__]
+        target_label: __param_target
+      - source_labels: [__param_target]
+        target_label: instance
+      - target_label: __address__
+        replacement: blackbox-exporter:9115
+    scrape_interval: 30s

@@ -70,7 +70,7 @@ sources:
 - Professors domain API, PostgreSQL, Astah schemas/examples (requirements section C).
 - Architecture spine / system architecture artifacts.
 - Full course mesh services (classes, courses, lessons, rooms, etc. as implemented APIs).
-- Prometheus, MongoDB, or unrelated observability stacks.
+- MongoDB, and observability stacks other than the oauth Prometheus and OpenTelemetry work owned by sibling spec `spec-grupo07-oauth-observability`. This kernel does not define that work.
 - Custom BMAD agents.
 - Inventing or owning the root `docker-compose.yml` / `.env` contents.
 

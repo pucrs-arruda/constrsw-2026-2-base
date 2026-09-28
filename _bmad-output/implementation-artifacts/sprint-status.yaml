@@ -1,5 +1,7 @@
 # generated: 2026-09-03
-# last_updated: 2026-09-10
+# last_updated: 2026-09-21
+# 2026-09-21 story 7.1 from sibling spec spec-grupo07-oauth-observability
+#   (not in epics.md). Epics 1–6 stay as they were. No app code in this create.
 # story 1.1 created → epic-1 in-progress, 1-1 ready-for-dev (story file only; no app code)
 # 2026-09-08 batch create-story: remaining 25 stories → ready-for-dev (files only).
 #   epic-1 stays in-progress; epics 2–6 stay backlog until implementation starts.
@@ -63,7 +65,7 @@
 # - Story 1.3 verifies oauth against professor compose (service already present)
 
 generated: 2026-09-03
-last_updated: 2026-09-10
+last_updated: 2026-09-21
 project: constrsw-2026-2
 project_key: NOKEY
 tracking_system: file-system
@@ -123,3 +125,8 @@ development_status:
   6-4-resource-based-permissions: review
   6-5-validate-resource-access-via-keycloak-authorization-services: review
   epic-6-retrospective: optional
+
+  # Epic 7: oauth Prometheus pull (sibling spec, not epics.md)
+  epic-7: in-progress
+  7-1-expose-oauth-prometheus-metrics: review
+  epic-7-retrospective: optional

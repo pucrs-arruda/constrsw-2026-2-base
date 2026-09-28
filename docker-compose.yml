@@ -3,11 +3,71 @@ networks:
   constrsw:
 
 volumes:
+  # No terminal, criar o volume externo: docker volume create constrsw-prometheus-data
+  constrsw-prometheus-data:
+    external: true
   # No terminal, criar o volume externo: docker volume create constrsw-keycloak-data
   constrsw-keycloak-data:
     external: true
 
 services:
+
+  # Prometheus
+  prometheus:
+    container_name: prometheus
+    build:
+      context: ./infrastructure/dev.local/services/prometheus
+      dockerfile: Dockerfile
+    image: constrsw/prometheus
+    environment:
+      - PROMETHEUS_INTERNAL_HOST=${PROMETHEUS_INTERNAL_HOST}
+      - PROMETHEUS_EXTERNAL_HOST=${PROMETHEUS_EXTERNAL_HOST}
+      - PROMETHEUS_INTERNAL_PORT=${PROMETHEUS_INTERNAL_PORT}
+      - PROMETHEUS_EXTERNAL_PORT=${PROMETHEUS_EXTERNAL_PORT}
+    volumes:
+      - constrsw-prometheus-data:/prometheus
+      - ./infrastructure/dev.local/services/prometheus/prometheus.yml:/etc/prometheus/prometheus.yml
+      - ./infrastructure/dev.local/services/prometheus/alerts.yml:/etc/prometheus/alerts.yml
+    networks:
+      - constrsw
+    ports:
+      - ${PROMETHEUS_EXTERNAL_PORT}:${PROMETHEUS_INTERNAL_PORT}
+    extra_hosts:
+      - "host.docker.internal:host-gateway"
+    restart: always
+
+  # OpenTelemetry Collector
+  otel-collector:
+    container_name: otel-collector
+    build:
+      context: ./infrastructure/dev.local/services/otel-collector
+      dockerfile: Dockerfile
+    image: constrsw/otel-collector
+    command: ["--config=/etc/otelcol/config.yaml"]
+    volumes:
+      - ./infrastructure/dev.local/services/otel-collector/otel-collector-config.yml:/etc/otelcol/config.yaml
+    ports:
+      - "4317:4317"   # OTLP gRPC receiver
+      - "4318:4318"   # OTLP HTTP receiver
+      - "8888:8888"   # Prometheus metrics endpoint
+      - "8889:8889"   # Prometheus exporter
+    networks:
+      - constrsw
+    depends_on:
+      - prometheus
+    restart: always
+
+  # Blackbox Exporter (para monitoramento de health checks)
+  blackbox-exporter:
+    container_name: blackbox-exporter
+    image: prom/blackbox-exporter:latest
+    volumes:
+      - ./infrastructure/dev.local/services/prometheus/blackbox.yml:/etc/blackbox_exporter/config.yml
+    networks:
+      - constrsw
+    ports:
+      - "9115:9115"
+    restart: always
 
   # Keycloak
   keycloak:

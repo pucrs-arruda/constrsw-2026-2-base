@@ -1,0 +1,352 @@
+groups:
+  - name: constrsw_alerts
+    rules:
+      # Alerta quando um servi?o est? down
+      - alert: ServiceDown
+        expr: up == 0
+        for: 1m
+        labels:
+          severity: critical
+        annotations:
+          summary: "Servi?o {{ $labels.job }} est? offline"
+          description: "O servi?o {{ $labels.job }} est? offline h? mais de 1 minuto"
+
+      # Alerta para tempo de resposta alto
+      - alert: HighResponseTime
+        expr: http_server_requests_seconds_max > 2
+        for: 5m
+        labels:
+          severity: warning
+        annotations:
+          summary: "Tempo de resposta alto para {{ $labels.job }}"
+          description: "O tempo de resposta do servi?o {{ $labels.job }} est? acima de 2 segundos"
+
+      # Alerta para uso de mem?ria alto
+      - alert: HighMemoryUsage
+        expr: (jvm_memory_used_bytes / jvm_memory_max_bytes) > 0.8
+        for: 5m
+        labels:
+          severity: warning
+        annotations:
+          summary: "Uso de mem?ria alto para {{ $labels.job }}"
+          description: "O uso de mem?ria do servi?o {{ $labels.job }} est? acima de 80%"
+
+      # Alerta para uso de CPU alto
+      - alert: HighCPUUsage
+        expr: process_cpu_usage > 0.8
+        for: 5m
+        labels:
+          severity: warning
+        annotations:
+          summary: "Uso de CPU alto para {{ $labels.job }}"
+          description: "O uso de CPU do servi?o {{ $labels.job }} est? acima de 80%"
+
+      # Alerta para muitas conex?es de banco de dados
+      - alert: HighDatabaseConnections
+        expr: hikaricp_connections_active / hikaricp_connections_max > 0.8
+        for: 5m
+        labels:
+          severity: warning
+        annotations:
+          summary: "Muitas conex?es de banco para {{ $labels.job }}"
+          description: "O servi?o {{ $labels.job }} est? usando mais de 80% das conex?es dispon?veis"
+
+      # Alerta para erro rate alto
+      - alert: HighErrorRate
+        expr: rate(http_server_requests_seconds_count{status=~"5.."}[5m]) > 0.1
+        for: 2m
+        labels:
+          severity: critical
+        annotations:
+          summary: "Taxa de erro alta para {{ $labels.job }}"
+          description: "O servi?o {{ $labels.job }} est? retornando muitos erros 5xx"
+
+      # Alerta para garbage collection frequente
+      - alert: FrequentGarbageCollection
+        expr: rate(jvm_gc_collection_seconds_count[5m]) > 10
+        for: 5m
+        labels:
+          severity: warning
+        annotations:
+          summary: "Garbage collection frequente para {{ $labels.job }}"
+          description: "O servi?o {{ $labels.job }} est? fazendo garbage collection muito frequentemente"
+
+      # Alerta para tempo de garbage collection alto
+      - alert: LongGarbageCollection
+        expr: jvm_gc_collection_seconds_sum > 1
+        for: 1m
+        labels:
+          severity: warning
+        annotations:
+          summary: "Garbage collection longo para {{ $labels.job }}"
+          description: "O garbage collection do servi?o {{ $labels.job }} est? demorando mais de 1 segundo"
+
+      # Alerta para servi?os espec?ficos do dom?nio
+      - alert: ClassesServiceDown
+        expr: up{job="classes"} == 0
+        for: 1m
+        labels:
+          severity: critical
+          service: classes
+        annotations:
+          summary: "Servi?o de Classes est? offline"
+          description: "O servi?o de gerenciamento de classes est? offline"
+
+      - alert: CoursesServiceDown
+        expr: up{job="courses"} == 0
+        for: 1m
+        labels:
+          severity: critical
+          service: courses
+        annotations:
+          summary: "Servi?o de Courses est? offline"
+          description: "O servi?o de gerenciamento de cursos est? offline"
+
+      - alert: LessonsServiceDown
+        expr: up{job="lessons"} == 0
+        for: 1m
+        labels:
+          severity: critical
+          service: lessons
+        annotations:
+          summary: "Servi?o de Lessons est? offline"
+          description: "O servi?o de gerenciamento de aulas est? offline"
+
+      - alert: ProfessorsServiceDown
+        expr: up{job="professors"} == 0
+        for: 1m
+        labels:
+          severity: critical
+          service: professors
+        annotations:
+          summary: "Servi?o de Professors est? offline"
+          description: "O servi?o de gerenciamento de professores est? offline"
+
+      - alert: ReservationsServiceDown
+        expr: up{job="reservations"} == 0
+        for: 1m
+        labels:
+          severity: critical
+          service: reservations
+        annotations:
+          summary: "Servi?o de Reservations est? offline"
+          description: "O servi?o de gerenciamento de reservas est? offline"
+
+      - alert: ResourcesServiceDown
+        expr: up{job="resources"} == 0
+        for: 1m
+        labels:
+          severity: critical
+          service: resources
+        annotations:
+          summary: "Servi?o de Resources est? offline"
+          description: "O servi?o de gerenciamento de recursos est? offline"
+
+      - alert: RoomsServiceDown
+        expr: up{job="rooms"} == 0
+        for: 1m
+        labels:
+          severity: critical
+          service: rooms
+        annotations:
+          summary: "Servi?o de Rooms est? offline"
+          description: "O servi?o de gerenciamento de salas est? offline"
+
+      - alert: StudentsServiceDown
+        expr: up{job="students"} == 0
+        for: 1m
+        labels:
+          severity: critical
+          service: students
+        annotations:
+          summary: "Servi?o de Students est? offline"
+          description: "O servi?o de gerenciamento de estudantes est? offline"
+
+      - alert: AuthServiceDown
+        expr: up{job="auth"} == 0
+        for: 1m
+        labels:
+          severity: critical
+          service: auth
+        annotations:
+          summary: "Servi?o Auth est? offline"
+          description: "O servi?o de autentica??o (auth) est? offline"
+
+      - alert: KeycloakDown
+        expr: up{job="keycloak"} == 0
+        for: 1m
+        labels:
+          severity: critical
+          service: keycloak
+        annotations:
+          summary: "Keycloak est? offline"
+          description: "O servidor Keycloak n?o est? expondo m?tricas na porta de management"
+
+      - alert: PostgreSQLExporterDown
+        expr: up{job="postgresql"} == 0
+        for: 1m
+        labels:
+          severity: critical
+          service: postgresql
+        annotations:
+          summary: "PostgreSQL exporter est? offline"
+          description: "O postgres_exporter n?o est? acess?vel pelo Prometheus"
+
+      - alert: MongoDBExporterDown
+        expr: up{job="mongodb"} == 0
+        for: 1m
+        labels:
+          severity: critical
+          service: mongodb
+        annotations:
+          summary: "MongoDB exporter est? offline"
+          description: "O mongodb_exporter n?o est? acess?vel pelo Prometheus"
+
+      - alert: EmployeesServiceDown
+        expr: up{job="employees"} == 0
+        for: 1m
+        labels:
+          severity: critical
+          service: employees
+        annotations:
+          summary: "Servi?o Employees est? offline"
+          description: "O servi?o de funcion?rios n?o est? expondo m?tricas pelo Actuator"
+
+      - alert: BFFServiceDown
+        expr: up{job="bff"} == 0
+        for: 1m
+        labels:
+          severity: critical
+          service: bff
+        annotations:
+          summary: "Servi?o BFF est? offline"
+          description: "O Backend for Frontend est? offline"
+
+      # Alertas de Health Check via Blackbox Exporter
+      - alert: HealthCheckFailed
+        expr: probe_success{job="health-checks"} == 0
+        for: 1m
+        labels:
+          severity: critical
+        annotations:
+          summary: "Health check falhou para {{ $labels.instance }}"
+          description: "O endpoint de health check {{ $labels.instance }} est? retornando erro h? mais de 1 minuto"
+
+      - alert: HealthCheckSlow
+        expr: probe_http_duration_seconds{job="health-checks"} > 2
+        for: 5m
+        labels:
+          severity: warning
+        annotations:
+          summary: "Health check lento para {{ $labels.instance }}"
+          description: "O endpoint de health check {{ $labels.instance }} est? demorando mais de 2 segundos para responder"
+
+      - alert: AuthHealthCheckFailed
+        expr: probe_success{job="health-checks",instance=~".*auth:3001.*"} == 0
+        for: 1m
+        labels:
+          severity: critical
+          service: auth
+        annotations:
+          summary: "Health check do Auth falhou"
+          description: "O endpoint de health check do servi?o Auth est? retornando erro"
+
+      - alert: KeycloakHealthCheckFailed
+        expr: probe_success{job="health-checks",instance=~".*keycloak.*"} == 0
+        for: 1m
+        labels:
+          severity: critical
+          service: keycloak
+        annotations:
+          summary: "Health check do Keycloak falhou"
+          description: "O endpoint /health/ready do Keycloak na porta de management est? retornando erro"
+
+      - alert: CoursesHealthCheckFailed
+        expr: probe_success{job="health-checks",instance=~".*courses.*"} == 0
+        for: 1m
+        labels:
+          severity: critical
+          service: courses
+        annotations:
+          summary: "Health check do Courses falhou"
+          description: "O endpoint de health check do servi?o Courses est? retornando erro"
+
+      - alert: ProfessorsHealthCheckFailed
+        expr: probe_success{job="health-checks",instance=~".*professors.*"} == 0
+        for: 1m
+        labels:
+          severity: critical
+          service: professors
+        annotations:
+          summary: "Health check do Professors falhou"
+          description: "O endpoint de health check do servi?o Professors est? retornando erro"
+
+      - alert: LessonsHealthCheckFailed
+        expr: probe_success{job="health-checks",instance=~".*lessons.*"} == 0
+        for: 1m
+        labels:
+          severity: critical
+          service: lessons
+        annotations:
+          summary: "Health check do Lessons falhou"
+          description: "O endpoint de health check do servi?o Lessons est? retornando erro"
+
+      - alert: ReservationsHealthCheckFailed
+        expr: probe_success{job="health-checks",instance=~".*reservations.*"} == 0
+        for: 1m
+        labels:
+          severity: critical
+          service: reservations
+        annotations:
+          summary: "Health check do Reservations falhou"
+          description: "O endpoint de health check do servi?o Reservations est? retornando erro"
+
+      - alert: ResourcesHealthCheckFailed
+        expr: probe_success{job="health-checks",instance=~".*resources.*"} == 0
+        for: 1m
+        labels:
+          severity: critical
+          service: resources
+        annotations:
+          summary: "Health check do Resources falhou"
+          description: "O endpoint de health check do servi?o Resources est? retornando erro"
+
+      - alert: RoomsHealthCheckFailed
+        expr: probe_success{job="health-checks",instance=~".*rooms.*"} == 0
+        for: 1m
+        labels:
+          severity: critical
+          service: rooms
+        annotations:
+          summary: "Health check do Rooms falhou"
+          description: "O endpoint de health check do servi?o Rooms est? retornando erro"
+
+      - alert: StudentsHealthCheckFailed
+        expr: probe_success{job="health-checks",instance=~".*students.*"} == 0
+        for: 1m
+        labels:
+          severity: critical
+          service: students
+        annotations:
+          summary: "Health check do Students falhou"
+          description: "O endpoint de health check do servi?o Students est? retornando erro"
+
+      - alert: EmployeesHealthCheckFailed
+        expr: probe_success{job="health-checks",instance=~".*employees.*"} == 0
+        for: 1m
+        labels:
+          severity: critical
+          service: employees
+        annotations:
+          summary: "Health check do Employees falhou"
+          description: "O endpoint de health check do servi?o Employees est? retornando erro"
+
+      - alert: ClassesHealthCheckFailed
+        expr: probe_success{job="health-checks",instance=~".*classes.*"} == 0
+        for: 1m
+        labels:
+          severity: critical
+          service: classes
+        annotations:
+          summary: "Health check do Classes falhou"
+          description: "O endpoint de health check do servi?o Classes est? retornando erro"
