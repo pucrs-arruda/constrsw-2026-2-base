@@ -32,6 +32,9 @@ jobs:
         working-directory: backend/oauth
         run: mvn --batch-mode --no-transfer-progress test
 
+      - name: Create external Keycloak data volume
+        run: docker volume create constrsw-keycloak-data
+
       - name: Start Keycloak and OAuth
         run: docker compose up --build -d keycloak oauth
 
