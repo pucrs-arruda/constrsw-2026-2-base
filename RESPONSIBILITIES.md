@@ -26,9 +26,24 @@ different epic boundaries. This file records what was actually built.
 | **Usuários** | William Klein | Config foundation, Bearer guard, Epic 4 | ✅ |
 | **Roles** | Gabriel Hoppe | Dockerfile, `/health`, Epic 5 | ✅ |
 | **Tokens & Autorização** | Leonardo Gemin | Epics 2, 3 and 6 | ✅ |
+| **Observability** | Juliano Chies | Epic 7 (Prometheus/OTel metrics) — added after the T1 scope, own sibling spec | ✅ |
 
-All 26 stories are implemented and merged into `grupo07`. What remains is
-**verifying them against a running Keycloak** — see "Still open" below.
+All 26 T1 stories plus Epic 7 are implemented and merged into `grupo07`. 269
+tests pass (`npm test` in `backend/oauth`).
+
+**Story 1.3 (run the stack for real) has happened.** Live testing against the
+professor's Keycloak (Postman) found and fixed two real bugs that no unit or
+integration test could catch, since those all face a faked Keycloak:
+
+- Login/refresh did not request `scope=openid`; Keycloak still issued tokens,
+  but UserInfo rejected them, so every guarded route answered `401` even
+  though `/login` had succeeded.
+- `AdministratorRoleGuard` read client roles from the UserInfo body, which
+  omits them — they only exist on the access token. `admin@pucrs.br` could
+  call `/authz/validate` but got `403` on `/users`.
+
+Both are fixed (see `src/common/jwt-payload.ts` and
+`src/auth/keycloak-token.client.ts`).
 
 ### Planning — Juliano
 
@@ -65,6 +80,16 @@ own error code, used by every module.
 `src/authz/` — `POST /authz/validate`, which delegates the decision to Keycloak
 Authorization Services.
 
+### Observability — Juliano
+
+`src/telemetry/` — an in-process OpenTelemetry SDK exposing Prometheus text on
+`OAUTH_INTERNAL_METRICS_PORT` (default `9464`, path `/metrics`). HTTP request
+duration only; no business counters, no traces or logs pushed anywhere (pull
+metrics only). Also fixed the two live-Keycloak bugs above
+(`src/common/jwt-payload.ts`, `src/auth/keycloak-token.client.ts`), and
+updated `infrastructure/dev.local/services/prometheus/prometheus.yml` to scrape
+`oauth:9464` instead of the old `auth` job name.
+
 ---
 
 ## Rules everyone follows
@@ -95,10 +120,18 @@ Authorization Services.
   table copied into code would ship that contradiction.
 - **An unreachable Keycloak is `503`**, not `401`, everywhere.
 - Errors use the shared OA envelope; `error_stack` redacts tokens and passwords.
+- **Login/refresh always request `scope=openid`.** Without it, Keycloak still
+  issues tokens, but UserInfo — and therefore `BearerAuthGuard` — rejects
+  them. This is not caller-configurable.
+- **Client roles come from the JWT, not UserInfo.** `BearerAuthGuard` decodes
+  the access token (no local signature check — the token was already proven
+  valid via UserInfo first) to overlay `resource_access`/`realm_access` onto
+  `request.user.raw`, because UserInfo omits them.
+- **Telemetry versions are pinned exactly** (`@opentelemetry/*` at `0.221.0`,
+  no `^`). Exporter versions below `0.217.0` crash on a malformed scrape.
+  `src/telemetry/instrument.ts` must be imported before `@nestjs/core` in
+  `main.ts`, or the HTTP server Nest creates is never instrumented.
 
-## Still open
+## Out of scope
 
-- **Story 1.3 — run the stack for real.** The 254 tests face a faked upstream:
-  they prove the logic and the contracts, not the wiring. Nobody has walked the
-  routes against a running Keycloak yet.
-- Professors domain and PostgreSQL, which are out of the T1 scope.
+- Professors domain and PostgreSQL — not part of the T1 `oauth` deliverable.
