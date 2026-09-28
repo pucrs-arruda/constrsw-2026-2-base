@@ -41,6 +41,21 @@ Keycloak is healthy.
 Every service with a `build:` entry is compiled inside its Dockerfile. Don't
 rely on build artifacts from your machine (`dist/`, `node_modules/`).
 
+## Demo
+
+```bash
+./scripts/demo.sh
+```
+
+A guided walkthrough for presentations. It runs the steps above, then pauses on
+each part of the stack: Keycloak health and test users, a login through `oauth`
+with the decoded token (also copied to the clipboard for Swagger), Swagger
+with a numbered example request for every endpoint, `/metrics`, Prometheus and
+Grafana, opening each page in the browser. From the
+login step on it sends traffic to `oauth` in the background so the graphs move,
+and stops it when the script ends. The stack keeps running afterwards. Needs
+`docker`, `curl` and `jq`.
+
 ## Services
 
 | Service | URL | Notes |
@@ -112,9 +127,11 @@ timeout, which makes `oauth` return `503` and fires the
 `OAuthKeycloakUnavailable` alert). Details are in
 [backend/oauth/README.md](backend/oauth/README.md).
 
-`prometheus.yml` also lists services that don't run yet, so their targets show
-as down and their alerts fire. That's expected until they're added to the
-compose file.
+`prometheus.yml` only scrapes services that are in the compose file. The other
+services' jobs and health check targets are commented out at the end of it,
+with their ports and metrics paths. When you add a service to the compose file,
+uncomment its job and its line under `health-checks`. Its alerts are already in
+`alerts.yml`.
 
 ## Configuration
 
