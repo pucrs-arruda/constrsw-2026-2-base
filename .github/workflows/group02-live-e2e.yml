@@ -16,7 +16,10 @@ jobs:
     steps:
       - uses: actions/checkout@v4
         with:
-          submodules: recursive
+          submodules: false
+
+      - name: Initialize Group 02 OAuth submodule
+        run: git submodule update --init --depth=1 backend/oauth
 
       - uses: actions/setup-java@v4
         with:
