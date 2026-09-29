@@ -107,6 +107,30 @@ oauth p95 latency, and oauth → Keycloak calls by result. Bookmark it.
 Counters restart at zero whenever `oauth` restarts, so the graphs stay flat
 until it gets some traffic.
 
+### Generating load for the dashboards
+
+`npm run test:e2e` (in `backend/oauth`) does **not** feed Grafana. It is a
+hermetic test: it boots the Nest app in memory with a mocked Keycloak and a
+throwaway `prom-client` registry, none of which reaches Prometheus. To actually
+move the panels, drive the running `oauth` — the instance Prometheus scrapes:
+
+```bash
+./scripts/load.sh                 # 120s, 16 concurrent workers, max speed (~100 req/s)
+./scripts/load.sh --rps 60        # exact global cap of 60 req/s
+./scripts/load.sh --workers 24    # more concurrency (capped at 24)
+./scripts/load.sh --duration 0    # until Ctrl-C, for a live demo
+./scripts/load.sh --open          # same, and opens the Grafana dashboards
+```
+
+It replays the same operations as the e2e specs, so every series
+(`http_server_requests_seconds_*`, `oauth_keycloak_request_*`) gets data and the
+4xx/Keycloak-`rejected` panels move too. Throughput is bounded by Keycloak, not
+the script: `POST /login` takes ~90ms, so the mixed scenario tops out near
+~100 req/s; more workers don't help past ~16. Prometheus scrapes every 10s and
+the panels use `rate(...[5m])`, so let it run for a minute or two. `demo.sh`
+already sends background traffic; `load.sh` is the fine-grained control for
+sending real volume.
+
 Other queries to paste at http://localhost:9090:
 
 | Question | Query |
