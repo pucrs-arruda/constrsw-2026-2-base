@@ -1,148 +1,154 @@
 # Review: versões e realidade da stack — Architecture Spine Closed CRAS
 
-- **Data da revisão:** 2026-08-24
-- **Alvo:** `ARCHITECTURE-SPINE.md` (status `draft`, atualizado 2026-08-24)
-- **Lente:** cada tecnologia nomeada / pinada foi conferida na web (existência, versão corrente, fit, defaults vivos de starters) — não no treinamento.
-- **Veredito:** **CONDICIONAL.** Quase todos os pins numéricos da tabela Stack existem e são o `latest` estável do dia. Dois problemas de *fit* impedem “apto sem ajuste”: TypeScript **7.0.2** quebra o paved path NestJS (`nest build` / `nest start`) e diverge do starter oficial Vite `react-ts`; AD-4 classifica `keycloak-js` como DEPRECATED, o que as páginas oficiais do Keycloak **não** fazem.
+- **Data da revisão:** 2026-10-14
+- **Alvo:** `ARCHITECTURE-SPINE.md` (status `draft`, `updated: 2026-10-14`)
+- **Lente:** cada decisão de Stack/tecnologia foi conferida na web (existência, versão corrente em 2026-10-14, fit com starters) — não inferida só de training data.
+- **Veredito:** **CONDICIONAL.** A tabela Stack e a nota “Verificado na web em 2026-10-14” batem com npm/Maven/registries na maior parte dos pins críticos (Angular 22, NestJS 12, drivers Mongo, Prometheus/Grafana, Keycloak 26.8.1). Ressalvas: classificação factual errada de `keycloak-js` em AD-4; artefato Spring de resilience4j não nomeado para Boot 4; dois pins um patch atrás do `latest` estável (springdoc); seed `@nestjs/resilience` em semver `0.0.x` recém-publicado.
 
-A frase da spine “Verificado na web em 2026-08-24” é, em geral, verdadeira para os números. O que falhou foi o *reality-check de fit* do TypeScript único da malha e a classificação do adapter JS.
+A revisão anterior (2026-08-24) refletia stack React/Vite/Nest 11 — **obsoleta**. Este documento cobre o spine pós-OV (Angular + Nest 12 + malha poliglota).
 
 ---
 
 ## Método
 
-Fontes consultadas em 2026-08-24 (não exaustivo): Maven Central / spring.io / GitHub Releases; npm registry (`latest`); nodejs.org/download e schedule LTS; keycloak.org (downloads, getting-started Docker, adapters); spec.openapis.org; PostgreSQL.org + Docker Hub `postgres:18.6`; GitHub `vitejs/vite` `template-react-ts`; GitHub `nestjs/typescript-starter`; issues `nestjs/nest-cli` #3477/#3479; endoflife.date/spring-boot; RFC 9457; RFC 9700 (ROPC).
+Spot-checks executados em **2026-10-14**:
 
-Nada abaixo é inferência de training data sem cruzamento.
+| Fonte | O que foi consultado |
+| --- | --- |
+| npm registry (`npm view`) | `@nestjs/core`, `@nestjs/resilience`, `@angular/core`, `@angular/material`, `@angular/cdk`, `@angular/build`, `mongodb`, `express`, `typescript`, `@nestjs/platform-express` |
+| Maven Central / repo1.maven.org (web) | `mongodb-driver-sync:5.13.0`, `resilience4j-*:2.4.0`, `resilience4j-spring-boot4:2.4.0` |
+| spring.io / springdoc.org / GitHub tags | Spring Boot 4.1.1, springdoc-openapi 3.1.x |
+| keycloak.org / GitHub keycloak-js | Keycloak 26.8.1, status do adapter JS |
+| prometheus.io / GitHub releases | Prometheus 3.15.0 |
+| grafana.com / Docker Hub | Grafana OSS 13.2.4 |
+| Docker Hub / docker-library | `mongo:8.3.13`, `postgres:18.6` (referência spine) |
+| nodejs.org / GitHub node releases | Node 24 LTS linha Krypton |
 
----
-
-## Tabela Stack — item a item
-
-| Pin da spine | Existe? | É o corrente em 2026-08-24? | Fit / starter | Status |
-| --- | --- | --- | --- | --- |
-| OpenAPI Specification **3.1** | Sim (`3.1.0`–`3.1.2`) | **Não é o latest da spec.** Latest publicado = **OAS 3.2.0** (19 set 2025, `spec.openapis.org/oas/latest.html`) | Pin **consciente** (memlog): springdoc 3.1.0 e tooling Nest/Swagger ainda alinhados a 3.1. 3.2 é backward-compat com 3.1; codegen/linter de 9 grupos pode não estar maduro em 3.2 | **OK (conservador)** — não desatualizado por acidente |
-| Java **21** | Sim (LTS) | **Não é o LTS mais novo.** Adoptium lista **JDK 25 LTS** e **JDK 21 LTS**. Spring Boot 4.1.1: Java 17–26 | 21 continua suportado. Conservador para laboratório. Não pinou patch (`21.0.x`) — aceitável para major | **OK (conservador)** |
-| Spring Boot **4.1.1** | Sim | **Sim.** Release 2026-08-20 ([spring.io/blog](https://spring.io/blog/2026/08/20/spring-boot-4-1-1-available-now/), Maven Central). OSS até 2027-07-31. Há `4.2.0-M1` (milestone — não pinar) | Substitui 3.5 (OSS EOL **2026-06-30**, confirmado endoflife.date). Baseline Java 17 | **OK** |
-| springdoc-openapi **3.1.0** | Sim | **Sim.** Latest no site e Maven Central. POM parent = Spring Boot **4.1.0** (não 4.1.1) | Linha 3.x = Boot 4 / OpenAPI 3.1. Compatível com Boot 4.1.1 (patch). Default `openapi_3_1` | **OK** (parent 4.1.0, não 4.1.1 — irrelevante) |
-| Node.js **24.19.0** | Sim | **Sim, Active LTS.** [nodejs.org/en/download](https://nodejs.org/en/download) oferece v24.19.0 LTS (Krypton, 2026-08-03). Node **26** é Current (LTS previsto 2026-10-28). 22 = Maintenance LTS | Nest 11 exige ≥20; react-router 8.3.0 exige ≥22.22.0. 24.19.0 serve os dois | **OK** |
-| NestJS **11.2.1** (`@nestjs/core`) | Sim | **Sim.** npm `latest` = 11.2.1 (2026-08-14). Nest **12** só em alpha | Express 5 é o default do Nest 11. Starter GitHub `nestjs/typescript-starter` **não** está no 11.2.1 (ver Starters) | **OK** (npm; não o repo starter) |
-| Express **5.2.1** | Sim | **Sim.** npm `latest` = 5.2.1 (2025-12-01; reverte breaking change de 5.2.0) | `@nestjs/platform-express@11.2.1` depende **exatamente** de `express@5.2.1` | **OK** |
-| TypeScript **7.0.2** | Sim | **Sim como `latest` npm** (2026-07-08). Compilador nativo (Go); API programática **não** vem no 7.0 — prevista no 7.1 | **Não cabe no Nest CLI.** `nest build` / `nest start` quebram (`getParsedCommandLineOfConfigFile is not a function`). Vite `react-ts` vivo pina **`typescript: ~6.0.2`**, não 7.0.2 | **FALHA DE FIT** |
-| Keycloak **26.7.2** | Sim | **Sim.** Release 2026-08-19 ([keycloak.org](https://www.keycloak.org/2026/08/keycloak-2672-released), GitHub tag). Patch de segurança (CVE-2026-18963 e outras) | `start-dev` ainda é o modo de desenvolvimento oficial | **OK** |
-| Imagem `quay.io/keycloak/keycloak:26.7.2` | Sim | **Sim.** Getting started Docker oficial: `quay.io/keycloak/keycloak:26.7.2 start-dev` (docs “Nightly 26.7.2”). Renovate em repos públicos já bumpou para 26.7.2 | Registro oficial = Quay, não Docker Hub como fonte primária | **OK** |
-| PostgreSQL **18.6** | Sim | **Sim.** Release 2026-08-13 (pula 18.5 por regressão). PG 19 ainda Beta 3 | Tag Docker Hub oficial `postgres:18.6` ativa (pushed 2026-08-13/15). **Breaking change da imagem 18:** VOLUME = `/var/lib/postgresql` (não `/var/lib/postgresql/data`) | **OK** + aviso de volume |
-| React **19.2.8** / React DOM **19.2.8** | Sim | **Sim.** GitHub React “Latest” 19.2.8 (2026-07-21); npm `react` = 19.2.8 | Vite `react-ts` vivo: `"react": "^19.2.8"`, `"react-dom": "^19.2.8"`. react-router 8 pede ≥19.2.7 | **OK** |
-| Vite **8.2.2** | Sim | **Sim.** npm `latest` = 8.2.2 (updated 2026-08-20) | Template oficial usa `"vite": "^8.2.2"` | **OK** |
-| `@vitejs/plugin-react` **6.1.0** | Sim | **Sim.** npm `latest` = 6.1.0 (2026-08-20). Peers: `vite ^8`, react 19.2.8 nos devDeps | Template oficial: `"@vitejs/plugin-react": "^6.1.0"` | **OK** |
-| `react-router` **8.3.0** | Sim | **Sim.** npm `latest` = 8.3.0 (2026-07-22). v8 **removeu** `react-router-dom` | Não vem no starter Vite (adição da spine — ok). `engines.node >=22.22.0`; peers React ≥19.2.7. API SPA: `createBrowserRouter` | **OK** |
-| `@tanstack/react-query` **5.102.3** | Sim | **Sim.** npm `latest` = 5.102.3, publicado **2026-08-24T19:26:18Z** (hoje). Release GitHub de ontem ainda listava 5.102.2 | Não vem no starter Vite (adição — ok). Compatível React 18+ | **OK** (pin fresco do dia) |
-| `@fontsource/ibm-plex-sans` **5.3.0** | Sim | **Sim.** npm `latest` = 5.3.0 (2026-07-19) | Pacote certo para DESIGN.md (IBM Plex Sans) | **OK** |
-| `@fontsource/ibm-plex-mono` **5.3.0** | Sim | **Sim.** npm `latest` = 5.3.0 (2026-07-19) | Idem Mono | **OK** |
-| Docker Compose **v2** | Sim (família `docker compose`) | **Impreciso.** Plugin atual = **Compose v5.5.0** (GitHub 2026-08-17). Docs Docker: v5 usa o mesmo comando `docker compose` que v2 | “v2” = “não é `docker-compose` v1 Python”. Funciona, mas não é um pin de versão | **OK fraco** — pin vago |
+Não foi feita varredura exaustiva de **todos** os pins da tabela (ex.: `@fontsource/*`, patch exato Temurin 21). Itens não spot-checkados estão listados em “Residual”.
 
 ---
 
-## Tecnologias commitidas fora da tabela Stack
+## Spot-checks críticos (3–5 pedidos)
 
-| Claim | Veredito web | Notas |
+### 1. Angular 22 + Angular Material
+
+| Pin spine | npm `latest` (2026-10-14) | Fit |
 | --- | --- | --- |
-| Spring Boot **3.5 EOL 2026-06-30** (AD-3 Prevents) | **Confirmado.** OSS ended 2026-06-30; último patch OSS 3.5.16 (2026-06-25). Comercial Broadcom até 2032 | Justifica o pin 4.1.1 |
-| RFC 9457 `application/problem+json` | **Confirmado.** Standards Track, jul 2023; obsoleta RFC 7807 | Envelope ainda corrente |
-| UUID v4 | **Confirmado** como RFC 4122 / 9562 `version=4` | UUID v7 existe; pin v4 é escolha, não desatualização |
-| Keycloak `start-dev` | **Confirmado** na doc de containers e getting-started Docker 26.7.2 | Adequado a AD-7 laboratório |
-| Direct Access Grant / ROPC (AD-4 `[ASSUMPTION]`) | **Ainda existe** em 26.x; **não é default** em clients novos (~26.2+). RFC 9700: MUST NOT. Fora do OAuth 2.1 | Flow de laboratório ainda implementável se o client confidencial `bff` ligar Direct Access Grants. Não é “versão errada”; é risco de produto já tagueado |
-| `keycloak-js` **DEPRECATED** (AD-4 Prevents) | **FALSO.** Downloads 26.7.2: JavaScript = *separate release* **26.2.4** (não DEPRECATED). Só **Node.js adapter** está `[DEPRECATED]`. Doc JS: `npm install keycloak-js` | Decisão arquitetural (UI não fala com IdP) continua válida. A *classificação* está errada |
-| Adapter Node.js (`keycloak-connect`) DEPRECATED | **Confirmado** (downloads + blog 2022/2023) | Correto não usar no BFF |
-| Porta frontend **5173** | **Confirmado** default Vite | Seed ok |
-| `GET /health` anônimo | Convenção da malha, **não** o default Spring Actuator (`/actuator/health`) | Não é pin de lib; grupos Spring precisam mapear |
+| `@angular/core` 22.2.2 | **22.2.2** | OK |
+| `@angular/material` 22.2.3 | **22.2.3** | OK |
+| `@angular/cdk` 22.2.3 | **22.2.3** | OK |
+| TypeScript (frontend) 6.0.x | `typescript@6.0.2` existe; npm `latest` = **7.0.2** | OK — spine documenta faixa **`>=6.0 <6.1`** via `@angular/build@22.2.2` (`typescript: '>=6.0 <6.1'`). Pin 6.0.x é **fit correto** para o paved path Angular; não usar TS 7 no frontend sem quebrar peer do CLI/build. |
+
+### 2. NestJS 12 + resilience BFF
+
+| Pin spine | Registro | Fit |
+| --- | --- | --- |
+| `@nestjs/core` 12.1.3 | npm `latest` = **12.1.3** | OK |
+| `@nestjs/resilience` 0.0.2 | npm `latest` = **0.0.2** (publicado ~6 dias antes da revisão; pacote oficial Nest, docs em [nestjs.com/reliability/resilience](https://docs.nestjs.com/reliability/resilience)) | **OK (existência)** / **ressalva (maturidade)** — semver `0.0.x` indica API ainda instável; comportamento AD-10 é invariante, mas cold-start assume lib verde. |
+| Express 5.2.x | npm `latest` = **5.3.0**; `@nestjs/platform-express@12.1.3` depende de **`express@5.2.1`** | OK — spine **5.2.x** alinha ao Nest 12, não ao Express isolado. |
+
+### 3. Drivers Mongo (Java + Node)
+
+| Pin spine | Registro | Fit |
+| --- | --- | --- |
+| `mongodb-driver-sync` 5.13.0 | Maven Central, release **2026-09-25** | OK — latest estável da linha 5.x spot-checkada. |
+| `mongodb` (Node) 7.7.0 | npm `latest` = **7.7.0** | OK |
+
+### 4. Observabilidade (Prometheus + Grafana)
+
+| Pin spine | Fonte | Fit |
+| --- | --- | --- |
+| Prometheus 3.15.0 | [prometheus.io/download](https://prometheus.io/download/) — “Latest” **3.15.0** (2026-09-24) | OK |
+| Grafana (OSS) 13.2.4 | [grafana.com download](https://grafana.com/grafana/download/13.2.4?edition=oss&platform=docker) — release **2026-10-13**; tag `grafana/grafana:13.2.4` | OK |
+
+### 5. Spring seed (amostra)
+
+| Pin spine | Fonte | Fit |
+| --- | --- | --- |
+| Spring Boot 4.1.1 | [spring.io blog 2026-08-20](https://spring.io/blog/2026/08/20/spring-boot-4-1-1-available-now/), Maven Central | OK |
+| springdoc-openapi 3.1.0 | [springdoc.org](https://springdoc.org/) documenta **3.1.1** como versão atual da linha Boot 4 | **Patch atrás** — 3.1.0 existe e suporta Boot 4; **3.1.1** (2026-09-06) é o patch estável corrente. |
+| resilience4j 2.4.0 | Maven Central / [release v2.4.0](https://github.com/resilience4j/resilience4j/releases/tag/v2.4.0) | **OK (versão)** / **gap de artefato** — com Boot **4.1.x** o starter correto é **`resilience4j-spring-boot4:2.4.0`**, não `resilience4j-spring-boot3` (Boot 3 falha startup com mensagem explícita). A spine só cita “resilience4j 2.4.0” sem módulo. |
 
 ---
 
-## Starters greenfield — defaults vivos
+## Tabela Stack — síntese item a item
 
-### Vite oficial `react-ts` (o que a spine “lean on”)
-
-Fonte: `https://github.com/vitejs/vite/blob/main/packages/create-vite/template-react-ts/package.json` (main, 2026-08-24).
-
-| Pacote | Template vivo | Spine | Match? |
+| Pin | Existe? | Corrente em 2026-10-14? | Status |
 | --- | --- | --- | --- |
-| `react` / `react-dom` | `^19.2.8` | 19.2.8 | Sim |
-| `vite` | `^8.2.2` | 8.2.2 | Sim |
-| `@vitejs/plugin-react` | `^6.1.0` | 6.1.0 | Sim |
-| `typescript` | **`~6.0.2`** | **7.0.2** | **Não** |
-| lint | **oxlint** `^1.79.0` | não pinado | Spine omite (ok — seed) |
-| `@types/node` | `^24.13.3` | não pinado | Alinha com Node 24 |
-| `@types/react` | `^19.2.18` | não pinado | — |
-| router / query / fontes | ausentes | pinados à parte | Adições conscientes |
-
-Comando vivo: `npm create vite@latest -- --template react-ts`. Template **existe** e é o starter oficial. A spine **não** reproduz o TypeScript do template.
-
-### NestJS
-
-- npm `@nestjs/core@11.2.1` + `@nestjs/platform-express` → Express **5.2.1**: bate.
-- Repo `nestjs/typescript-starter` (master) **está atrás**: `@nestjs/core ^11.0.1`, `typescript ^5.7.3`, `@types/node ^22`, `engines.node >=20`. **Não** usar esse GitHub como default vivo.
-- `nest new` / CLI 11.0.24: guarda que **rejeita TypeScript 7.0** (falta Compiler API); mensagem oficial pede `typescript@^6` até 7.1.
-
-Conclusão starter: o paved path Node da spine deveria pinhar **TypeScript 6.x** (Vite template `~6.0.2` + Nest CLI), não 7.0.2 — ou documentar coexistência `typescript@6` (CLI) + `tsc` 7 só no frontend.
-
-### Spring Boot
-
-Não há um “starter Vite” equivalente. Initializr 4.1.1 + Java 17–26. Pin Java 21 é válido; Java 25 é o LTS mais recente (set 2025).
-
-### PostgreSQL 18 no Compose
-
-Default vivo da imagem oficial 18.x: montar volume em `/var/lib/postgresql`, não `/var/lib/postgresql/data`. A spine não especifica o mount — risco de compose quebrado no cold-start se alguém copiar receitas PG 16/17.
+| OpenAPI contratos 3.1 | Sim | Spec latest = **3.2.0**; spine explica pin 3.1 | OK (conservador, documentado) |
+| Java 21 | Sim | 25 LTS também disponível; Boot 4.1 suporta 17–26 | OK (conservador) |
+| Spring Boot 4.1.1 | Sim | Sim (patch estável 4.1.x) | OK |
+| springdoc-openapi 3.1.0 | Sim | **3.1.1** é latest da linha | Menor drift |
+| resilience4j 2.4.0 | Sim | Sim | OK + nomear `spring-boot4` |
+| mongodb-driver-sync 5.13.0 | Sim | Sim (5.13.0) | OK |
+| Node.js 24.x (>=24.15) | Sim | LTS **24.22.0** publicado **no dia da revisão**; floor >=24.15 válido | OK (range, não pin único) |
+| NestJS 12.1.3 | Sim | Sim | OK |
+| @nestjs/resilience 0.0.2 | Sim | Sim | OK + maturidade 0.0.x |
+| Express 5.2.x | Sim | 5.3.0 no npm; Nest trava 5.2.1 | OK |
+| TypeScript 6.0.x (frontend) | Sim | 7.0.2 é npm latest | OK (fit Angular) |
+| mongodb 7.7.0 | Sim | Sim | OK |
+| Keycloak 26.8.1 / imagem Quay | Sim | Release **2026-10-13** | OK |
+| PostgreSQL 18.6 | Sim (spine) | Release 2026-08-13 (histórico conhecido) | OK — não revalidado patch do dia nesta sessão |
+| mongo:8.3.13 | Sim | Tag oficial [docker-library/mongo](https://github.com/docker-library/docs/blob/master/mongo/README.md) | OK |
+| Angular / Material / CDK 22.2.x | Sim | Sim | OK |
+| @fontsource/ibm-plex-* 5.3.0 | Não revalidado nesta sessão | — | Assumido OK (memlog) |
+| Prometheus 3.15.0 | Sim | Sim | OK |
+| Grafana 13.2.4 | Sim | Sim | OK |
+| Docker Compose v2 | Família existe | Plugin atual = linha **5.x** (“v2” é vago) | OK fraco |
 
 ---
 
-## O que estava desatualizado / mal classificado
+## Tecnologias fora da tabela — claims AD / operacional
 
-1. **TypeScript 7.0.2 (bloqueante de fit).** Número corrente no npm; **incompatível** com NestJS 11 CLI e **diferente** do default vivo Vite `react-ts` (`~6.0.2`). Um único pin 7.0.2 para BFF + contextos Node + UI não passa no reality-check.
-2. **`keycloak-js` marcado DEPRECATED.** Só o adapter **Node.js** está deprecated. JS adapter é release separado 26.2.4, docs ativas.
-3. **OpenAPI 3.1 vs 3.2.** Spec latest = 3.2.0. Pin 3.1 **justificado por tooling** (memlog + springdoc). Não corrigir para 3.2 sem checar Nest Swagger/orval/openapi-generator dos 9 grupos.
-4. **Java 21 vs 25.** 21 não está “morto”; 25 é o LTS novo. Conservador, ok para laboratório.
-5. **Docker Compose “v2”.** Família certa, versão errada/vaga (plugin atual 5.x). Preferir “Docker Compose plugin (`docker compose`), não Compose v1”.
-6. **ROPC.** Não é pin de versão, mas o default Keycloak 26.2+ **desliga** Direct Access Grant em client novo. Compose/realm precisa ligar explicitamente no client `bff`.
-
----
-
-## O que *não* ficou sem confirmação web
-
-Nenhum pin da tabela Stack ficou só em training data. Residual de confiança baixo:
-
-- Tag Quay `26.7.2`: confirmada pela **página oficial** getting-started Docker (comando com essa tag). API Quay desta sessão timeout; não contradiz a doc.
-- Patch exato de Temurin 21 (`21.0.x`): não pinado na spine — sem drift.
-- `nestjs/typescript-starter` master: confirmado **stale**; a spine pinou npm, não esse repo.
+| Claim | Veredito web |
+| --- | --- |
+| AD-4: `keycloak-js` **proibido** / listado junto a “adapter Node.js (DEPRECATED)” | **Decisão arquitetural válida** (UI não fala com IdP). **Classificação DEPRECATED para `keycloak-js` continua falsa** — adapter JS mantido (repo [keycloak/keycloak-js](https://github.com/keycloak/keycloak-js), releases 26.x); deprecated são adapter **Node.js** (`keycloak-connect`) e subpartes **Cordova** / proposta `keycloak-js/authz`. |
+| AD-4: Direct Access Grant / ROPC | Ainda implementável em Keycloak 26.x; não é pin de versão; risco de produto (RFC 9700) já marcado `[ASSUMPTION]`. |
+| AD-7: PostgreSQL 18 volume mount | Breaking change conhecido da imagem 18 (`/var/lib/postgresql` vs `/data`) — spine não detalha mount; risco operacional de compose copiado de PG 16/17. |
+| AD-10: libs seed | Nest: `@nestjs/resilience` confirmado oficial. Spring: usar **`resilience4j-spring-boot4`**, não BOM genérico sem módulo Boot 4. |
 
 ---
 
-## Recomendações (não aplicadas neste arquivo)
+## O que estava desatualizado ou não confirmável
 
-1. **Trocar o pin TypeScript** para `6.0.2` (ou `~6.0.2`) na malha Nest/Vite; deixar 7.x como Deferred até Nest CLI + API programática 7.1. Se quiser 7 só no frontend, **dois pins**, não um.
-2. **Corrigir AD-4 Prevents:** “adapter Node.js DEPRECATED; UI sem `keycloak-js` (ainda mantido, mas fora da malha)”.
-3. Opcional: Compose “v2” → `docker compose` (plugin atual). Nota de volume PG 18 no seed operacional.
-4. Manter OpenAPI 3.1, Spring Boot 4.1.1, Nest 11.2.1, Node 24.19.0 LTS, Keycloak 26.7.2, React/Vite/router/query/fontsource como estão.
+1. **springdoc-openapi 3.1.0** — um patch atrás de **3.1.1** (documentação springdoc, set/2026).
+2. **resilience4j** — versão **2.4.0** correta; falta explicitar **`resilience4j-spring-boot4`** para domínios Spring Boot 4.1.1 (fit, não versão).
+3. **AD-4 / `keycloak-js`** — não deprecado; só confundir com adapter Node ou Cordova.
+4. **`@nestjs/resilience@0.0.2`** — existe e é o latest, porém **pré-1.0** e muito recente; cold-start deve tratar como seed experimental.
+5. **Docker Compose “v2”** — não é pin de versão; preferir “plugin `docker compose` (não Compose v1)”.
+
+**Residual (baixa confiança, não spot-check nesta sessão):** patch exato JDK Temurin 21; `@fontsource/*`; se **PostgreSQL 18.6** ainda é o patch mais recente da série 18 em 2026-10-14; compatibilidade cruzada Nest 12 × TS 6 no BFF quando divergir do frontend (spine permite divergência — OK conceitualmente, validar no `nest new` 12).
+
+---
+
+## Evidência de pesquisa vs assertiva
+
+A spine **declara** verificação web em 2026-10-14. Esta revisão **confirma independentemente** a maioria dos números spot-checkados (Angular, Nest, Mongo drivers, Prometheus, Grafana, Keycloak 26.8.1, Spring Boot 4.1.1, imagem Mongo 8.3.13). Os achados acima são **ajustes de fit/classificação** ou **drift menor de patch**, não pins inventados ou tecnologias inexistentes.
+
+---
+
+## Recomendações (não aplicadas no spine)
+
+1. AD-4: trocar “`keycloak-js` DEPRECATED” por “UI **sem** `keycloak-js`; adapter **Node.js** deprecated; JS adapter mantido fora da malha”.
+2. Stack: `springdoc-openapi-starter-webmvc-ui` **3.1.1** (ou nota “>=3.1.0, prefer 3.1.1”).
+3. Stack / AD-10 nota Spring: **`io.github.resilience4j:resilience4j-spring-boot4:2.4.0`**.
+4. Node: documentar exemplo **24.22.0** LTS mantendo floor `>=24.15`.
+5. `@nestjs/resilience`: manter pin, acrescentar nota “semver 0.0.x — acompanhar releases”.
 
 ---
 
 ## Fontes (principais)
 
+- npm: `@nestjs/core@12.1.3`, `@nestjs/resilience@0.0.2`, `@angular/core@22.2.2`, `@angular/material@22.2.3`, `mongodb@7.7.0`, `express@5.2.1` (via `@nestjs/platform-express`)
+- Angular TS peers: `@angular/build@22.2.2` → `typescript: '>=6.0 <6.1'`
 - Spring Boot 4.1.1: https://spring.io/blog/2026/08/20/spring-boot-4-1-1-available-now/
-- Spring Boot 4.1 system requirements: https://docs.spring.io/spring-boot/4.1/system-requirements.html
-- Spring Boot EOL: https://endoflife.date/spring-boot
-- springdoc 3.1.0: https://springdoc.org/
-- Node 24.19.0 LTS: https://nodejs.org/en/download — https://nodejs.org/en/blog/release/v24.19.0
-- Node schedule: https://github.com/nodejs/Release
-- npm: `@nestjs/core@11.2.1`, `express@5.2.1`, `typescript@7.0.2`, `vite@8.2.2`, `@vitejs/plugin-react@6.1.0`, `react@19.2.8`, `react-router@8.3.0`, `@tanstack/react-query@5.102.3`, `@fontsource/ibm-plex-{sans,mono}@5.3.0`
-- Nest CLI × TS 7: https://github.com/nestjs/nest-cli/issues/3477 — https://github.com/nestjs/nest-cli/issues/3479
-- Vite template: https://github.com/vitejs/vite/tree/main/packages/create-vite/template-react-ts
-- Nest starter (stale): https://github.com/nestjs/typescript-starter
-- Keycloak 26.7.2: https://www.keycloak.org/2026/08/keycloak-2672-released — https://www.keycloak.org/downloads — https://www.keycloak.org/getting-started/getting-started-docker
-- Keycloak adapters: downloads (JS 26.2.4 vs Node DEPRECATED); https://www.keycloak.org/securing-apps/javascript-adapter
-- OAS 3.2.0: https://spec.openapis.org/oas/latest.html — 3.1.2: https://spec.openapis.org/oas/v3.1.2.html
-- PostgreSQL 18.6: https://www.postgresql.org/about/news/postgresql-186-1711-1615-1519-1424-and-19-beta-3-released-3365/
-- Docker Hub postgres:18.6 + nota PGDATA 18: https://hub.docker.com/_/postgres
-- RFC 9457: https://datatracker.ietf.org/doc/html/rfc9457
-- Docker Compose v5.5.0: https://github.com/docker/compose/releases/tag/v5.5.0
-- Adoptium LTS list: https://adoptium.net/temurin/releases/ (JDK 25 LTS e JDK 21 LTS)
+- springdoc: https://springdoc.org/ (v3.1.1)
+- Mongo Java driver 5.13.0: https://repo1.maven.org/maven2/org/mongodb/mongodb-driver-sync/5.13.0/
+- resilience4j Spring Boot 4: https://central.sonatype.com/artifact/io.github.resilience4j/resilience4j-spring-boot4
+- Keycloak 26.8.1: https://www.keycloak.org/2026/10/keycloak-2681-released
+- keycloak-js: https://github.com/keycloak/keycloak/discussions/11975
+- Prometheus 3.15.0: https://prometheus.io/download/
+- Grafana 13.2.4: https://grafana.com/grafana/download/13.2.4?edition=oss&platform=docker
+- Node 24.22.0 LTS: https://nodejs.org/en/blog/release/v24.22.0
+- mongo:8.3.13: https://github.com/docker-library/docs/blob/master/mongo/README.md
+- Nest resilience docs: https://docs.nestjs.com/reliability/resilience

@@ -1,270 +1,224 @@
 ---
-reviewer: adversarial-general
-lens: duas unidades um nível abaixo que obedecem todos os ADs à letra e mesmo assim divergem
+reviewer: adversarial-finalize
+lens: duas unidades um nível abaixo que obedecem todos os ADs à letra e mesmo assim divergem (OV-10: regra no BFF / join no domínio)
 spine: ARCHITECTURE-SPINE.md
-date: 2026-08-24
+spine_updated: 2026-10-14
+date: 2026-10-14
 status: complete
 spine_unchanged: true
 altitude: initiative
 ---
 
-# Review adversarial — Architecture Spine Closed CRAS
+# Review adversarial (finalize) — Architecture Spine Closed CRAS
 
-Ataque: para cada buraco, duas unidades (contexto, módulo BFF ou superfície) constroem de forma **legal** sob AD-1…AD-8 + convenções e, juntas, não fecham malha — forma compartilhada incompatível, dois donos da mesma entidade, ou dois caminhos de mutação do mesmo estado. Spine **não** alterada. Cada par é um AD novo ou um Rule a apertar.
+Ataque à spine **atual** (AD-1…AD-12, overrides OV-1…OV-10, AD-9 `POST /v1/lessons/gerar`, FR-29 em `modules/ocupacao`, `classes`/`reservations` → `employees.ativo`). Para cada buraco: **duas unidades** (contexto, módulo BFF ou par domínio×BFF) que passam o checklist de conformidade e respeitam cada Rule **como escrita**, e ainda assim não integram — formas compartilhadas incompatíveis, dois donos da mesma associação, dois caminhos de mutação do mesmo fato, divergência poliglota, ou modos de falha OV-10 (“BFF roubou regra negocial” / “domínio embutiu join de tela”).
 
-Glossário, UJs e OQ-1 não foram relitigados como produto; só entram quando a spine os deixa como escolha de implementação.
+Spine **não** alterada neste review. Fechos apontam qual AD apertar.
+
+Glossário, UJs e OQ-1 não são relitigados como produto; entram só onde a spine deixa escolha de implementação.
 
 ## Veredito
 
-**A spine não é contrato suficiente para nove grupos em paralelo.** AD-1…AD-8 fecham direção grosseira, UUID/faixa/problem+json, paved path e o recorte BFF/SPA. Não fecham: quem **persiste** Lesson; o **schema** e o **universo** de `GET ocupacao`; o vínculo `sub` Keycloak ↔ entidade de domínio; o dono dos read-models FR-19/FR-29; nem o JSON dos pares 1–N além de meia dúzia de tokens. Unidades compliant colidem no dia 1. Não é handoff-clean.
+**Quase-handoff, ainda não contrato fechado para nove grupos em paralelo.** Os emendamentos de 2026-10-14 fecharam buracos graves (geração de Lesson, dono nominal de FR-29/FR-19 no BFF, leitura de `employees.ativo`, classificação OV-10 na tabela AD-1). O que resta é o **interior do fio compartilhado** e o **limite BFF↔domínio**: dois times AD-compliant ainda colidem em ocupação de Professor, chave canônica `professorId`, schema de `GET …/ocupacao`, identidade JWT→ids, e em “proxy puro” vs read-model que filtra/recalcula. Não é nitpick de stack — quebra UJ-2/UJ-3/UJ-4 na demo.
 
 ## Método
 
-Uma unidade “obedece à letra” se: respeita as setas de AD-1 como únicas dependências de runtime; publica `openapi/openapi.yaml` 3.1 com `/v1/<contexto>` e os tokens listados em AD-2; escolhe Spring **ou** Nest (AD-3); resource-server + `GET /v1/identidade/me` (AD-4); não calcula sala efetiva fora de `lessons` (AD-5); não abre CORS de SPA nem junta OpenAPI no browser (AD-6); sobe no compose com `cras_<contexto>` (AD-7); UI só fala com BFF via TanStack Query (AD-8). O teste falha se duas dessas unidades não integram.
+Uma unidade “obedece à letra” se:
+
+- Respeita as setas AD-1 (negocial vs composição; `POST /v1/lessons/gerar` só `classes`→`lessons`; ciclo `lessons`↔`reservations` só GET profundidade 1; browser só BFF).
+- Publica OpenAPI 3.1 em `openapi/openapi.yaml`, paths `/v1/<contexto>`, tokens citados, UUID/string, `data`+`faixaId`, listas `items`, RFC 9457 (AD-2).
+- Passa checklist AD-3 (incl. poliglota PG/Mongo por contexto; Professor is-a só via `employeeId`).
+- Resource-server + `GET /v1/identidade/me` conforme fragmento oauth; BFF login/cookie; sem browser→Keycloak (AD-4).
+- `lessons` único dono de derivação `salaEfetivaId`; escritores fazem merge de conflito; BFF não recalcula sala efetiva (AD-5).
+- CORS só BFF; proxy vs read-model rotulados; FR-29 só `modules/ocupacao/`; FR-19 só módulo `lessons` do BFF; roster só módulo `classes`; sem roster em `reservations` (AD-6).
+- Compose, `cras_<contexto>`, `/health`, métricas, seed idempotente (AD-7, AD-12).
+- SPA única Angular; dados só via BFF (AD-8).
+- Geração/imutabilidade data+faixa (AD-9); resilience nos hops (AD-10); camadas de teste (AD-11).
+
+O teste **falha** se duas unidades compliant não fecham malha ou produzem SM-5/identidade quebrada.
+
+## O que a revisão anterior já não precisa relitigar
+
+- **P1 antigo (quem dispara gerar Lesson):** AD-9 + seta `CLA → POST gerar → LES` no mermaid fecham o dono do protocolo; resta pinar **payload** e **forma do esqueleto** (WeeklySlot), não a existência da seta.
+- **Dois módulos BFF donos de FR-29:** AD-6 fixa `modules/ocupacao/` — desde que ninguém reimplemente ocupação “de zelo” noutro módulo (buraco novo abaixo).
 
 ## Pares (buracos)
 
-### P1 — `classes` × `lessons`: dois donos da escrita de Lesson
+### H1 — `classes` × `reservations`: ocupação AD-5 cumprida, universo de Professor incompatível
 
-**Unidade A (`classes`).** POST `/v1/classes` confirma a turma, recusa via `GET /v1/lessons/ocupacao?data=&faixaId=` (única seta CLA→LES no diagrama), e **não** chama nenhum POST em `lessons` — AD-1: “setas abaixo são as únicas dependências de runtime permitidas”. Lesson “gerada” vira atributo interno, job, ou espera que outro dispare. Capability map e NFR-CTR-2 (“Class que gera Lesson”) ficam como comentário de produto, não como seta.
+**Unidade A (`lessons`, dono de `GET /v1/lessons/ocupacao`).** Rule AD-5: resposta com `salaEfetivaId` já resolvido por par `data`+`faixaId`. Implementação mínima: lista de `{ salaEfetivaId }` (ou só salas) derivada das Lessons da faixa. Não inclui `professorId` — a prosa de FR-13 fala em “union salas/professores”, mas o Rule pinado na mesma AD cita explicitamente `salaEfetivaId` no GET ocupacao, não um envelope de professores.
 
-**Unidade B (`lessons`).** Único persistidor de Lesson (equidade 1–N, AD-5 dono da derivação). Expõe `POST /v1/lessons` e/ou `POST /v1/lessons/gerar`. Sem barramento (convenção), não é notificado da confirmação. Espera que `classes` ou o BFF chamem. GET em `classes` (seta LES→CLA) só ajuda se alguém disparar o pull.
+**Unidade B (`classes`, FR-13).** Antes de abrir Class, chama **só** `GET /v1/lessons/ocupacao` (seta permitida). Interpreta o payload como **ocupação de salas** única. Para Professor, faz union **local**: percorre `professorIds` da própria Class em draft e consulta GET em `professors` — **não** vê Reservation ad hoc do mesmo Professor na faixa (seta CLA→RSV não existe para ocupação; CLA→RSV só GET ocupacao no diagrama é CLA→LES e CLA→RSV para merge AD-5 — reservations tem GET ocupacao próprio).
 
-**ADs cumpridos:** AD-1 (A respeita o diagrama; B respeita LES→CLA), AD-5 (B é dono da derivação), AD-7 (DBs separados — A não pode inserir em `cras_lessons`), convenção “mutação no contexto dono”.
+**Unidade B′ (`reservations`, FR-23/24/30).** Recusa POST com merge AD-5: chama `GET /v1/lessons/ocupacao` **e** olha linhas locais. Assume que ocupacao traz **professores ocupados** na faixa; se A não mandar, B só vê Reservation local — Lesson de outra turma não bloqueia.
 
-**Colisão:** UJ-2 confirma Class e a grade de aulas não nasce; ou os dois implementam geração e duplicam Lesson no retry. O Rule de AD-1 cita NFR-CTR-2 (“gera Lesson”) e o diagrama **proíbe** a seta de escrita que tornaria isso possível. Unidades honestas escolhem lados opostos da contradição.
+**ADs cumpridos:** AD-1 (setas corretas), AD-5 letra (escritores recusam; BFF não calcula sala efetiva), AD-2 (`data`, `faixaId`).
 
-**Fechar:** apertar AD-1 — ou (i) seta de escrita explícita e única `classes` → `POST /v1/lessons/gerar { classId }` (lessons persiste; classes não grava aula), ou (ii) BFF orquestra POST Class depois POST gerar, e o diagrama admite essa orquestração sem persistência de agregado. Uma das duas. Proibir as duas ao mesmo tempo.
+**Colisão:** Rafael abre Class com Professor já reservado ad hoc (B′ autoriza se ocupacao não listar professor). Marina reserva Professor em faixa com Lesson presencial (A listou só sala; B′ autoriza). SM-5 quebra com duas implementações “corretas”. **Não** é violação óbvia de OV-10 — é **forma compartilhada** do endpoint que AD-5 usa como único leitor de composição para escritores.
 
-### P2 — `classes` × `reservations`: ocupação que cada escritor inventa
+**Fechar:** apertar **AD-5** + **AD-2** — JSON Schema canônico de `OcupacaoFaixa` (campos obrigatórios: `data`, `faixaId`, `items` com pelo menos `salaEfetivaId` **e** `professorIds` ocupados na faixa, origem Lesson via Class **e** Reservation `professorId`; RECURSO **fora** deste GET — permanece no escritor `reservations`). Proibir segundo algoritmo de “professor livre?” em `classes` sem GET em `reservations` quando a regra exigir union com reserva.
 
-**Unidade A (`classes`, FR-13).** Recusa abertura só com `GET /v1/lessons/ocupacao` (AD-5). Interpreta o payload como salas efetivas de **Lesson**. SALA **ad hoc** (Reservation sem `lessonId`) não é Lesson → não entra. Compromisso de Professor: AD-5 descreve ocupacao como `salaEfetivaId` já resolvido — A consulta `professorIds` só nas próprias Classes (não vê Reservation do mesmo Professor nem Lesson de outra turma, a menos que ocupacao as traga — o Rule não manda).
+---
 
-**Unidade B (`reservations`, FR-23/24/30).** Recusa no próprio POST chamando a mesma ocupacao (AD-5) **e** as próprias linhas. Inclui Resource, linha SALA ligada a Lesson, e ad hoc. Professor ocupado = Reservation local ∪ “se ocupacao devolver professor”. Se não devolver, B só vê as próprias reservas — Lesson do coordenador não bloqueia projetor na mesma faixa.
+### H2 — `lessons` × `reservations` × `classes`: dois caminhos de mutação da “sala na faixa” (AD-5 explícito, efeito colateral não)
 
-**ADs cumpridos:** AD-1 (RSV→LES GET ocupacao; CLA→LES GET ocupacao; profundidade 1), AD-5 letra (ambos recusam no escritor; BFF não calcula sala efetiva), AD-2 (`data`+`faixaId`).
+**Unidade A (`lessons`).** PATCH `modalidade=remoto` permitido (FR-17). AD-5: remoto → `salaEfetivaId` nulo **mesmo com** linha SALA existente; `lessons` não apaga Reservation. Ocupacao de A deixa de emitir a sala da Lesson **e** não emite `targetId` da linha SALA (não é Lesson).
 
-**Colisão:** (1) Rafael abre turma na Room que já tem reserva ad hoc na faixa — A autoriza; FR-29 depois mostra dois ocupantes. (2) Marina tem Reservation ad hoc na H; Rafael abre Class com o mesmo `professorId` na H — A autoriza. (3) B autoriza Resource na faixa em que já existe Lesson do mesmo Professor, se ocupacao for só sala. SM-5 quebra com implementações legais.
+**Unidade B (`reservations`).** Linha `kind=SALA` com `lessonId` permanece até FR-30. `GET /v1/reservations/ocupacao` continua a expor a linha. AD-5 diz que FR-29 no BFF une salas efetivas + SALA ad hoc + RECURSO — linha SALA **ligada a Lesson** não está nomeada como “ad hoc”; interpretação B: linha com `lessonId` **não** entra no join FR-29 (só ad hoc).
 
-**Fechar:** apertar AD-5 (e AD-2) — schema canônico de `GET /v1/lessons/ocupacao` **e** o universo: salas efetivas de Lesson, **mais** Room de SALA ad hoc, **mais** `professorId`s ocupados (Lesson via Class.professorIds **e** Reservation.professorId). `reservations` permanece o dono das linhas; `lessons` é o único *leitor de composição* que os escritores de conflito chamam. Sem segundo algoritmo de ocupação em `classes` ou no BFF.
+**Unidade C (`classes`, nova abertura FR-13).** Consulta só `GET /v1/lessons/ocupacao` — vê faixa **sem** aquela Room (remoto). Autoriza nova Class na Room que B ainda “segura” via linha SALA não cancelada.
 
-### P3 — `lessons` × `reservations`: dois caminhos de mutação da sala efetiva
+**ADs cumpridos:** AD-1 (sem escrita lessons→reservations), AD-5 (ordem da fórmula remoto; dono derivação), AD-6 (BFF não recalcula sala efetiva).
 
-**Unidade A (`lessons`, FR-17).** PATCH `modalidade=remoto` é ajuste de Lesson; Professor atribuído pode. Fórmula AD-5 na ordem escrita: “Remoto → sem Room” curto-circuita linha SALA. `GET ocupacao` deixa de emitir a sala padrão **e** o `targetId` da linha SALA. A só **GET** linhas SALA (AD-1: ciclo só GET, profundidade 1) — não DELETE em `reservations`.
+**Colisão:** estado espacial da faixa depende de **PATCH Lesson** vs **POST/DELETE linha** sem invariante de compensação ou recusa cruzada. Cancelamento tardio de reserva reexpõe conflito com Class já aberta. Escritores legais, malha inconsistente.
 
-**Unidade B (`reservations`).** Linha `kind=SALA` daquela `lessonId` continua persistida até FR-30. Não é ad hoc. AD-5 manda o BFF unir ocupacao de lessons com “linhas RECURSO e SALA **ad hoc**” — linha ligada a Lesson **não** entra no join do BFF. B não é chamado no PATCH de modalidade.
+**Fechar:** apertar **AD-5** — uma das opções pinadas (não três): (i) PATCH remoto **recusa** FR-* enquanto existir linha SALA da `lessonId` (`lessons` GET linhas RSV, 409); (ii) linha SALA ligada a Lesson **entra** no universo de ocupacao de salas que `classes`/`reservations` consultam mesmo com `salaEfetivaId` nulo; (iii) única liberação espacial na faixa = FR-30, e modalidade remota exige pré-condição documentada.
 
-**ADs cumpridos:** AD-1 (sem escrita lessons→reservations), AD-5 (A é o único dono da derivação; B não persiste `salaEfetivaId`), AD-6 (BFF não recalcula).
+---
 
-**Colisão:** aula vira remota; Caio (FR-19) não vê Room (A); a Room alvo da linha SALA some da ocupação FR-29 (não está em lessons, não é ad hoc); Rafael pode abrir outra Class naquela Room; B ainda “segura” o recurso espacial. Cancelar depois reabre um alvo que já foi reatribuído. Estado da sala efetiva tem dois escritórios: PATCH Lesson vs POST/DELETE ReservationLine, sem invariante de compensação.
+### H3 — `professors` × `classes`: mesma equidade AD-3, duas chaves canônicas para alocação
 
-**Fechar:** apertar AD-5 — ordem da fórmula: remoto **não** ignora linha SALA existente; ou PATCH `modalidade=remoto` é recusa FR enquanto existir linha SALA daquela `lessonId` (A GET linhas, 409); ou a única mutação que libera sala é FR-30, e `lessons` não pode marcar remoto sem essa pré-condição. Escolher um caminho de mutação.
+**Unidade A (`professors`, MongoDB).** Checklist AD-3: `employeeId` 1–1, documento Professor keyed por `employeeId` (um UUID, PK = FK). OpenAPI: `GET /v1/professors/{employeeId}`. `professorId` **ausente** — identidade de papel docente = Employee id.
 
-### P4 — `lessons` × `reservations`: forma compartilhada de ocupacao e de linha SALA
+**Unidade B (`classes`).** FR-13 guarda `professorIds[]` como ids retornados por listagem de professors — implementação seed Spring usa UUID **próprio** emitido em create Professor (Nest no outro grupo). GET Professor por id funciona; GET por `employeeId` 404.
 
-**Unidade A (`lessons`).** Publica OpenAPI 3.1 em `/v1/lessons`. Tokens AD-2 presentes (`lessonId`, `salaEfetivaId`, `faixaId`, `roomId`). Ocupacao:
+**Unidade C (BFF módulo `professors`, OQ-ARCH-2 [ASSUMPTION]).** Read-model de vista enriquece display name com GET Employee — usa `{employeeId}` de A; proxy CRUD usa `{professorId}` de B.
 
-```json
-{ "data": "2026-03-12", "faixaId": "H", "salaEfetivaId": "…" }
-```
+**ADs cumpridos:** AD-3 (A: “não identidade Mongo=Employee” lido como PK distinto permitido; B: `employeeId` obrigatório no agregado), AD-2 (`employeeId` token existe), AD-1 (PRO→EMP negocial).
 
-Um único id (a “sala da vez”). Lista de aulas da faixa omitida. GET linhas: A chama `GET /v1/reservations?lessonId=&kind=SALA` — path que AD-2 não fixa (só `/v1/reservations`).
+**Colisão:** `professorIds` na Class apontam para entidades inexistentes no outro modelo; FR-31 roster e FR-13 abertura falham de forma intermitente. `/v1/identidade/me` devolve `professorId` **e** `employeeId` (AD-4) — qual entra em `professorIds`? Dois consumidores compliant, contrato de alocação não fechado.
 
-**Unidade B (`reservations`).** OpenAPI legal. Linhas embutidas no agregado:
+**Fechar:** apertar **AD-2** + **AD-4** — Professor tem `professorId` UUID v4 **próprio**; `employeeId` obrigatório 1–1; **consumidores de alocação** (`classes`, `reservations`) persistem **somente** `professorId`; paths pinados `/v1/professors/{professorId}`; fragmento oauth fixa mapeamento claim → `professorId`.
 
-```json
-{ "id": "…", "linha": [{ "tipo": "SALA", "alvoId": "…" }] }
-```
+---
 
-`tipo`/`alvoId` não estão na lista de tokens de AD-2 (`kind=SALA` e `targetId` vivem só na prosa de AD-5). Collection GET devolve array nu, sem filtro `lessonId`.
+### H4 — módulo BFF `classes` × contexto `lessons`: OV-10 “BFF roubou regra negocial” via proxy “inteligente”
 
-**ADs cumpridos:** AD-2 (paths `/v1/lessons`, `/v1/reservations`; UUID; `data`+`faixaId`; tokens *listados*), AD-5 (conceito kind=SALA).
+**Unidade A (BFF, módulo `classes`).** AD-6: proxy CRUD pass-through, envelope AD-2, **sem regra nova**. Implementação: antes de `POST /v1/classes` repassado ao domínio, BFF chama `GET /v1/employees/{id}` para cada `professorId` resolvido e recusa 409 se `ativo=false` — “melhor UX”, “OQ-2 visible no BFF”. Anti-padrão AD-1 cita BFF validando Employee ativo **no lugar de** `professors`; aqui BFF valida no **lugar de** `classes` (que AD-1 já manda GET `employees.ativo`).
 
-**Colisão:** A não parseia `linha[].tipo`; B não parseia ocupacao sem array de salas/lessons. Integração GET profundidade 1 quebra em runtime com dois YAMLs “AD-2 green”. O fio compartilhado pinou o vocabulário errado: pinou `employeeId` e esqueceu `kind`, `targetId`, `professorId`, `studentId`, `modalidade`, o envelope de ocupacao e o envelope de coleção.
+**Unidade B (`classes`).** Implementa FR-1a: GET `employees` para `ativo` no escritor. Recusa 409 `code=FR-1a` quando inativo.
 
-**Fechar:** apertar AD-2 — JSON Schema (ou fragmento OpenAPI compartilhado em `oauth/contracts`) para: ocupacao, Reservation, ReservationLine (`kind` enum `SALA|RECURSO`, `targetId`), Lesson (modalidade, `flagAvaliacao`, `classId`), e envelope de lista (`{ items }`). Proibir segundo nome para esses campos. Query canônica `GET /v1/reservations?lessonId=&kind=`.
+**Unidade C (frontend UX-S5, outro grupo).** Trata 409 do BFF com `code` inventado `BFF-EMP-INACTIVE` vs 409 `FR-1a` do domínio — ambos “legal” sob AD-2 se BFF usar problem+json genérico.
 
-### P5 — `employees` × `professors`: um is-a, dois agregados, duas chaves
+**ADs cumpridos:** AD-6 (proxy vs read-model — A rotula proxy), AD-1 (B não deixa de validar), AD-4 (auth via BFF).
 
-**Unidade A (`employees`).** Agregado Employee, UUID v4 em `id`. JSON `{ id, nome, email, ativo }` — “nome/e-mail” são prosa do PRD, não token AD-2. Nested `GET /v1/employees/{id}/employment-bonds`. `GET /v1/identidade/me` resolve o usuário por e-mail do JWT (`preferred_username`).
+**Colisão:** duas fontes de recusa para o mesmo invariante; códigos FR divergem; testes de contrato AD-11 na fronteira BFF↔domínio **passam** (BFF forwarda body) mas comportamento observado pela UI diverge. **OV-10 failure mode:** regra negocial (`employees.ativo` na abertura) executada no BFF — tabela AD-1 diz que validação `employees.ativo` em `classes` é negocial, não visualização.
 
-**Unidade B (`professors`).** is-a 1–1. Como PK do Professor = `employeeId` (um UUID só, “não copiar cadastro”). `GET /v1/professors/{employeeId}`. `GET /v1/identidade/me` resolve por claim `sub`. AcademicDegree em `/v1/academic-degrees?professorId=`. Não chama o nested de A; espera `{ employeeId, name, mail, active }` em Employee.
+**Fechar:** apertar **AD-1** + **AD-6** — definição operacional de **proxy**: proibido hop extra a domínios para **validar** invariante FR antes do forward; permitido só authZ de papel no BFF. Lista fechada de exceções (só login). Proxy deve repassar 409 do domínio byte-a-byte (`code` FR-*). OQ-2 só nos escritores pinados.
 
-**ADs cumpridos:** AD-1 (PRO→EMP; IDs alheios são atributos), AD-2 (`employeeId` existe em B; `id` UUID em A), AD-4 (ambos têm `/v1/identidade/me` do próprio domínio), FR-5 espírito (não copiam nome).
+---
 
-**Colisão:** `classes` guarda `professorIds` (FR-13). São ids de Professor ou de Employee? A e B divergem; `classes` escolhe um e o outro contexto 404. UX-S2 resolve nome via BFF: um módulo busca `id`, o outro `employeeId`. Dois `/me` no mesmo JWT. NFR-ID “um dono por tipo de pessoa” não fixa a chave canônica do papel docente.
+### H5 — contexto `lessons` × módulo BFF `lessons`: OV-10 “domínio embutiu join de tela”
 
-**Fechar:** apertar AD-2/AD-4 — Professor tem UUID v4 **próprio** (`professorId`); `employeeId` obrigatório 1–1 distinto; consumidores de alocação guardam **`professorId`**, nunca `employeeId`. Shape de Employee publicado (`id`, `nome`, `email`, `ativo`). Path 1–N pinado (`/v1/employees/{employeeId}/bonds` e `/v1/professors/{professorId}/degrees`). Um algoritmo de resolução `sub`/e-mail → entidade, no catálogo oauth — não nove.
+**Unidade A (`lessons`).** `GET /v1/lessons/{lessonId}` devolve agregado Lesson + objeto aninhado `room: { codigo, predio, capacidade }` obtido por GET interno em `rooms` — “evita N+1 para o BFF”, “ainda é dono da derivação”. Não inclui `studentIds`. Argumento: não é join de **nove** contextos, só Room.
 
-### P6 — `employees` × (`classes` | `reservations`): OQ-2 sem aresta de leitura
+**Unidade B (BFF módulo `lessons`, FR-19).** Read-model Student consome AD-5: usa `salaEfetivaId` + GET `/v1/rooms/{id}` separado — não espera nested `room`. OpenAPI BFF documenta shape flat.
 
-**Unidade A (`employees`).** Desativar: `ativo=false`; EmploymentBond permanece (FR-1). Convenção OQ-2: Class somente leitura; nova Reservation recusada.
+**Unidade C (`lessons`, alternativa compliant).** Devolve só `salaEfetivaId` + `roomId` padrão; zero nested.
 
-**Unidade B (`reservations`).** Recusa nova Reservation se o titular estiver desativado. Setas AD-1 de B: RSV→ROM, RSV→RES, RSV→PRO, RSV→LES (GET). **Não há RSV→EMP.** GET Professor não copia `ativo` (AD-1/FR-3). B inventa: (i) cache local de `ativo` no POST de Reservation (cópia de cadastro — espírito FR-3, mas AD-1 não a impede se for um booleano “snapshot”), ou (ii) ignora OQ-2 porque não pode ler Employee sem violar o diagrama.
+**ADs cumpridos:** AD-1 (anti-padrão fala em payload Lesson completo **no agregado Class**, não proíbe explicitamente Room nested em Lesson), AD-5 (sala efetiva derivada no domínio), AD-6 (FR-19 no BFF).
 
-**Unidade B′ (`classes`).** Setas: CLA→CRS/PRO/ROM/STU e GET ocupacao. **Não há CLA→EMP.** Mesmo buraco para “Class somente leitura”.
+**Colisão:** A e C publicam OpenAPI 3.1 válidos com **schemas diferentes** para o mesmo path de domínio; BFF FR-19 quebra ou bifurca. Cadastro Room duplicado na resposta (FR-3 espírito). **OV-10:** domínio fez join de UI (código/nome/capacidade da sala para Caio) no agregado Lesson.
 
-**ADs cumpridos:** AD-1 à letra (não inventam seta), convenção OQ-2 como *intenção*, FR-3 (B′ não copia e-mail).
+**Fechar:** apertar **AD-1** (anti-padrões) + **AD-2** — `GET Lesson` **proíbe** objetos nested de outros contextos; só ids (`roomId`, `classId`, `salaEfetivaId`). Join de nome/código Room **só** read-model BFF (visualização OV-10). Teste de contrato: schema Lesson sem `$ref` a Room.
 
-**Colisão:** Helena desativa Employee; Marina ainda reserva; Rafael ainda PATCH Class. Ou B copia `ativo` e divergem os snapshots. A convenção exige um fato que o diagrama torna ilegível.
+---
 
-**Fechar:** ou seta de leitura `professors`→`employees` **já existe** e GET `/v1/professors/{id}` passa a incluir `employeeAtivo` **derivado** (não cópia de nome/e-mail) — pinado em AD-2; `classes` e `reservations` leem só isso — ou OQ-2 sai das convenções da malha e vira regra só de `employees`+BFF. Não deixar os dois.
+### H6 — `modules/ocupacao` × módulo BFF `lessons`: FR-29 legal, FR-19 “quase ocupacao” (dupla contagem / regra smuggled)
 
-### P7 — `students` × `classes`: dois donos de `Class.studentIds`
+**Unidade A (`modules/ocupacao`).** AD-6: único dono de FR-29. Chama `GET lessons/ocupacao` + `GET reservations/ocupacao`, une salas efetivas + SALA ad hoc + RECURSO, **sem** `studentIds`. Não deduplica linha SALA de Lesson já refletida em `salaEfetivaId`.
 
-**Unidade A (`students`).** Convenção: seed JSON idempotente por `id` em `students`. FR-9: roster chega no **mesmo** seed/import. A inclui `classIds` no JSON de carga e persiste o vínculo no próprio DB (não é AcademicAffiliation — FR-8 — então cria tabela de matrícula, ou empilha ids na afiliação “para a demo”). Sem seta STU→CLA no diagrama: A **não** PATCH `classes`.
+**Unidade B (módulo BFF `lessons`, FR-19).** Para agenda Student, além de lessons+courses, chama `reservations` filtrado por `lessonId` e **recalcula** “onde está a aula” se `modalidade=remoto` — lógica espelhada de AD-5 “para exibir certo”. Não persiste — argumento read-model.
 
-**Unidade B (`classes`).** `studentIds` é atributo da principal Class (addendum). Seed/abertura grava o array. GET `students` para recusar id inexistente (CLA→STU). Não lê o JSON de A.
+**Unidade C (módulo BFF `lessons`).** Implementação mínima: só campos do domínio; remoto mostra null mesmo com linha SALA (fiel AD-5).
 
-**ADs cumpridos:** AD-1 (A não chama classes; B não chama students para escrever), AD-8 (sem tela de alta), convenção Student, FR-7/FR-9 cada um no seu recorte.
+**ADs cumpridos:** AD-6 (FR-19 só módulo lessons; FR-29 só ocupacao), AD-5 (domínio deriva; BFF consome).
 
-**Colisão:** Caio existe em `students` e não está em nenhuma Class; ou B tem `studentIds` fantasma recusados por A; ou os dois seeds aplicam o roster e um overwrite apaga o outro. UJ-4 depende desse array. Dois donos da mesma associação.
+**Colisão:** Caio vê sala “fantasma” ou null inconsistente entre UX-S9 e UX-S4; A conta slot duas vezes na grade FR-29. B cruza linha de **regra de derivação** (quando mostrar sala) — **OV-10 BFF** reimplementa pedaço de AD-5 no read-model FR-19.
 
-**Fechar:** apertar AD-1/convenção Student — **único escritor** de `Class.studentIds` = `classes`. Artefato de carga: `students` importa só Student+AcademicAffiliation; roster é arquivo (ou seção) consumido **só** por `classes`, que GET `students` para FR-7. Proibir `classIds` no contexto `students`.
+**Fechar:** apertar **AD-6** + **AD-5** — FR-19 **só** exibe `salaEfetivaId` e metadados Lesson/Course já resolvidos; proibido reinterpretar linha SALA no BFF. FR-29: regra pinada de deduplicação SALA Lesson vs ad hoc. Um único documento de composição BFF (rotas → módulo → fontes GET).
 
-### P8 — `courses` × `classes`: FR-11 com dois calendários
+---
 
-**Unidade A (`courses`).** Publica plano com `dataPublicacao`. Recusa FR-11 se a data não for “antes do início do período”. Sem seta CRS→CLA: A não lê Class. Inventa `periodoInicio` no Course (ou “período letivo 2026/2” string).
+### H7 — `employees` (Spring) × `reservations` (Nest): poliglota compliant, mesmo JWT, malha AuthZ divergente
 
-**Unidade B (`classes`).** Class tem período início/fim (addendum). Abertura exige plano já publicado. GET Course (CLA→CRS). Compara `Class.periodoInicio` com `Course.dataPublicacao` — ou só checa se o plano existe.
+**Unidade A (`employees`, Spring Boot seed).** Checklist AD-3 item 5: JWKS + `/v1/identidade/me`. Guard exige `ROLE_coordenador` com prefixo Spring; `iss` = `http://localhost:8080/realms/closed-cras`.
 
-**ADs cumpridos:** AD-1 (setas só CLA→CRS), AD-2 (`courseId`), mapa FR-11 em courses / FR-13 em classes.
+**Unidade B (`reservations`, Nest seed).** Guard lê `realm_access.roles` literal `funcionario`; `iss` = `http://keycloak:8080/realms/closed-cras` (hostname compose). Ignora `aud`.
 
-**Colisão:** plano publicado “antes do período do Course”; Class abre com início **anterior** à publicação; ou o contrário — A recusa publicar porque o Course.periodo já passou, B ainda nem existe. A recusa FR-11 não é a mesma comparação que B usa na abertura.
+**Unidade C (BFF).** Propaga o mesmo Bearer do cookie para ambos — AD-10 resilience ok.
 
-**Fechar:** apertar AD-2 — período da oferta vive **só** em Class (`periodoInicio`, `periodoFim`, `YYYY-MM-DD`). FR-11 no escritor `courses`: ou deixa de depender de Class (recusa só se já existir Class consumidora — exige seta CRS→CLA GET, hoje ilegal) ou a recusa FR-11 **move** para `classes` na abertura (plano com `dataPublicacao >= Class.periodoInicio` → 409). Um dono da comparação.
+**ADs cumpridos:** AD-3 (linguagens diferentes permitidas), AD-4 (papéis v1 nomeados; adapters oauth são referência — spine diz **seed**, não obrigatório idêntico).
 
-### P9 — módulo BFF `lessons` × módulo BFF `reservations`: dois donos de FR-29 (e FR-19)
+**Colisão:** Helena autentica; POST Employee 201; POST Reservation 403 em B, GET Employee 403 em A para papel `professor`. UJ-1 morta sem violar checklist. **Polyglot divergence** onde o compartilhado deveria ser comportamento de identidade.
 
-**Unidade A (`backend/bff/src/modules/lessons`).** AD-6: cada grupo adiciona o **próprio** domínio. FR-29 e FR-19 “são read-models do BFF que consomem AD-5”. A implementa `GET /v1/ocupacao?data=&faixaId=` e `GET /v1/me/aulas` (Student), juntando lessons+rooms e, por zelo, chamando reservations.
+**Fechar:** apertar **AD-4** + **AD-3** item 5 — adapters em `backend/oauth/adapters/*` passam a **norma de conformidade** (não exemplo): extractor de papéis sem `ROLE_`, issuers aceitos (lista env), audience; teste de fumaça JWT único roda contra os nove no compose da malha.
 
-**Unidade B (`modules/reservations`).** Mesma frase AD-6. FR-29 precisa das linhas RECURSO e SALA ad hoc — isso é *o* domínio de B. Implementa `GET /v1/occupancy` e join próprio. Módulo `reservations` não inclui `studentIds` (AD-6) — B cumpre. Não implementa roster.
+---
 
-**ADs cumpridos:** AD-6 (cada um no seu diretório; sem CORS nos contextos; sem roster em reserva), AD-5 (não recalculam sala efetiva; chamam GET lessons), AD-8 (UI via BFF).
+### H8 — `students` × `classes`: roster FR-9, dois escritores possíveis da associação
 
-**Colisão:** UX-S4 não tem path canônico; duas respostas, dois envelopes, possível dupla contagem da linha SALA de Lesson (A já a refletiu em `salaEfetivaId`; B lista a linha). FR-19: `modules/students`, `modules/lessons` e `modules/classes` também podem se achar donos (plano+aulas+roster filtrado). “Sem dono exclusivo do BFF” virou **sem dono** dos únicos joins que a UI precisa.
+**Unidade A (`students`).** Seed idempotente AD-12. Interpreta FR-9 como vínculo Student↔Class no **próprio** store (`classIds[]` no import) — “roster no seed” sem chamar `classes` (STU→CLA não existe).
 
-**Fechar:** AD novo (composição BFF) — tabela rota → **um** módulo:
+**Unidade B (`classes`).** `studentIds[]` na principal Class; seed de lab PATCH Class com roster; GET `students` só para validar id (FR-7).
 
-| Read-model | Path BFF | Módulo |
-| --- | --- | --- |
-| FR-29 | `GET /v1/ocupacao?data=&faixaId=` | `lessons` (chama reservations; não o contrário) |
-| FR-19 | `GET /v1/students/me/agenda` | `students` (chama lessons+courses; sem inventar sala efetiva) |
-| FR-31 | já em `classes` | manter |
-| login | `POST /v1/auth/login` | não é domínio; pinado em `bff` (`src/auth`), não em oauth-como-serviço |
+**ADs cumpridos:** AD-1 (sem seta de escrita cruzada), AD-8/AD-12 (Student seed, sem tela alta), convenção “mutação no dono” (ambos claimam ser dono da associação).
 
-Proibir segundo path para o mesmo join.
+**Colisão:** Caio em `students` sem Class; ou Class com ids fantasma; UJ-4 quebra. Dois donos da mesma relação N-N lógica.
 
-### P10 — `bff`/`oauth` × `frontend` (shell × qualquer UX-S*): sessão e `/me`
+**Fechar:** apertar **AD-1** ou convenção **Student** — **único escritor** de `Class.studentIds` = `classes`; artefato de roster consumido só por `classes`; proibir `classIds` persistido em `students`.
 
-**Unidade A (BFF, AD-4).** `POST /v1/auth/login`, cookie httpOnly SameSite=Lax, sem nome/path/domain pinados. `Set-Cookie` no host `:8088`. CORS para origem do frontend (AD-6). JWT `iss` = `http://keycloak:8080/realms/closed-cras` (rede compose).
+---
 
-**Unidade B (UX-LOGIN em `src/shell`).** POST absoluto `http://localhost:8088/v1/auth/login`. TanStack Query default **sem** `credentials: 'include'`. Superfície UX-S1 (outro grupo, AD-8 “no máximo um grupo por UX-S*”) usa `VITE_API_URL=/v1` na origem `:5173` (sem proxy no seed). `GET /v1/identidade/me` — nove contextos expõem isso; o BFF não tem path único de sessão. Shell pede `/v1/identidade/me` e recebe 404 ou o `/me` de `employees` com shape de Employee enquanto o papel é Student.
+### H9 — catálogo `oauth` × dois contextos: `faixas.json` AD-2 compliant, semântica de extremo divergente
 
-**ADs cumpridos:** AD-4 (browser não fala com Keycloak; sem localStorage; Direct Access Grant), AD-6 (CORS só no BFF), AD-7 (portas 5173/8088/8080), AD-8 (uma SPA, Query → BFF).
+**Unidade A (`lessons`).** Carrega `backend/oauth/contracts/faixas.json` no build via submodule oauth. Parser: objeto map `{ "H": { "inicio", "fim" } }`; intervalo **[inicio, fim)** em minutos locais.
 
-**Colisão:** login “funciona” no banner e a jornada morre na superfície seguinte (cookie host-only / same-site cruzando portas sem credentials / sem proxy). Quatro papéis, nove `/me`, zero contrato de identidade de UI (`nome` + `papel` + ids). AD-3 autoriza Spring e Nest no resource-server: um mapeia `realm_access.roles` = `funcionario`; o outro exige `ROLE_funcionario` ou `aud` = client do serviço → 403 seletivo por contexto, BFF “legal” nos dois.
+**Unidade B (`reservations`).** Mesmo arquivo; interpreta lista `[{ faixaId, inicio, fim }]` com extremo **fechado** em `fim`; comparação UTC.
 
-**Fechar:** apertar AD-4/AD-7/AD-8 — (i) seed: proxy Vite `/v1` → BFF **ou** cookie `Path=/; SameSite=Lax` na **mesma origem** via compose (Caddy/nginx na frente); (ii) cookie nome `closed_cras_session`; (iii) QueryClient do shell com `credentials: 'include'`; (iv) **um** `GET /v1/auth/me` no BFF (papel realm + `employeeId`/`professorId`/`studentId` resolvidos por regra oauth); (v) JWT: `iss` interno vs host documentado em env; papéis **exatos** `funcionario|coordenador|professor|student` sem prefixo `ROLE_`; `aud` aceito pelos nove. Adapters oauth de referência implementam isso — não “só um exemplo”.
+**ADs cumpridos:** AD-2 (não copiar tabela; cânone A–E F–N P; par data+faixa), AD-3 (faixas só no catálogo).
 
-### P11 — `classes` × `lessons`: WeeklySlot e o loop de ocupacao
+**Colisão:** duas reservas/aulas adjacentes: 409 num, 201 no outro; faixa-picker UX-S4/S6/S7 desalinhado. Forma compartilhada do catálogo não pinada além da prosa.
 
-**Unidade A (`classes`).** WeeklySlot: `{ dayOfWeek: 1, faixaId: "H" }` (ISO 1=segunda). Período `{ start: "2026-03-02", end: "2026-07-04" }`. Na abertura, chama ocupacao **uma vez por par data×faixa** (~dezenas/centenas de GET). Snapshot muda no meio do loop.
+**Fechar:** apertar **AD-2** — JSON Schema de `faixas.json` no catálogo (ordem, enum `faixaId`, `HH:mm`, timezone America/Sao_Paulo, regra **[inicio,fim)** explícita); teste CI malha compara enum OpenAPI ↔ arquivo.
 
-**Unidade B (`lessons`).** Gera Lesson com `weekday: "SEG"` herdado do GET Class — não casa com `1`. Implementa `GET /v1/lessons/ocupacao?de=&ate=` (não pinado) **ou** só o query `data`+`faixaId` de AD-5. Segunda-feira Java `DayOfWeek` vs JS `getDay()` (0=domingo).
+---
 
-**ADs cumpridos:** AD-2 (`faixaId`, `data` YYYY-MM-DD; **não** pina dia da semana nem período), AD-5 (query documentada é um par data+faixa).
+### H10 — BFF × `frontend` (shell): sessão AD-4/AD-6 compliant, identidade de UI ausente
 
-**Colisão:** aulas nascem no domingo; ou esqueleto “seg” não gera nada; FR-13 aprova uma metade do período. Forma compartilhada do esqueleto é o input da geração (P1) — mesmo que P1 feche o *quem*, este par quebra o *quê*.
+**Unidade A (BFF).** `POST /v1/auth/login`, cookie httpOnly SameSite=Lax, CORS com credentials na origem `:4200`. Não expõe `GET /v1/auth/me` — AD-4 não pina path único de sessão UI.
 
-**Fechar:** apertar AD-2 — `WeeklySlot.diaDaSemana` enum `SEG|TER|QUA|QUI|SEX|SAB` (nunca 0–6). `periodoInicio`/`periodoFim` date-only. Ocupacao de intervalo: `GET /v1/lessons/ocupacao?de=&ate=&faixaId=` **ou** body de verificação na abertura (`POST /v1/lessons/verificar-esqueleto`) atômico — proibir 90 GETs como protocolo.
+**Unidade B (`frontend/src/shell`).** Após login, chama `GET /v1/identidade/me` no **proxy BFF** roteado para módulo `employees` (primeiro módulo registrado). Student recebe shape Employee; papel errado na home.
 
-### P12 — `rooms` × (`classes` | `reservations`): cadastro de Room que os escritores não leem igual
+**Unidade C (superfície UX-S*, grupo cruzado).** TanStack Query **sem** `credentials: 'include'` em metade das superfícies — AD-8 não pina QueryClient global.
 
-**Unidade A (`rooms`).** `{ id, codigo, predio, occupancy, enabled, features: [{ code, present }] }`. AD-2 pina `roomId`, não `capacidade`, `ativo`, `AccessibilityFeature`.
+**ADs cumpridos:** AD-4 (sem Keycloak no browser), AD-6 (CORS BFF), AD-8 (uma SPA, dados via BFF).
 
-**Unidade B (`classes`, FR-15).** GET Room; recusa se `capacidade < vagas` ou se não houver AccessibilityFeature. Procura `capacidade` e `accessibilityFeatures[]`. 404 semântico: Room “cabe” sempre (campo ausente) ou recusa sempre.
+**Colisão:** login aparente e jornada morta; quatro papéis, múltiplos `/me`, zero contrato de sessão UI. Cross-port `:4200`/`:8088` exige credentials — comportamento não inexigível hoje.
 
-**Unidade B′ (`reservations`, FR-24).** Mesma FR, outro parser (`capacity`, `acessivel: true` — boolean na principal, o que o PRD proíbe mas AD-2 não).
+**Fechar:** apertar **AD-4** + **AD-8** — `GET /v1/auth/me` no BFF (schema oauth); shell + QueryClient com `credentials: 'include'` obrigatório; seed compose **mesma origem** (proxy dev ou gateway) documentado em AD-7.
 
-**ADs cumpridos:** AD-1 (IDs; CLA→ROM, RSV→ROM), AD-2 (UUID, `/v1/rooms`).
+---
 
-**Colisão:** Rafael abre Class em Room sem feature porque A usou `features` e B olhou `accessibilityFeatures`. Marina reserva SALA na mesma Room e toma 409. Equidade 1–N do par Room/AccessibilityFeature não tem JSON.
+## Achados laterais (mesmo teste)
 
-**Fechar:** apertar AD-2 — Room `{ roomId, codigo, predio, capacidade, ativo }`; AccessibilityFeature `{ codigo, descricao }`; path `/v1/rooms/{roomId}/features`. Recusa FR-15/24 = `capacidade` numérico **e** `features.length >= 1`. Mesmo para Resource `{ resourceId, nome, tipo, ativo }` + InventoryItem `{ identificador, descricao, estado: disponivel|indisponivel }` (FR-22).
-
-### P13 — `oauth` × qualquer contexto: `faixas.json` e o relógio da faixa
-
-**Unidade A (`lessons`).** Carrega `backend/oauth/contracts/faixas.json` (AD-2). Parser: mapa `{ "A": { "start": "08:00:00", "end": "08:45:00" } }`. Conflito [início,fim) com Date UTC.
-
-**Unidade B (`reservations`).** O arquivo real (ainda seed) é lista `{ faixaId, inicio, fim }` `"08:00"`/`"08:45"`. Extremos que se tocam: A e B (08:45) — um trata overlap, o outro não (NFR-CTR-4). Códigos minúsculos `"a"` passam num validador e falham no outro.
-
-**ADs cumpridos:** AD-2 (não copiar a tabela; cânone A–E F–N P; [início,fim)), AD-3 (ambos lêem o catálogo).
-
-**Colisão:** duas aulas “adjacentes” no extremo: um escritor 409, o outro 201. Grade visível em UX-S4/S6/S7 (faixa-picker) ainda outra interpretação.
-
-**Fechar:** apertar AD-2 — schema de `faixas.json` no próprio catálogo (lista ordenada, `faixaId` enum, `inicio`/`fim` `HH:mm`, timezone implícito America/Sao_Paulo, comparação em minutos locais). Consumidores não reinterpretam ISO datetime.
-
-### P14 — UX-S7 × `lessons` × `reservations`: uma superfície, duas mutações, zero ordem
-
-**Unidade A (frontend `src/surfaces/ux-s7`, grupo cruzado).** Uma superfície, duas zonas (EXPERIENCE). Duas mutations TanStack: PATCH Lesson e POST Reservation. Ordem na UI: primeiro tópico/modalidade, depois projetor/sala. Obedece AD-8 (uma pasta, Query→BFF, tokens.css).
-
-**Unidade B (`lessons` + seu módulo BFF).** PATCH Lesson é o agregado. Não sabe de Reservation.
-
-**Unidade C (`reservations` + seu módulo BFF).** POST Reservation com `lessonId`. Recusa via ocupacao (P2/P3).
-
-**ADs cumpridos:** AD-8 (um grupo por UX-S*; S7 é uma superfície), AD-5/AD-6 (UI não decide colisão; roster não na S7), OQ-1 aberto (spine não atribui dono — o grupo de S7 **não** é o de `lessons` nem o de `reservations`).
-
-**Colisão:** A dispara as duas mutations em paralelo; C GET ocupacao antes do PATCH remoto de B commit; ou o contrário (P3). Shell e S7 não compartilham query keys (`['lessons', id]` vs `['aulas', id]`) — S4/S9 mostram sala velha. OQ-1 no Deferred **é** um par: dois grupos escolhem S7; AD-8 diz “no máximo um” e a spine recusa atribuir. “Deferred porque a turma fecha” não impede divergência no cold-start do repo `frontend`.
-
-**Fechar:** apertar AD-8 — query keys canônicas; S7 serializa zona Lesson **depois** zona Reservation (ou o inverso, pinado) no BFF (`POST /v1/lessons/{id}/ajuste-com-reserva` **proibido** se reintroduzir dono BFF de agregado — então: UI sequencia, BFF não). OQ-1: protocolo de claim (`frontend/OWNERS` ou tabela no oauth) **antes** do código das superfícies, mesmo sem nomes de grupo. Deferred sem mecanismo ainda é buraco.
-
-### P15 — Spring `employees` × Nest `professors`: o mesmo JWT, duas AuthZ
-
-**Unidade A (Spring Boot 4.1.x, AD-3 permitido).** Resource-server default: autoridade `ROLE_funcionario`; `aud` = `account`; 401 se `iss` ≠ `http://localhost:8080/...`.
-
-**Unidade B (Nest 11.2.x, AD-3 permitido).** Guard lê `realm_access.roles` literal `funcionario`; ignora `aud`; `iss` = hostname compose `keycloak`.
-
-**ADs cumpridos:** AD-3 (um paved path cada), AD-4 (JWKS do realm, papéis v1 nomeados, `/v1/identidade/me`, catálogo `roles-scopes.yaml` sem dono exclusivo — cada PR adiciona escopos do próprio domínio com nomes que o outro não lê).
-
-**Colisão:** Helena autentica; POST Employee 201; POST Professor 403. Demo UJ-1 morta. “PR de qualquer grupo” no YAML de escopos é o segundo dono: dois PRs definem `scope: class:write` vs `classes.write` vs papel só.
-
-**Fechar:** apertar AD-4 — adapters de referência **são** o comportamento obrigatório (não ilustração): extractor de papéis, issuer(s) aceitos, audience. Catálogo: só os quatro papéis na v1; escopos extras no Deferred (já está) **e** regra “não inventar scope até lá”. Compose: `KEYCLOAK_ISS` único interno + `KEYCLOAK_ISS_HOST` se o browser nunca vê o IdP (não vê — então um iss, o interno).
-
-### P16 — dois grupos no `compose.yaml`: Postgres, `/health`, dono do arquivo
-
-**Unidade A (`employees`).** Adiciona `CREATE DATABASE cras_employees` num `initdb.d/01.sql`. Health Spring `/actuator/health`. Serviço `backend-employees`.
-
-**Unidade B (`rooms`).** Mesmo `initdb.d/01.sql` (last-write-wins no clone). Health `GET /health` → `{ "ok": true }` (AD-7 pina o path, não o body). Serviço `rooms`. `depends_on` postgres sem database ready.
-
-**ADs cumpridos:** AD-7 (um compose, um Postgres, `cras_<contexto>`, `GET /health` anônimo, portas seed).
-
-**Colisão:** segundo init falha ou apaga o primeiro; healthcheck do compose verde com processo up e DB down; BFF env `EMPLOYEES_URL=http://employees:8101` não resolve. Seed operacional tem dono implícito (`oauth`? raiz da malha?) e nove autores.
-
-**Fechar:** apertar AD-7 — `compose.yaml` na raiz é da malha; lista de databases `cras_employees`…`cras_reservations` + `keycloak` num **único** init da raiz (não nos submódulos). Serviço = nome do contexto. `GET /health` → 200 `{"status":"ok"}` sem auth. Variáveis `*_URL` no BFF pinadas.
-
-## Achados laterais (mesmo teste, menos centrais)
-
-- Envelope RFC 9457: `code`/`type` pinados; `title`/`detail` e maiúsculas `FR-13` vs `fr-13` soltos — UI `refusal-banner` mapeia errado (AD-2 × AD-8).
-- 409 vs 404 no FR-4 (Employee ausente): AD-2 dá os dois status para casos vizinhos; `professors` escolhe um, UX-S2 o outro.
-- `PATCH` vs `PUT` vs `POST …/cancel` em FR-30 — UX-S7 e `reservations`.
-- `BFF_ORIGIN` na convenção vs origem CORS do frontend vs URL pública do BFF — três leituras.
-- Paradigma “SPA por papel” vs AD-8 uma SPA — dois grupos leem o paradigma e abrem `frontend-professor/` (já atacado no reconcile UX; aqui: par shell × “SPA do Student”).
-- Codegen OpenAPI no Deferred: sem envelope comum (P4/P12), dois geradores legalizam a divergência.
-- `GET /v1/lessons/:id` “lê rooms por esse id”: A embute objeto Room (cópia de cadastro); B devolve só `salaEfetivaId`; BFF FR-19/S9 escolhe um e Caio vê código da sala ou UUID.
+- **AD-2:** `ReservationLine` (`kind`, `targetId`), `WeeklySlot.diaDaSemana`, Room/Resource/InventoryItem, envelope `OcupacaoFaixa`, query `GET /v1/reservations?lessonId=&kind=` — tokens citados na prosa AD-5, não no Rule AD-2.
+- **OQ-3 + UX-S7:** default AD-8 até fechar; grupo `lessons` vs superfície cruzada ainda pode publicar shapes diferentes em paralelo — consumidor deve ser OpenAPI de `lessons` (pinar em AD-8).
+- **OQ-ARCH-1:** Mongo vs PG por contexto não quebra HTTP, mas duplica mental model de Employee/Professor se grupos escolherem stores opostos para pares simétricos — risco de cópia de campo (`ativo` vs `active`).
+- **AD-11:** contrato BFF↔domínio verifica YAML; não detecta nested Room em Lesson (H5) se teste só na fronteira BFF.
+- **Deferred codegen OpenAPI:** dois geradores “green” amplificam H1/H3/H9.
 
 ## O que a spine já impede (não relitigar)
 
-UI→domínio direto; BFF persistindo `salaEfetivaId`; 18 Reservation da sala padrão; `/funcionarios` vs `/employees` no path; `pessoa`/`evento`/`slot` como nomes de agregado; datetime solto no lugar de data+faixa; cookie em `localStorage`; `keycloak-js`; Next/RSC; schema SQL único; quatro SPAs; kit MUI com tema próprio; CORS de SPA nos nove.
+Browser→domínio/IdP; BFF persistir agregado ou recalcular `salaEfetivaId`; CORS nos nove; join de nove OpenAPIs na UI; ausência da seta `classes`→`POST …/gerar`; FR-29/FR-19 em módulos BFF errados **por nome**; `employees.ativo` classificado negocial; classificação OV-10 explícita na tabela AD-1; anti-padrões nomeados (BFF valida ativo **no lugar de professors**, Class com payload Lesson completo).
 
-Esses Prevents funcionam. Os pares acima vivem **no interior** do que restou opcional.
+## Fechos sugeridos (prioridade para finalize)
 
-## Fechos sugeridos (para o autor; não aplicados)
+1. **AD-5 + AD-2:** schema e universo de ocupacao (sala **e** professor; linha SALA ligada a Lesson vs remoto; dedup FR-29).
+2. **AD-2 + AD-4:** `professorId` canônico vs `employeeId`; shape Employee; identidade UI (`/v1/auth/me`).
+3. **AD-1 + AD-6:** definição de proxy (sem validação FR); proibição de nested cross-context em GET de domínio (OV-10 join).
+4. **AD-4 + AD-3:** adapters oauth = norma JWT, não seed decorativo.
+5. **AD-1 / convenção Student:** único escritor de `Class.studentIds`.
+6. **AD-2:** schema `faixas.json` + WeeklySlot enum.
 
-1. **AD-1:** resolver a contradição diagrama vs “Class gera Lesson”; arestas de leitura que OQ-2 e FR-11 exigem, ou mover a regra para quem já tem a aresta.
-2. **AD-2:** schema compartilhado (ocupacao, pares 1–N, envelopes, faixas.json, dia da semana, problem+json `code` canônico) — hoje o “fio” é uma lista de 6 tokens.
-3. **AD-4:** um `/v1/auth/me`; binding `sub`↔ids; papéis JWT literais; iss/cookie/proxy de laboratório.
-4. **AD-5:** universo e schema de ocupacao; um caminho de mutação remoto vs linha SALA; verificação de esqueleto atômica.
-5. **AD-6/AD-8:** dono (módulo + path) de FR-19 e FR-29; query keys; claim OQ-1.
-
-Sem isso, nove implementações “AD-compliant” não produzem UJ-1–UJ-4.
+Sem (1)–(3), duas unidades AD-compliant ainda falham SM-5 e OV-10 na demo.
