@@ -1,0 +1,589 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "https://constrsw.pucrs.br/schemas/grupo03-reservations-schemas.json",
+  "title": "Reservations API (Grupo 03) — JSON Schemas",
+  "$defs": {
+    "Uuid": {
+      "description": "Identificador UUID v4 em texto.",
+      "type": "string",
+      "format": "uuid",
+      "examples": [
+        "3f2b8c1e-6a4d-4f7b-9c2e-1a5d7e9b0c41"
+      ]
+    },
+    "Date": {
+      "description": "Data sem horário (YYYY-MM-DD). Domingo é recusado pelo serviço (RN-01), não pelo schema.",
+      "type": "string",
+      "format": "date",
+      "examples": [
+        "2026-11-03"
+      ]
+    },
+    "TimeSlotId": {
+      "description": "Código da faixa no cânone do addendum: A–E, F–N, P (sem O, E1, E2).",
+      "type": "string",
+      "enum": [
+        "A",
+        "B",
+        "C",
+        "D",
+        "E",
+        "F",
+        "G",
+        "H",
+        "I",
+        "J",
+        "K",
+        "L",
+        "M",
+        "N",
+        "P"
+      ]
+    },
+    "Purpose": {
+      "description": "Finalidade em texto livre (opcional, Q4).",
+      "type": "string",
+      "minLength": 1,
+      "maxLength": 255,
+      "examples": [
+        "Aula prática de redes"
+      ]
+    },
+    "ResourceIds": {
+      "description": "Resources reservados (N–N com Resource). Pelo menos 1, sem repetição (Q8).",
+      "type": "array",
+      "minItems": 1,
+      "uniqueItems": true,
+      "items": {
+        "$ref": "#/$defs/Uuid"
+      }
+    },
+    "DetailStatus": {
+      "description": "Situação da ocorrência. Nasce OPEN.",
+      "type": "string",
+      "enum": [
+        "OPEN",
+        "RESOLVED"
+      ]
+    },
+    "Description": {
+      "description": "Descrição da ocorrência (Q10).",
+      "type": "string",
+      "minLength": 1,
+      "maxLength": 500,
+      "examples": [
+        "Projetor não liga"
+      ]
+    },
+    "QueryValue": {
+      "description": "Valor de filtro: `valor` (igualdade) ou `{op}valor`, op em neq, gt, gteq, lt, lteq, like.",
+      "type": "string",
+      "pattern": "^(\\{(neq|gt|gteq|lt|lteq|like)\\})?[^{}]+$"
+    },
+    "Reservation": {
+      "title": "Reservation",
+      "description": "Reserva como devolvida pela API. Campos opcionais sem valor são omitidos. Ocorrências ficam em /details.",
+      "type": "object",
+      "required": [
+        "id",
+        "enabled",
+        "professorId",
+        "lessonId",
+        "date",
+        "timeSlotId",
+        "resourceIds",
+        "createdAt",
+        "updatedAt"
+      ],
+      "properties": {
+        "id": {
+          "$ref": "#/$defs/Uuid"
+        },
+        "enabled": {
+          "type": "boolean",
+          "readOnly": true,
+          "default": true,
+          "description": "Exclusão lógica: true para registro ativo; false para registro excluído logicamente. Controlado pelo servidor."
+        },
+        "professorId": {
+          "$ref": "#/$defs/Uuid",
+          "description": "Dono da reserva. Vem do JWT, nunca do corpo."
+        },
+        "lessonId": {
+          "$ref": "#/$defs/Uuid",
+          "description": "Lesson atendida pela reserva (obrigatória; a Lesson já tem a sala)."
+        },
+        "date": {
+          "$ref": "#/$defs/Date"
+        },
+        "timeSlotId": {
+          "$ref": "#/$defs/TimeSlotId"
+        },
+        "purpose": {
+          "$ref": "#/$defs/Purpose"
+        },
+        "resourceIds": {
+          "$ref": "#/$defs/ResourceIds"
+        },
+        "createdAt": {
+          "type": "string",
+          "format": "date-time"
+        },
+        "updatedAt": {
+          "type": "string",
+          "format": "date-time"
+        }
+      },
+      "additionalProperties": false,
+      "examples": [
+        {
+          "id": "3f2b8c1e-6a4d-4f7b-9c2e-1a5d7e9b0c41",
+          "enabled": true,
+          "professorId": "b2d1c002-0000-4000-b000-000000000003",
+          "lessonId": "30000000-0000-4000-8000-000000000001",
+          "date": "2026-11-03",
+          "timeSlotId": "C",
+          "purpose": "Aula prática de redes",
+          "resourceIds": [
+            "50000000-0000-4000-8000-000000000001",
+            "50000000-0000-4000-8000-000000000002"
+          ],
+          "createdAt": "2026-10-28T14:05:00Z",
+          "updatedAt": "2026-10-28T14:05:00Z"
+        }
+      ]
+    },
+    "ReservationCreate": {
+      "title": "ReservationCreate",
+      "description": "Corpo do POST. professorId, enabled, id e datas são do servidor (enviar → 422).",
+      "type": "object",
+      "required": [
+        "lessonId",
+        "date",
+        "timeSlotId",
+        "resourceIds"
+      ],
+      "properties": {
+        "lessonId": {
+          "$ref": "#/$defs/Uuid"
+        },
+        "date": {
+          "$ref": "#/$defs/Date"
+        },
+        "timeSlotId": {
+          "$ref": "#/$defs/TimeSlotId"
+        },
+        "purpose": {
+          "$ref": "#/$defs/Purpose"
+        },
+        "resourceIds": {
+          "$ref": "#/$defs/ResourceIds"
+        }
+      },
+      "additionalProperties": false,
+      "examples": [
+        {
+          "lessonId": "30000000-0000-4000-8000-000000000001",
+          "date": "2026-11-03",
+          "timeSlotId": "C",
+          "purpose": "Aula prática de redes",
+          "resourceIds": [
+            "50000000-0000-4000-8000-000000000001",
+            "50000000-0000-4000-8000-000000000002"
+          ]
+        }
+      ]
+    },
+    "ReservationUpdate": {
+      "title": "ReservationUpdate",
+      "description": "Corpo do PUT. Substituição total, inclusive resourceIds; purpose ausente é apagado.",
+      "type": "object",
+      "required": [
+        "lessonId",
+        "date",
+        "timeSlotId",
+        "resourceIds"
+      ],
+      "properties": {
+        "lessonId": {
+          "$ref": "#/$defs/Uuid"
+        },
+        "date": {
+          "$ref": "#/$defs/Date"
+        },
+        "timeSlotId": {
+          "$ref": "#/$defs/TimeSlotId"
+        },
+        "purpose": {
+          "$ref": "#/$defs/Purpose"
+        },
+        "resourceIds": {
+          "$ref": "#/$defs/ResourceIds"
+        }
+      },
+      "additionalProperties": false,
+      "examples": [
+        {
+          "lessonId": "30000000-0000-4000-8000-000000000001",
+          "date": "2026-11-03",
+          "timeSlotId": "C",
+          "resourceIds": [
+            "50000000-0000-4000-8000-000000000002"
+          ]
+        }
+      ]
+    },
+    "ReservationPatch": {
+      "title": "ReservationPatch",
+      "description": "Corpo do PATCH (merge patch). null só apaga purpose; resourceIds troca a lista inteira. Pelo menos um campo.",
+      "type": "object",
+      "minProperties": 1,
+      "properties": {
+        "lessonId": {
+          "$ref": "#/$defs/Uuid"
+        },
+        "date": {
+          "$ref": "#/$defs/Date"
+        },
+        "timeSlotId": {
+          "$ref": "#/$defs/TimeSlotId"
+        },
+        "purpose": {
+          "oneOf": [
+            {
+              "$ref": "#/$defs/Purpose"
+            },
+            {
+              "type": "null"
+            }
+          ]
+        },
+        "resourceIds": {
+          "$ref": "#/$defs/ResourceIds"
+        }
+      },
+      "additionalProperties": false,
+      "examples": [
+        {
+          "resourceIds": [
+            "50000000-0000-4000-8000-000000000001"
+          ]
+        },
+        {
+          "purpose": null
+        }
+      ]
+    },
+    "ReservationList": {
+      "type": "object",
+      "required": [
+        "items"
+      ],
+      "properties": {
+        "items": {
+          "type": "array",
+          "items": {
+            "$ref": "#/$defs/Reservation"
+          }
+        }
+      },
+      "additionalProperties": false
+    },
+    "Detail": {
+      "title": "Detail",
+      "description": "Ocorrência da reserva (ex.: projetor não liga), como devolvida pela API.",
+      "type": "object",
+      "required": [
+        "id",
+        "enabled",
+        "reservationId",
+        "description",
+        "status",
+        "createdAt"
+      ],
+      "properties": {
+        "id": {
+          "$ref": "#/$defs/Uuid"
+        },
+        "enabled": {
+          "type": "boolean",
+          "readOnly": true,
+          "default": true,
+          "description": "Exclusão lógica: true para registro ativo; false para registro excluído logicamente. Controlado pelo servidor."
+        },
+        "reservationId": {
+          "$ref": "#/$defs/Uuid"
+        },
+        "description": {
+          "$ref": "#/$defs/Description"
+        },
+        "status": {
+          "$ref": "#/$defs/DetailStatus"
+        },
+        "resourceId": {
+          "$ref": "#/$defs/Uuid",
+          "description": "Recurso envolvido, quando houver; precisa estar em resourceIds da reserva (RN-09)."
+        },
+        "createdAt": {
+          "type": "string",
+          "format": "date-time"
+        }
+      },
+      "additionalProperties": false,
+      "examples": [
+        {
+          "id": "8d0e6b52-2f1c-4c3a-9b7e-5a4f3d2c1b10",
+          "enabled": true,
+          "reservationId": "3f2b8c1e-6a4d-4f7b-9c2e-1a5d7e9b0c41",
+          "description": "Projetor não liga",
+          "status": "OPEN",
+          "resourceId": "50000000-0000-4000-8000-000000000001",
+          "createdAt": "2026-11-03T10:20:00Z"
+        }
+      ]
+    },
+    "DetailCreate": {
+      "title": "DetailCreate",
+      "description": "Corpo do POST de ocorrência. status opcional (default OPEN).",
+      "type": "object",
+      "required": [
+        "description"
+      ],
+      "properties": {
+        "description": {
+          "$ref": "#/$defs/Description"
+        },
+        "status": {
+          "$ref": "#/$defs/DetailStatus"
+        },
+        "resourceId": {
+          "$ref": "#/$defs/Uuid"
+        }
+      },
+      "additionalProperties": false,
+      "examples": [
+        {
+          "description": "Projetor não liga",
+          "resourceId": "50000000-0000-4000-8000-000000000001"
+        }
+      ]
+    },
+    "DetailUpdate": {
+      "title": "DetailUpdate",
+      "description": "Corpo do PUT de ocorrência. Substituição total; resourceId ausente é apagado.",
+      "type": "object",
+      "required": [
+        "description",
+        "status"
+      ],
+      "properties": {
+        "description": {
+          "$ref": "#/$defs/Description"
+        },
+        "status": {
+          "$ref": "#/$defs/DetailStatus"
+        },
+        "resourceId": {
+          "$ref": "#/$defs/Uuid"
+        }
+      },
+      "additionalProperties": false,
+      "examples": [
+        {
+          "description": "Projetor não liga (cabo HDMI trocado)",
+          "status": "RESOLVED",
+          "resourceId": "50000000-0000-4000-8000-000000000001"
+        }
+      ]
+    },
+    "DetailPatch": {
+      "title": "DetailPatch",
+      "description": "Corpo do PATCH de ocorrência (merge patch). null só apaga resourceId. Pelo menos um campo.",
+      "type": "object",
+      "minProperties": 1,
+      "properties": {
+        "description": {
+          "$ref": "#/$defs/Description"
+        },
+        "status": {
+          "$ref": "#/$defs/DetailStatus"
+        },
+        "resourceId": {
+          "oneOf": [
+            {
+              "$ref": "#/$defs/Uuid"
+            },
+            {
+              "type": "null"
+            }
+          ]
+        }
+      },
+      "additionalProperties": false,
+      "examples": [
+        {
+          "status": "RESOLVED"
+        },
+        {
+          "resourceId": null
+        }
+      ]
+    },
+    "DetailList": {
+      "type": "object",
+      "required": [
+        "items"
+      ],
+      "properties": {
+        "items": {
+          "type": "array",
+          "items": {
+            "$ref": "#/$defs/Detail"
+          }
+        }
+      },
+      "additionalProperties": false
+    },
+    "OccupancyItem": {
+      "title": "OccupancyItem",
+      "type": "object",
+      "required": [
+        "reservationId",
+        "professorId",
+        "lessonId",
+        "resourceId"
+      ],
+      "properties": {
+        "reservationId": {
+          "$ref": "#/$defs/Uuid"
+        },
+        "professorId": {
+          "$ref": "#/$defs/Uuid"
+        },
+        "lessonId": {
+          "$ref": "#/$defs/Uuid"
+        },
+        "resourceId": {
+          "$ref": "#/$defs/Uuid"
+        }
+      },
+      "additionalProperties": false
+    },
+    "OccupancyList": {
+      "type": "object",
+      "required": [
+        "items"
+      ],
+      "properties": {
+        "items": {
+          "type": "array",
+          "items": {
+            "$ref": "#/$defs/OccupancyItem"
+          }
+        }
+      },
+      "additionalProperties": false
+    },
+    "Problem": {
+      "title": "Problem",
+      "description": "RFC 9457. 409 com code = FR e type = urn:closed-cras:recusa:<code>; 422 com errors.",
+      "type": "object",
+      "required": [
+        "type",
+        "title",
+        "status"
+      ],
+      "properties": {
+        "type": {
+          "type": "string",
+          "format": "uri"
+        },
+        "title": {
+          "type": "string"
+        },
+        "status": {
+          "type": "integer",
+          "minimum": 400,
+          "maximum": 599
+        },
+        "detail": {
+          "type": "string"
+        },
+        "instance": {
+          "type": "string",
+          "format": "uri-reference"
+        },
+        "code": {
+          "type": "string",
+          "pattern": "^FR-[0-9]+$"
+        },
+        "errors": {
+          "type": "array",
+          "items": {
+            "type": "object",
+            "required": [
+              "field",
+              "message"
+            ],
+            "properties": {
+              "field": {
+                "type": "string"
+              },
+              "message": {
+                "type": "string"
+              }
+            },
+            "additionalProperties": false
+          }
+        }
+      }
+    },
+    "Identity": {
+      "title": "Identity",
+      "description": "Dados do JWT (Spine AD-4). IDs não aplicáveis vêm null.",
+      "type": "object",
+      "required": [
+        "sub",
+        "email",
+        "roles",
+        "employeeId",
+        "professorId",
+        "studentId"
+      ],
+      "properties": {
+        "sub": {
+          "type": "string"
+        },
+        "email": {
+          "type": "string",
+          "format": "email"
+        },
+        "roles": {
+          "type": "array",
+          "items": {
+            "type": "string"
+          }
+        },
+        "employeeId": {
+          "type": [
+            "string",
+            "null"
+          ]
+        },
+        "professorId": {
+          "type": [
+            "string",
+            "null"
+          ]
+        },
+        "studentId": {
+          "type": [
+            "string",
+            "null"
+          ]
+        }
+      },
+      "additionalProperties": false
+    }
+  }
+}

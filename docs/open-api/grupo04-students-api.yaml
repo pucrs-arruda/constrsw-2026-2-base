@@ -1,0 +1,1171 @@
+# Contrato OpenAPI 3.1 da REST API students (Grupo 04). Também é o documento exibido no Swagger UI.
+openapi: 3.1.0
+info:
+  title: Students API
+  version: 1.0.0
+  summary: REST API students — ConstrSW 2026/2 — Grupo 04
+  description: |
+    CRUD de estudantes (classe principal) e de seus vínculos acadêmicos (classe secundária, composição 1..0..*), persistidos em PostgreSQL.
+
+    **Autenticação:** todas as rotas exigem `Authorization: Bearer <access_token>`. Obtenha o token em `POST http://localhost:8181/login` (API oauth) com `username=admin@pucrs.br` e `password=a12345678`, clique em **Authorize** e cole o `access_token`.
+
+    **Autorização (realm roles do Keycloak):** GET = qualquer usuário autenticado; POST/PUT/PATCH/DELETE = `administrator` ou `coordinator` (os demais recebem 403).
+
+    **Erros:** envelope `error_code` / `error_description` / `error_source` / `error_stack`.
+
+    ## Exclusão lógica
+
+    Todas as exclusões são lógicas e controladas pelo atributo `enabled` das classes. Um `DELETE` não remove o registro do banco: apenas define `enabled=false`. O atributo é somente leitura (`readOnly`): nasce `true` e não pode ser enviado pelo cliente.
+
+    Registros com `enabled=false` não aparecem nas listagens, a consulta por id responde `404` e não podem ser alterados nem excluídos novamente (`404`).
+servers:
+- url: http://localhost:8103
+  description: docker compose (local)
+security:
+- bearerAuth: []
+tags:
+- name: students
+  description: Coleção principal
+- name: enrollments
+  description: 'Coleção secundária: vínculos acadêmicos do estudante'
+paths:
+  /api/v1/students:
+    post:
+      tags:
+      - students
+      operationId: createStudent
+      summary: Cria um estudante
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/StudentRequest'
+            example:
+              registration_number: '24100123'
+              name: Caio Fernandes
+              email: caio.fernandes@edu.pucrs.br
+              birth_date: '2004-03-15'
+              phone: '+5551999998888'
+              honors:
+      responses:
+        '201':
+          description: Created
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Student'
+          headers:
+            Location:
+              description: URL do recurso criado
+              schema:
+                type: string
+        '400':
+          description: 'Bad Request: requisição, JSON ou filtro com erro'
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Error'
+        '401':
+          description: 'Unauthorized: Authorization ausente, token inválido ou expirado'
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Error'
+        '403':
+          description: 'Forbidden: o usuário autenticado não tem acesso a esta função'
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Error'
+        '409':
+          description: 'Conflict: já existe um estudante com a matrícula informada'
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Error'
+        '415':
+          description: 'Unsupported Media Type: use Content-Type application/json'
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Error'
+    get:
+      tags:
+      - students
+      operationId: listStudents
+      summary: Lista estudantes (todos, query string simples ou complexa)
+      description: 'Sem parâmetros: todos os estudantes. Com parâmetros: filtro por `atributo=valor` (simples) ou `atributo={op}valor`
+        (complexa), combinados com AND.
+
+
+        Operadores (query string complexa): sem operador = igual; `{neq}` diferente; `{gt}` maior; `{gteq}` maior ou igual;
+        `{lt}` menor; `{lteq}` menor ou igual; `{like}` contém (curingas `%` ou `*`, sem diferenciar maiúsculas). O mesmo
+        atributo pode ser repetido (ex.: faixa de datas).
+
+
+        Exemplo: `GET /api/v1/students?name={like}%silva%&birth_date={gteq}2000-01-01&honors={neq}cum laude`
+
+
+        Nenhum resultado devolve `200` com lista vazia. Atributo, operador ou valor inválido devolve `400`.'
+      parameters:
+      - name: registration_number
+        in: query
+        required: false
+        description: Filtra por `registration_number`. Aceita todos os operadores.
+        schema:
+          type: array
+          items:
+            type: string
+        style: form
+        explode: true
+        example:
+        - '24100123'
+      - name: name
+        in: query
+        required: false
+        description: Filtra por `name`. Aceita todos os operadores.
+        schema:
+          type: array
+          items:
+            type: string
+        style: form
+        explode: true
+        example:
+        - '{like}%silva%'
+      - name: email
+        in: query
+        required: false
+        description: Filtra por `email`. Aceita todos os operadores.
+        schema:
+          type: array
+          items:
+            type: string
+        style: form
+        explode: true
+        example:
+        - '{like}%@edu.pucrs.br'
+      - name: birth_date
+        in: query
+        required: false
+        description: Filtra por `birth_date` (AAAA-MM-DD). Aceita igual, `{neq}`, `{gt}`, `{gteq}`, `{lt}`, `{lteq}`.
+        schema:
+          type: array
+          items:
+            type: string
+        style: form
+        explode: true
+        example:
+        - '{gteq}2000-01-01'
+      - name: phone
+        in: query
+        required: false
+        description: Filtra por `phone`. Aceita todos os operadores.
+        schema:
+          type: array
+          items:
+            type: string
+        style: form
+        explode: true
+        example:
+        - '{like}5551*'
+      - name: honors
+        in: query
+        required: false
+        description: 'Filtra por `honors`. Aceita apenas igual e `{neq}`. Valores: cum laude, magna cum laude, summa cum laude.'
+        schema:
+          type: array
+          items:
+            type: string
+        style: form
+        explode: true
+        example:
+        - '{neq}cum laude'
+      responses:
+        '200':
+          description: OK
+          content:
+            application/json:
+              schema:
+                type: array
+                items:
+                  $ref: '#/components/schemas/Student'
+        '400':
+          description: 'Bad Request: requisição, JSON ou filtro com erro'
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Error'
+        '401':
+          description: 'Unauthorized: Authorization ausente, token inválido ou expirado'
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Error'
+        '403':
+          description: 'Forbidden: o usuário autenticado não tem acesso a esta função'
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Error'
+  /api/v1/students/{id}:
+    parameters:
+    - name: id
+      in: path
+      required: true
+      description: id (UUID) do estudante
+      schema:
+        type: string
+        format: uuid
+    get:
+      tags:
+      - students
+      operationId: getStudent
+      summary: Recupera um estudante pelo id
+      responses:
+        '200':
+          description: OK
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Student'
+        '400':
+          description: 'Bad Request: requisição, JSON ou filtro com erro'
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Error'
+        '401':
+          description: 'Unauthorized: Authorization ausente, token inválido ou expirado'
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Error'
+        '403':
+          description: 'Forbidden: o usuário autenticado não tem acesso a esta função'
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Error'
+        '404':
+          description: 'Not Found: id não encontrado'
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Error'
+    put:
+      tags:
+      - students
+      operationId: replaceStudent
+      summary: Atualização total do estudante
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/StudentRequest'
+            example:
+              registration_number: '24100123'
+              name: Caio Fernandes
+              email: caio.fernandes@edu.pucrs.br
+              birth_date: '2004-03-15'
+              phone: '+5551999998888'
+              honors:
+      responses:
+        '200':
+          description: OK
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Student'
+        '400':
+          description: 'Bad Request: requisição, JSON ou filtro com erro'
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Error'
+        '401':
+          description: 'Unauthorized: Authorization ausente, token inválido ou expirado'
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Error'
+        '403':
+          description: 'Forbidden: o usuário autenticado não tem acesso a esta função'
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Error'
+        '404':
+          description: 'Not Found: id não encontrado'
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Error'
+        '409':
+          description: 'Conflict: já existe um estudante com a matrícula informada'
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Error'
+        '415':
+          description: 'Unsupported Media Type: use Content-Type application/json'
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Error'
+    patch:
+      tags:
+      - students
+      operationId: patchStudent
+      summary: Atualização parcial do estudante
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/StudentPatch'
+            example:
+              honors: summa cum laude
+          application/merge-patch+json:
+            schema:
+              $ref: '#/components/schemas/StudentPatch'
+            example:
+              honors: summa cum laude
+      responses:
+        '200':
+          description: OK
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Student'
+        '400':
+          description: 'Bad Request: requisição, JSON ou filtro com erro'
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Error'
+        '401':
+          description: 'Unauthorized: Authorization ausente, token inválido ou expirado'
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Error'
+        '403':
+          description: 'Forbidden: o usuário autenticado não tem acesso a esta função'
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Error'
+        '404':
+          description: 'Not Found: id não encontrado'
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Error'
+        '409':
+          description: 'Conflict: já existe um estudante com a matrícula informada'
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Error'
+        '415':
+          description: 'Unsupported Media Type: use Content-Type application/json'
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Error'
+    delete:
+      tags:
+      - students
+      operationId: deleteStudent
+      summary: Exclui o estudante e seus vínculos acadêmicos (exclusão lógica)
+      description: 'Exclusão lógica: define `enabled=false` no estudante e em todos os seus vínculos acadêmicos; nada é removido
+        do banco.'
+      responses:
+        '204':
+          description: 'No Content: estudante excluído logicamente (`enabled=false`)'
+        '400':
+          description: 'Bad Request: requisição, JSON ou filtro com erro'
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Error'
+        '401':
+          description: 'Unauthorized: Authorization ausente, token inválido ou expirado'
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Error'
+        '403':
+          description: 'Forbidden: o usuário autenticado não tem acesso a esta função'
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Error'
+        '404':
+          description: 'Not Found: id não encontrado'
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Error'
+  /api/v1/students/{id}/enrollments:
+    parameters:
+    - name: id
+      in: path
+      required: true
+      description: id (UUID) do estudante
+      schema:
+        type: string
+        format: uuid
+    post:
+      tags:
+      - enrollments
+      operationId: createEnrollment
+      summary: Cria um vínculo acadêmico na collection do estudante
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/AcademicEnrollmentRequest'
+            example:
+              course_code: 4646B
+              admission_term: 2024/1
+              status: active
+              start_date: '2024-03-04'
+              end_date:
+      responses:
+        '201':
+          description: Created
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/AcademicEnrollment'
+          headers:
+            Location:
+              description: URL do recurso criado
+              schema:
+                type: string
+        '400':
+          description: 'Bad Request: requisição, JSON ou filtro com erro'
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Error'
+        '401':
+          description: 'Unauthorized: Authorization ausente, token inválido ou expirado'
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Error'
+        '403':
+          description: 'Forbidden: o usuário autenticado não tem acesso a esta função'
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Error'
+        '404':
+          description: 'Not Found: id não encontrado'
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Error'
+        '415':
+          description: 'Unsupported Media Type: use Content-Type application/json'
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Error'
+    get:
+      tags:
+      - enrollments
+      operationId: listEnrollments
+      summary: Lista os vínculos acadêmicos do estudante (aceita filtros)
+      description: 'Operadores (query string complexa): sem operador = igual; `{neq}` diferente; `{gt}` maior; `{gteq}` maior
+        ou igual; `{lt}` menor; `{lteq}` menor ou igual; `{like}` contém (curingas `%` ou `*`, sem diferenciar maiúsculas).
+        O mesmo atributo pode ser repetido (ex.: faixa de datas).
+
+
+        Exemplo: `GET /api/v1/students/{id}/enrollments?status={neq}cancelled&start_date={gteq}2023-01-01`'
+      parameters:
+      - name: course_code
+        in: query
+        required: false
+        description: Filtra por `course_code`. Aceita todos os operadores.
+        schema:
+          type: array
+          items:
+            type: string
+        style: form
+        explode: true
+        example:
+        - 4646B
+      - name: admission_term
+        in: query
+        required: false
+        description: Filtra por `admission_term`. Aceita todos os operadores.
+        schema:
+          type: array
+          items:
+            type: string
+        style: form
+        explode: true
+        example:
+        - '{gteq}2023/1'
+      - name: status
+        in: query
+        required: false
+        description: 'Filtra por `status`. Aceita apenas igual e `{neq}`. Valores: `active`, `suspended`, `graduated`, `cancelled`,
+          `transferred`.'
+        schema:
+          type: array
+          items:
+            type: string
+        style: form
+        explode: true
+        example:
+        - active
+      - name: start_date
+        in: query
+        required: false
+        description: Filtra por `start_date` (AAAA-MM-DD). Aceita igual, `{neq}`, `{gt}`, `{gteq}`, `{lt}`, `{lteq}`.
+        schema:
+          type: array
+          items:
+            type: string
+        style: form
+        explode: true
+        example:
+        - '{lt}2025-01-01'
+      - name: end_date
+        in: query
+        required: false
+        description: Filtra por `end_date` (AAAA-MM-DD). Aceita igual, `{neq}`, `{gt}`, `{gteq}`, `{lt}`, `{lteq}`.
+        schema:
+          type: array
+          items:
+            type: string
+        style: form
+        explode: true
+        example:
+        - '{lteq}2026-12-31'
+      responses:
+        '200':
+          description: OK
+          content:
+            application/json:
+              schema:
+                type: array
+                items:
+                  $ref: '#/components/schemas/AcademicEnrollment'
+        '400':
+          description: 'Bad Request: requisição, JSON ou filtro com erro'
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Error'
+        '401':
+          description: 'Unauthorized: Authorization ausente, token inválido ou expirado'
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Error'
+        '403':
+          description: 'Forbidden: o usuário autenticado não tem acesso a esta função'
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Error'
+        '404':
+          description: 'Not Found: id não encontrado'
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Error'
+  /api/v1/students/{id}/enrollments/{enrollmentId}:
+    parameters:
+    - name: id
+      in: path
+      required: true
+      description: id (UUID) do estudante
+      schema:
+        type: string
+        format: uuid
+    - name: enrollmentId
+      in: path
+      required: true
+      description: id (UUID) do vínculo acadêmico
+      schema:
+        type: string
+        format: uuid
+    get:
+      tags:
+      - enrollments
+      operationId: getEnrollment
+      summary: Recupera um vínculo acadêmico do estudante
+      responses:
+        '200':
+          description: OK
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/AcademicEnrollment'
+        '400':
+          description: 'Bad Request: requisição, JSON ou filtro com erro'
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Error'
+        '401':
+          description: 'Unauthorized: Authorization ausente, token inválido ou expirado'
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Error'
+        '403':
+          description: 'Forbidden: o usuário autenticado não tem acesso a esta função'
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Error'
+        '404':
+          description: 'Not Found: id não encontrado'
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Error'
+    put:
+      tags:
+      - enrollments
+      operationId: replaceEnrollment
+      summary: Atualização total do vínculo acadêmico
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/AcademicEnrollmentRequest'
+            example:
+              course_code: 4646B
+              admission_term: 2024/1
+              status: graduated
+              start_date: '2024-03-04'
+              end_date: '2027-12-20'
+      responses:
+        '200':
+          description: OK
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/AcademicEnrollment'
+        '400':
+          description: 'Bad Request: requisição, JSON ou filtro com erro'
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Error'
+        '401':
+          description: 'Unauthorized: Authorization ausente, token inválido ou expirado'
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Error'
+        '403':
+          description: 'Forbidden: o usuário autenticado não tem acesso a esta função'
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Error'
+        '404':
+          description: 'Not Found: id não encontrado'
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Error'
+        '415':
+          description: 'Unsupported Media Type: use Content-Type application/json'
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Error'
+    patch:
+      tags:
+      - enrollments
+      operationId: patchEnrollment
+      summary: Atualização parcial do vínculo acadêmico
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/AcademicEnrollmentPatch'
+            example:
+              status: suspended
+          application/merge-patch+json:
+            schema:
+              $ref: '#/components/schemas/AcademicEnrollmentPatch'
+            example:
+              status: suspended
+      responses:
+        '200':
+          description: OK
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/AcademicEnrollment'
+        '400':
+          description: 'Bad Request: requisição, JSON ou filtro com erro'
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Error'
+        '401':
+          description: 'Unauthorized: Authorization ausente, token inválido ou expirado'
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Error'
+        '403':
+          description: 'Forbidden: o usuário autenticado não tem acesso a esta função'
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Error'
+        '404':
+          description: 'Not Found: id não encontrado'
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Error'
+        '415':
+          description: 'Unsupported Media Type: use Content-Type application/json'
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Error'
+    delete:
+      tags:
+      - enrollments
+      operationId: deleteEnrollment
+      summary: Exclui o vínculo acadêmico (exclusão lógica)
+      description: 'Exclusão lógica: define `enabled=false` no vínculo acadêmico; nada é removido do banco.'
+      responses:
+        '204':
+          description: 'No Content: vínculo excluído logicamente (`enabled=false`)'
+        '400':
+          description: 'Bad Request: requisição, JSON ou filtro com erro'
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Error'
+        '401':
+          description: 'Unauthorized: Authorization ausente, token inválido ou expirado'
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Error'
+        '403':
+          description: 'Forbidden: o usuário autenticado não tem acesso a esta função'
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Error'
+        '404':
+          description: 'Not Found: id não encontrado'
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Error'
+components:
+  securitySchemes:
+    bearerAuth:
+      type: http
+      scheme: bearer
+      bearerFormat: JWT
+  schemas:
+    Student:
+      title: Student
+      description: Estudante (classe principal). Resposta de POST, GET, PUT e PATCH /students.
+      type: object
+      properties:
+        id:
+          type: string
+          format: uuid
+          readOnly: true
+          examples:
+          - 42cedfbd-f998-4be7-a278-b74322fdf21a
+        enabled:
+          type: boolean
+          readOnly: true
+          default: true
+          description: 'Exclusão lógica: true para registro ativo; false para registro excluído logicamente. Controlado pelo
+            servidor.'
+        registration_number:
+          type: string
+          minLength: 1
+          maxLength: 20
+          description: Matrícula do estudante (única)
+          examples:
+          - '24100123'
+        name:
+          type: string
+          minLength: 1
+          maxLength: 150
+          examples:
+          - Caio Fernandes
+        email:
+          type: string
+          format: email
+          maxLength: 150
+          examples:
+          - caio.fernandes@edu.pucrs.br
+        birth_date:
+          type: string
+          format: date
+          description: Data no formato AAAA-MM-DD (deve estar no passado)
+          examples:
+          - '2004-03-15'
+        phone:
+          type:
+          - string
+          - 'null'
+          pattern: ^\+?[0-9]{8,14}$
+          maxLength: 15
+          examples:
+          - '+5551999998888'
+        honors:
+          type:
+          - string
+          - 'null'
+          enum:
+          - cum laude
+          - magna cum laude
+          - summa cum laude
+          - 
+          description: Láurea acadêmica do estudante; null quando não possui
+          examples:
+          - magna cum laude
+      required:
+      - id
+      - enabled
+      - registration_number
+      - name
+      - email
+      - birth_date
+      - phone
+      - honors
+      additionalProperties: false
+    StudentRequest:
+      title: StudentRequest
+      description: Corpo de POST /students e PUT /students/{id}. O id é gerado pela API; no PUT os atributos omitidos 
+        opcionais ficam null.
+      type: object
+      properties:
+        registration_number:
+          type: string
+          minLength: 1
+          maxLength: 20
+          description: Matrícula do estudante (única)
+          examples:
+          - '24100123'
+        name:
+          type: string
+          minLength: 1
+          maxLength: 150
+          examples:
+          - Caio Fernandes
+        email:
+          type: string
+          format: email
+          maxLength: 150
+          examples:
+          - caio.fernandes@edu.pucrs.br
+        birth_date:
+          type: string
+          format: date
+          description: Data no formato AAAA-MM-DD (deve estar no passado)
+          examples:
+          - '2004-03-15'
+        phone:
+          type:
+          - string
+          - 'null'
+          pattern: ^\+?[0-9]{8,14}$
+          maxLength: 15
+          examples:
+          - '+5551999998888'
+        honors:
+          type:
+          - string
+          - 'null'
+          enum:
+          - cum laude
+          - magna cum laude
+          - summa cum laude
+          - 
+          description: Láurea acadêmica do estudante; null quando não possui
+          examples:
+          - magna cum laude
+      required:
+      - registration_number
+      - name
+      - email
+      - birth_date
+      additionalProperties: false
+    StudentPatch:
+      title: StudentPatch
+      description: 'Corpo de PATCH /students/{id}: qualquer subconjunto dos atributos (JSON Merge Patch). Enviar null em `phone`
+        ou `honors` limpa o valor.'
+      type: object
+      properties:
+        registration_number:
+          type: string
+          minLength: 1
+          maxLength: 20
+          description: Matrícula do estudante (única)
+          examples:
+          - '24100123'
+        name:
+          type: string
+          minLength: 1
+          maxLength: 150
+          examples:
+          - Caio Fernandes
+        email:
+          type: string
+          format: email
+          maxLength: 150
+          examples:
+          - caio.fernandes@edu.pucrs.br
+        birth_date:
+          type: string
+          format: date
+          description: Data no formato AAAA-MM-DD (deve estar no passado)
+          examples:
+          - '2004-03-15'
+        phone:
+          type:
+          - string
+          - 'null'
+          pattern: ^\+?[0-9]{8,14}$
+          maxLength: 15
+          examples:
+          - '+5551999998888'
+        honors:
+          type:
+          - string
+          - 'null'
+          enum:
+          - cum laude
+          - magna cum laude
+          - summa cum laude
+          - 
+          description: Láurea acadêmica do estudante; null quando não possui
+          examples:
+          - magna cum laude
+      minProperties: 1
+      additionalProperties: false
+    AcademicEnrollment:
+      title: AcademicEnrollment
+      description: Vínculo acadêmico do estudante (classe secundária). Resposta das rotas /students/{id}/enrollments.
+      type: object
+      properties:
+        id:
+          type: string
+          format: uuid
+          readOnly: true
+          examples:
+          - 3f0c2a5e-8a7b-4c1d-9e2f-1a2b3c4d5e6f
+        enabled:
+          type: boolean
+          readOnly: true
+          default: true
+          description: 'Exclusão lógica: true para registro ativo; false para registro excluído logicamente. Controlado pelo
+            servidor.'
+        student_id:
+          type: string
+          format: uuid
+          readOnly: true
+          description: Estudante dono do vínculo
+          examples:
+          - 42cedfbd-f998-4be7-a278-b74322fdf21a
+        course_code:
+          type: string
+          minLength: 1
+          maxLength: 20
+          description: Código do curso
+          examples:
+          - 4646B
+        admission_term:
+          type: string
+          pattern: ^[0-9]{4}/[12]$
+          maxLength: 6
+          description: Período de ingresso (AAAA/S)
+          examples:
+          - 2024/1
+        status:
+          type: string
+          enum:
+          - active
+          - suspended
+          - graduated
+          - cancelled
+          - transferred
+          description: Situação do vínculo
+          examples:
+          - active
+        start_date:
+          type: string
+          format: date
+          examples:
+          - '2024-03-04'
+        end_date:
+          type:
+          - string
+          - 'null'
+          format: date
+          description: Deve ser igual ou posterior a start_date; null se o vínculo está em aberto
+          examples:
+          - 
+      required:
+      - id
+      - enabled
+      - student_id
+      - course_code
+      - admission_term
+      - status
+      - start_date
+      - end_date
+      additionalProperties: false
+    AcademicEnrollmentRequest:
+      title: AcademicEnrollmentRequest
+      description: Corpo de POST /students/{id}/enrollments e PUT /students/{id}/enrollments/{enrollmentId}.
+      type: object
+      properties:
+        course_code:
+          type: string
+          minLength: 1
+          maxLength: 20
+          description: Código do curso
+          examples:
+          - 4646B
+        admission_term:
+          type: string
+          pattern: ^[0-9]{4}/[12]$
+          maxLength: 6
+          description: Período de ingresso (AAAA/S)
+          examples:
+          - 2024/1
+        status:
+          type: string
+          enum:
+          - active
+          - suspended
+          - graduated
+          - cancelled
+          - transferred
+          description: Situação do vínculo
+          examples:
+          - active
+        start_date:
+          type: string
+          format: date
+          examples:
+          - '2024-03-04'
+        end_date:
+          type:
+          - string
+          - 'null'
+          format: date
+          description: Deve ser igual ou posterior a start_date; null se o vínculo está em aberto
+          examples:
+          - 
+      required:
+      - course_code
+      - admission_term
+      - status
+      - start_date
+      additionalProperties: false
+    AcademicEnrollmentPatch:
+      title: AcademicEnrollmentPatch
+      description: 'Corpo de PATCH /students/{id}/enrollments/{enrollmentId}: qualquer subconjunto dos atributos.'
+      type: object
+      properties:
+        course_code:
+          type: string
+          minLength: 1
+          maxLength: 20
+          description: Código do curso
+          examples:
+          - 4646B
+        admission_term:
+          type: string
+          pattern: ^[0-9]{4}/[12]$
+          maxLength: 6
+          description: Período de ingresso (AAAA/S)
+          examples:
+          - 2024/1
+        status:
+          type: string
+          enum:
+          - active
+          - suspended
+          - graduated
+          - cancelled
+          - transferred
+          description: Situação do vínculo
+          examples:
+          - active
+        start_date:
+          type: string
+          format: date
+          examples:
+          - '2024-03-04'
+        end_date:
+          type:
+          - string
+          - 'null'
+          format: date
+          description: Deve ser igual ou posterior a start_date; null se o vínculo está em aberto
+          examples:
+          - 
+      minProperties: 1
+      additionalProperties: false
+    Error:
+      title: Error
+      description: Envelope de erro padrão. error_code = ST-<status HTTP>.
+      type: object
+      properties:
+        error_code:
+          type: string
+          examples:
+          - ST-404
+        error_description:
+          type: string
+          examples:
+          - Estudante 42cedfbd-f998-4be7-a278-b74322fdf21a não encontrado
+        error_source:
+          type: string
+          examples:
+          - StudentsAPI
+        error_stack:
+          type: array
+          items:
+            type: object
+            properties:
+              error_code:
+                type: string
+              error_description:
+                type: string
+              error_source:
+                type: string
+            required:
+            - error_code
+            - error_description
+            - error_source
+      required:
+      - error_code
+      - error_description
+      - error_source
+      - error_stack

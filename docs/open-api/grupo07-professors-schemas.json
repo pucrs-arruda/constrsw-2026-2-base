@@ -1,0 +1,214 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "https://constrsw.pucrs.br/schemas/grupo07-professors-schemas.json",
+  "title": "Professors API (Grupo 07) — JSON Schemas",
+  "$defs": {
+    "Professor": {
+      "title": "Professor",
+      "type": "object",
+      "additionalProperties": false,
+      "required": [
+        "_id",
+        "enabled",
+        "employeeId",
+        "active",
+        "startDate",
+        "appointment"
+      ],
+      "properties": {
+        "_id": {
+          "type": "string",
+          "format": "uuid"
+        },
+        "enabled": {
+          "type": "boolean",
+          "readOnly": true,
+          "default": true,
+          "description": "Soft delete flag: true for an active record; false for a logically deleted record. Server-managed."
+        },
+        "employeeId": {
+          "type": "string",
+          "format": "uuid",
+          "description": "Employees resource _id. Not a registration number."
+        },
+        "active": {
+          "type": "boolean"
+        },
+        "startDate": {
+          "type": "string",
+          "format": "date"
+        },
+        "appointment": {
+          "enum": [
+            "permanent",
+            "substitute",
+            "visiting"
+          ]
+        }
+      }
+    },
+    "AcademicDegree": {
+      "title": "AcademicDegree",
+      "type": "object",
+      "additionalProperties": false,
+      "required": [
+        "_id",
+        "enabled",
+        "level",
+        "field",
+        "institution",
+        "year"
+      ],
+      "properties": {
+        "_id": {
+          "type": "string",
+          "format": "uuid"
+        },
+        "enabled": {
+          "type": "boolean",
+          "readOnly": true,
+          "default": true,
+          "description": "Soft delete flag: true for an active record; false for a logically deleted record. Server-managed."
+        },
+        "level": {
+          "type": "string",
+          "minLength": 1
+        },
+        "field": {
+          "type": "string",
+          "minLength": 1
+        },
+        "institution": {
+          "type": "string",
+          "minLength": 1
+        },
+        "year": {
+          "type": "integer",
+          "minimum": 1900
+        }
+      }
+    },
+    "ProfessorWrite": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": [
+        "employeeId",
+        "active",
+        "startDate",
+        "appointment"
+      ],
+      "properties": {
+        "employeeId": {
+          "type": "string",
+          "format": "uuid"
+        },
+        "active": {
+          "type": "boolean"
+        },
+        "startDate": {
+          "type": "string",
+          "format": "date"
+        },
+        "appointment": {
+          "enum": [
+            "permanent",
+            "substitute",
+            "visiting"
+          ]
+        }
+      }
+    },
+    "ProfessorPatch": {
+      "type": "object",
+      "additionalProperties": false,
+      "minProperties": 1,
+      "properties": {
+        "employeeId": {
+          "type": "string",
+          "format": "uuid"
+        },
+        "active": {
+          "type": "boolean"
+        },
+        "startDate": {
+          "type": "string",
+          "format": "date"
+        },
+        "appointment": {
+          "enum": [
+            "permanent",
+            "substitute",
+            "visiting"
+          ]
+        }
+      }
+    },
+    "AcademicDegreeWrite": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": [
+        "level",
+        "field",
+        "institution",
+        "year"
+      ],
+      "properties": {
+        "level": {
+          "type": "string",
+          "minLength": 1
+        },
+        "field": {
+          "type": "string",
+          "minLength": 1
+        },
+        "institution": {
+          "type": "string",
+          "minLength": 1
+        },
+        "year": {
+          "type": "integer",
+          "minimum": 1900
+        }
+      }
+    },
+    "AcademicDegreePatch": {
+      "type": "object",
+      "additionalProperties": false,
+      "minProperties": 1,
+      "properties": {
+        "level": {
+          "type": "string",
+          "minLength": 1
+        },
+        "field": {
+          "type": "string",
+          "minLength": 1
+        },
+        "institution": {
+          "type": "string",
+          "minLength": 1
+        },
+        "year": {
+          "type": "integer",
+          "minimum": 1900
+        }
+      }
+    },
+    "Error": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": [
+        "code",
+        "detail"
+      ],
+      "properties": {
+        "code": {
+          "type": "string"
+        },
+        "detail": {
+          "type": "string"
+        }
+      }
+    }
+  }
+}

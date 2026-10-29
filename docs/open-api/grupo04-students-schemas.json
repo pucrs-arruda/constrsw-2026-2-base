@@ -1,0 +1,509 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "https://constrsw.pucrs.br/schemas/grupo04-students-schemas.json",
+  "title": "Students API (Grupo 04) — JSON Schemas",
+  "$defs": {
+    "Error": {
+      "title": "Error",
+      "description": "Envelope de erro padrão. error_code = ST-<status HTTP>.",
+      "type": "object",
+      "properties": {
+        "error_code": {
+          "type": "string",
+          "examples": [
+            "ST-404"
+          ]
+        },
+        "error_description": {
+          "type": "string",
+          "examples": [
+            "Estudante 42cedfbd-f998-4be7-a278-b74322fdf21a não encontrado"
+          ]
+        },
+        "error_source": {
+          "type": "string",
+          "examples": [
+            "StudentsAPI"
+          ]
+        },
+        "error_stack": {
+          "type": "array",
+          "items": {
+            "type": "object",
+            "properties": {
+              "error_code": {
+                "type": "string"
+              },
+              "error_description": {
+                "type": "string"
+              },
+              "error_source": {
+                "type": "string"
+              }
+            },
+            "required": [
+              "error_code",
+              "error_description",
+              "error_source"
+            ]
+          }
+        }
+      },
+      "required": [
+        "error_code",
+        "error_description",
+        "error_source",
+        "error_stack"
+      ]
+    },
+    "Student": {
+      "title": "Student",
+      "description": "Estudante (classe principal). Resposta de POST, GET, PUT e PATCH /students.",
+      "type": "object",
+      "properties": {
+        "id": {
+          "type": "string",
+          "format": "uuid",
+          "readOnly": true,
+          "examples": [
+            "42cedfbd-f998-4be7-a278-b74322fdf21a"
+          ]
+        },
+        "enabled": {
+          "type": "boolean",
+          "readOnly": true,
+          "default": true,
+          "description": "Exclusão lógica: true para registro ativo; false para registro excluído logicamente. Controlado pelo servidor."
+        },
+        "registration_number": {
+          "type": "string",
+          "minLength": 1,
+          "maxLength": 20,
+          "description": "Matrícula do estudante (única)",
+          "examples": [
+            "24100123"
+          ]
+        },
+        "name": {
+          "type": "string",
+          "minLength": 1,
+          "maxLength": 150,
+          "examples": [
+            "Caio Fernandes"
+          ]
+        },
+        "email": {
+          "type": "string",
+          "format": "email",
+          "maxLength": 150,
+          "examples": [
+            "caio.fernandes@edu.pucrs.br"
+          ]
+        },
+        "birth_date": {
+          "type": "string",
+          "format": "date",
+          "description": "Data no formato AAAA-MM-DD (deve estar no passado)",
+          "examples": [
+            "2004-03-15"
+          ]
+        },
+        "phone": {
+          "type": [
+            "string",
+            "null"
+          ],
+          "pattern": "^\\+?[0-9]{8,14}$",
+          "maxLength": 15,
+          "examples": [
+            "+5551999998888"
+          ]
+        },
+        "honors": {
+          "type": [
+            "string",
+            "null"
+          ],
+          "enum": [
+            "cum laude",
+            "magna cum laude",
+            "summa cum laude",
+            null
+          ],
+          "description": "Láurea acadêmica do estudante; null quando não possui",
+          "examples": [
+            "magna cum laude"
+          ]
+        }
+      },
+      "required": [
+        "id",
+        "enabled",
+        "registration_number",
+        "name",
+        "email",
+        "birth_date",
+        "phone",
+        "honors"
+      ],
+      "additionalProperties": false
+    },
+    "StudentPatch": {
+      "title": "StudentPatch",
+      "description": "Corpo de PATCH /students/{id}: qualquer subconjunto dos atributos (JSON Merge Patch). Enviar null em `phone` ou `honors` limpa o valor.",
+      "type": "object",
+      "properties": {
+        "registration_number": {
+          "type": "string",
+          "minLength": 1,
+          "maxLength": 20,
+          "description": "Matrícula do estudante (única)",
+          "examples": [
+            "24100123"
+          ]
+        },
+        "name": {
+          "type": "string",
+          "minLength": 1,
+          "maxLength": 150,
+          "examples": [
+            "Caio Fernandes"
+          ]
+        },
+        "email": {
+          "type": "string",
+          "format": "email",
+          "maxLength": 150,
+          "examples": [
+            "caio.fernandes@edu.pucrs.br"
+          ]
+        },
+        "birth_date": {
+          "type": "string",
+          "format": "date",
+          "description": "Data no formato AAAA-MM-DD (deve estar no passado)",
+          "examples": [
+            "2004-03-15"
+          ]
+        },
+        "phone": {
+          "type": [
+            "string",
+            "null"
+          ],
+          "pattern": "^\\+?[0-9]{8,14}$",
+          "maxLength": 15,
+          "examples": [
+            "+5551999998888"
+          ]
+        },
+        "honors": {
+          "type": [
+            "string",
+            "null"
+          ],
+          "enum": [
+            "cum laude",
+            "magna cum laude",
+            "summa cum laude",
+            null
+          ],
+          "description": "Láurea acadêmica do estudante; null quando não possui",
+          "examples": [
+            "magna cum laude"
+          ]
+        }
+      },
+      "minProperties": 1,
+      "additionalProperties": false
+    },
+    "StudentRequest": {
+      "title": "StudentRequest",
+      "description": "Corpo de POST /students e PUT /students/{id}. O id é gerado pela API; no PUT os atributos omitidos opcionais ficam null.",
+      "type": "object",
+      "properties": {
+        "registration_number": {
+          "type": "string",
+          "minLength": 1,
+          "maxLength": 20,
+          "description": "Matrícula do estudante (única)",
+          "examples": [
+            "24100123"
+          ]
+        },
+        "name": {
+          "type": "string",
+          "minLength": 1,
+          "maxLength": 150,
+          "examples": [
+            "Caio Fernandes"
+          ]
+        },
+        "email": {
+          "type": "string",
+          "format": "email",
+          "maxLength": 150,
+          "examples": [
+            "caio.fernandes@edu.pucrs.br"
+          ]
+        },
+        "birth_date": {
+          "type": "string",
+          "format": "date",
+          "description": "Data no formato AAAA-MM-DD (deve estar no passado)",
+          "examples": [
+            "2004-03-15"
+          ]
+        },
+        "phone": {
+          "type": [
+            "string",
+            "null"
+          ],
+          "pattern": "^\\+?[0-9]{8,14}$",
+          "maxLength": 15,
+          "examples": [
+            "+5551999998888"
+          ]
+        },
+        "honors": {
+          "type": [
+            "string",
+            "null"
+          ],
+          "enum": [
+            "cum laude",
+            "magna cum laude",
+            "summa cum laude",
+            null
+          ],
+          "description": "Láurea acadêmica do estudante; null quando não possui",
+          "examples": [
+            "magna cum laude"
+          ]
+        }
+      },
+      "required": [
+        "registration_number",
+        "name",
+        "email",
+        "birth_date"
+      ],
+      "additionalProperties": false
+    },
+    "AcademicEnrollment": {
+      "title": "AcademicEnrollment",
+      "description": "Vínculo acadêmico do estudante (classe secundária). Resposta das rotas /students/{id}/enrollments.",
+      "type": "object",
+      "properties": {
+        "id": {
+          "type": "string",
+          "format": "uuid",
+          "readOnly": true,
+          "examples": [
+            "3f0c2a5e-8a7b-4c1d-9e2f-1a2b3c4d5e6f"
+          ]
+        },
+        "enabled": {
+          "type": "boolean",
+          "readOnly": true,
+          "default": true,
+          "description": "Exclusão lógica: true para registro ativo; false para registro excluído logicamente. Controlado pelo servidor."
+        },
+        "student_id": {
+          "type": "string",
+          "format": "uuid",
+          "readOnly": true,
+          "description": "Estudante dono do vínculo",
+          "examples": [
+            "42cedfbd-f998-4be7-a278-b74322fdf21a"
+          ]
+        },
+        "course_code": {
+          "type": "string",
+          "minLength": 1,
+          "maxLength": 20,
+          "description": "Código do curso",
+          "examples": [
+            "4646B"
+          ]
+        },
+        "admission_term": {
+          "type": "string",
+          "pattern": "^[0-9]{4}/[12]$",
+          "maxLength": 6,
+          "description": "Período de ingresso (AAAA/S)",
+          "examples": [
+            "2024/1"
+          ]
+        },
+        "status": {
+          "type": "string",
+          "enum": [
+            "active",
+            "suspended",
+            "graduated",
+            "cancelled",
+            "transferred"
+          ],
+          "description": "Situação do vínculo",
+          "examples": [
+            "active"
+          ]
+        },
+        "start_date": {
+          "type": "string",
+          "format": "date",
+          "examples": [
+            "2024-03-04"
+          ]
+        },
+        "end_date": {
+          "type": [
+            "string",
+            "null"
+          ],
+          "format": "date",
+          "description": "Deve ser igual ou posterior a start_date; null se o vínculo está em aberto",
+          "examples": [
+            null
+          ]
+        }
+      },
+      "required": [
+        "id",
+        "enabled",
+        "student_id",
+        "course_code",
+        "admission_term",
+        "status",
+        "start_date",
+        "end_date"
+      ],
+      "additionalProperties": false
+    },
+    "AcademicEnrollmentPatch": {
+      "title": "AcademicEnrollmentPatch",
+      "description": "Corpo de PATCH /students/{id}/enrollments/{enrollmentId}: qualquer subconjunto dos atributos.",
+      "type": "object",
+      "properties": {
+        "course_code": {
+          "type": "string",
+          "minLength": 1,
+          "maxLength": 20,
+          "description": "Código do curso",
+          "examples": [
+            "4646B"
+          ]
+        },
+        "admission_term": {
+          "type": "string",
+          "pattern": "^[0-9]{4}/[12]$",
+          "maxLength": 6,
+          "description": "Período de ingresso (AAAA/S)",
+          "examples": [
+            "2024/1"
+          ]
+        },
+        "status": {
+          "type": "string",
+          "enum": [
+            "active",
+            "suspended",
+            "graduated",
+            "cancelled",
+            "transferred"
+          ],
+          "description": "Situação do vínculo",
+          "examples": [
+            "active"
+          ]
+        },
+        "start_date": {
+          "type": "string",
+          "format": "date",
+          "examples": [
+            "2024-03-04"
+          ]
+        },
+        "end_date": {
+          "type": [
+            "string",
+            "null"
+          ],
+          "format": "date",
+          "description": "Deve ser igual ou posterior a start_date; null se o vínculo está em aberto",
+          "examples": [
+            null
+          ]
+        }
+      },
+      "minProperties": 1,
+      "additionalProperties": false
+    },
+    "AcademicEnrollmentRequest": {
+      "title": "AcademicEnrollmentRequest",
+      "description": "Corpo de POST /students/{id}/enrollments e PUT /students/{id}/enrollments/{enrollmentId}.",
+      "type": "object",
+      "properties": {
+        "course_code": {
+          "type": "string",
+          "minLength": 1,
+          "maxLength": 20,
+          "description": "Código do curso",
+          "examples": [
+            "4646B"
+          ]
+        },
+        "admission_term": {
+          "type": "string",
+          "pattern": "^[0-9]{4}/[12]$",
+          "maxLength": 6,
+          "description": "Período de ingresso (AAAA/S)",
+          "examples": [
+            "2024/1"
+          ]
+        },
+        "status": {
+          "type": "string",
+          "enum": [
+            "active",
+            "suspended",
+            "graduated",
+            "cancelled",
+            "transferred"
+          ],
+          "description": "Situação do vínculo",
+          "examples": [
+            "active"
+          ]
+        },
+        "start_date": {
+          "type": "string",
+          "format": "date",
+          "examples": [
+            "2024-03-04"
+          ]
+        },
+        "end_date": {
+          "type": [
+            "string",
+            "null"
+          ],
+          "format": "date",
+          "description": "Deve ser igual ou posterior a start_date; null se o vínculo está em aberto",
+          "examples": [
+            null
+          ]
+        }
+      },
+      "required": [
+        "course_code",
+        "admission_term",
+        "status",
+        "start_date"
+      ],
+      "additionalProperties": false
+    }
+  }
+}
