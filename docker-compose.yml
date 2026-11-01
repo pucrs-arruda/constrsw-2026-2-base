@@ -9,6 +9,8 @@ volumes:
   # No terminal, criar o volume externo: docker volume create constrsw-keycloak-data
   constrsw-keycloak-data:
     external: true
+  # PostgreSQL cras_classes data
+  constrsw-classes-db-data:
 
 services:
 
@@ -144,4 +146,55 @@ services:
       timeout: 5s
       retries: 5
       start_period: 20s
+    restart: always
+
+  # PostgreSQL - cras_classes
+  postgres-classes:
+    container_name: postgres-classes
+    image: postgres:18-alpine
+    environment:
+      - POSTGRES_DB=${CLASSES_DB_NAME}
+      - POSTGRES_USER=${CLASSES_DB_USER}
+      - POSTGRES_PASSWORD=${CLASSES_DB_PASSWORD}
+    volumes:
+      - constrsw-classes-db-data:/var/lib/postgresql/data
+    networks:
+      - constrsw
+    ports:
+      - "${CLASSES_DB_PORT}:5432"
+    healthcheck:
+      test: ["CMD-SHELL", "pg_isready -U ${CLASSES_DB_USER} -d ${CLASSES_DB_NAME}"]
+      interval: 10s
+      timeout: 5s
+      retries: 5
+      start_period: 10s
+    restart: always
+
+  # Classes Domain Service
+  classes:
+    container_name: classes
+    build:
+      context: ./backend/classes
+      dockerfile: Dockerfile
+    image: constrsw/classes
+    environment:
+      - DATABASE_URL=${CLASSES_DATABASE_URL}
+      - DATABASE_USERNAME=${CLASSES_DB_USER}
+      - DATABASE_PASSWORD=${CLASSES_DB_PASSWORD}
+      - KEYCLOAK_JWKS_URL=${KEYCLOAK_JWKS_URL}
+      - BFF_ORIGIN=${BFF_ORIGIN}
+      - CLASSES_INTERNAL_API_PORT=${CLASSES_INTERNAL_API_PORT}
+    ports:
+      - "${CLASSES_EXTERNAL_API_PORT}:${CLASSES_INTERNAL_API_PORT}"
+    networks:
+      - constrsw
+    depends_on:
+      postgres-classes:
+        condition: service_healthy
+    healthcheck:
+      test: ["CMD-SHELL", "wget -qO- http://127.0.0.1:${CLASSES_INTERNAL_API_PORT}/health || exit 1"]
+      interval: 15s
+      timeout: 5s
+      retries: 5
+      start_period: 25s
     restart: always
