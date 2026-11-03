@@ -53,3 +53,28 @@ docker compose -f docker-compose.yml -f backend/oauth/docker-compose.prometheus.
 - OAuth metrics: <http://localhost:8381/actuator/prometheus>
 
 See the [OAuth API README](https://github.com/pucrs-constrsw-2026-2/oauth/blob/grupo02/README.md) for metric details, endpoint examples, and configuration options.
+
+## Lessons (grupo 02)
+
+O Compose raiz inclui `backend/lessons/compose.lessons.yml`. Com os submódulos OAuth e
+Lessons inicializados, execute na raiz:
+
+```bash
+git submodule update --init backend/oauth backend/lessons
+docker volume create constrsw-keycloak-data
+docker compose up --build -d --wait lessons
+```
+
+Isso sobe Keycloak, OAuth, PostgreSQL e Lessons. Swagger:
+[Lessons](http://localhost:8108/swagger-ui/index.html).
+
+Para executar os testes ponta a ponta pela mesma stack:
+
+```bash
+python3 backend/lessons/scripts/base_e2e.py --base .
+```
+
+Os clientes HTTP de classes, itens do plano de ensino e reservas de sala dependem dos
+contratos dos outros grupos. Os testes ponta a ponta usam fixtures apenas nessas três
+APIs; Keycloak, OAuth, PostgreSQL e Lessons são reais. Configuração e limitações estão em
+[integrações Lessons](backend/lessons/docs/integrations.md).

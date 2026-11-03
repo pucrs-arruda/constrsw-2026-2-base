@@ -1,3 +1,8 @@
+# Lessons is maintained in its submodule; all services start from this root file.
+include:
+  - path: backend/lessons/compose.lessons.yml
+    project_directory: .
+
 # Builds: cada serviço com `build:` compila/embalagem apenas no Dockerfile (não usar artefatos de build da máquina host no lugar do build da imagem). Ver README.md na raiz.
 networks:
   constrsw:
