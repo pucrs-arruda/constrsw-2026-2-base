@@ -1,36 +1,36 @@
 [submodule "backend/oauth"]
 	path = backend/oauth
-	url = https://github.com/pucrs-constrsw-2026-2/oauth.git
+	url = https://github.com/pucrs-arruda/constrsw-2026-2-oauth.git
 [submodule "backend/classes"]
 	path = backend/classes
-	url = https://github.com/pucrs-constrsw-2026-2/classes.git
+	url = https://github.com/pucrs-arruda/constrsw-2026-2-classes.git
 [submodule "backend/lessons"]
 	path = backend/lessons
-	url = https://github.com/pucrs-constrsw-2026-2/lessons.git
+	url = https://github.com/pucrs-arruda/constrsw-2026-2-lessons.git
 [submodule "backend/reservations"]
 	path = backend/reservations
-	url = https://github.com/pucrs-constrsw-2026-2/reservations.git
+	url = https://github.com/pucrs-arruda/constrsw-2026-2-reservations.git
 [submodule "backend/students"]
 	path = backend/students
-	url = https://github.com/pucrs-constrsw-2026-2/students.git
+	url = https://github.com/pucrs-arruda/constrsw-2026-2-students.git
 [submodule "backend/courses"]
 	path = backend/courses
-	url = https://github.com/pucrs-constrsw-2026-2/courses.git
+	url = https://github.com/pucrs-arruda/constrsw-2026-2-courses.git
 [submodule "backend/resources"]
 	path = backend/resources
-	url = https://github.com/pucrs-constrsw-2026-2/resources.git
+	url = https://github.com/pucrs-arruda/constrsw-2026-2-resources.git
 [submodule "backend/professors"]
 	path = backend/professors
-	url = https://github.com/pucrs-constrsw-2026-2/professors.git
+	url = https://github.com/pucrs-arruda/constrsw-2026-2-professors.git
 [submodule "backend/rooms"]
 	path = backend/rooms
-	url = https://github.com/pucrs-constrsw-2026-2/rooms.git
+	url = https://github.com/pucrs-arruda/constrsw-2026-2-rooms.git
 [submodule "backend/employees"]
 	path = backend/employees
-	url = https://github.com/pucrs-constrsw-2026-2/employees.git
+	url = https://github.com/pucrs-arruda/constrsw-2026-2-employees.git
 [submodule "backend/bff"]
 	path = backend/bff
-	url = https://github.com/pucrs-constrsw-2026-2/bff.git
+	url = https://github.com/pucrs-arruda/constrsw-2026-2-bff.git
 [submodule "frontend"]
 	path = frontend
-	url = https://github.com/pucrs-constrsw-2026-2/frontend.git
+	url = https://github.com/pucrs-arruda/constrsw-2026-2-frontend.git

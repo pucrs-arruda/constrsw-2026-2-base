@@ -1,0 +1,1128 @@
+openapi: 3.1.0
+jsonSchemaDialect: https://json-schema.org/draft/2020-12/schema
+info:
+  title: Lessons API — Aulas e Tópicos da Aula
+  version: 1.0.0
+  description: |
+    Contrato proposto do Grupo 02 para a segunda entrega do T2 de Construção de Software. Banco previsto: PostgreSQL. Toda aula pertence a uma turma externa (API classes), ocupa uma data e uma faixa da grade canônica e possui 0..* tópicos. A sala efetiva é derivada pelo servidor. A existência da turma e do item do plano, a unicidade turma+data+faixa, a propriedade dos tópicos e as permissões por papel devem ser garantidas pelo backend; JSON Schema valida apenas a estrutura. A API ainda não foi implementada nesta entrega. Use Accept: application/json e, nas escritas, Content-Type: application/json. O token Bearer é obtido no serviço de autenticação do projeto.
+
+    ## Exclusão lógica
+
+    Todas as exclusões são lógicas e controladas pelo atributo `enabled` das classes. Um `DELETE` não remove o registro do banco: apenas define `enabled=false`. O atributo é somente leitura (`readOnly`): nasce `true` e não pode ser enviado pelo cliente.
+
+    Registros com `enabled=false` não aparecem nas listagens, a consulta por id responde `404` e não podem ser alterados nem excluídos novamente (`404`).
+servers:
+- url: '{baseUrl}/api/v1'
+  description: Origem configurável; localhost:8108 é a porta prevista para lessons na arquitetura do projeto.
+  variables:
+    baseUrl:
+      default: http://localhost:8108
+      description: Origem da API lessons, sem /api/v1 no final.
+tags:
+- name: Lessons
+  description: 'Recurso principal: encontro datado de uma turma.'
+- name: Lesson topics
+  description: Coleção secundária pertencente a uma aula.
+security:
+- bearerAuth: []
+paths:
+  /lessons:
+    post:
+      tags:
+      - Lessons
+      operationId: createLesson
+      summary: Criar aula avulsa da turma
+      description: Cria uma aula da turma em uma data e faixa, opcionalmente com tópicos, na mesma transação. Valida a 
+        turma pela API classes; a data deve estar no período da turma e cair de segunda a sábado. Retorna 409 se a turma
+        já tiver aula nessa data e faixa. O servidor deriva effectiveRoomId.
+      responses:
+        '201':
+          description: Aula criada com seus tópicos.
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Lesson'
+              examples:
+                example:
+                  value: &id001
+                    id: 6f1c2a9e-3b7d-4c51-9a2e-8d4f0b1c7e35
+                    enabled: true
+                    classId: b3e8f0d2-71a4-4c9e-8f25-3d6a9c0e1f47
+                    date: '2026-11-05'
+                    timeSlotId: H
+                    modality: IN_PERSON
+                    hasAssessment: false
+                    effectiveRoomId: d9a4c3b1-5e2f-4a78-9c60-1b7e2f8a4d93
+                    topics: &id003
+                    - &id004
+                      id: 0c7d5e2a-9b14-4f3e-a861-5c2b7d9e0f18
+                      enabled: true
+                      lessonId: 6f1c2a9e-3b7d-4c51-9a2e-8d4f0b1c7e35
+                      order: 1
+                      syllabusItemId: 8e2b6f41-c3d7-4a95-b0e8-7f1a4c6d2b59
+                      statement: Introdução a contratos OpenAPI 3.1.
+                    - &id006
+                      id: 5a3e9c17-2d84-4b6f-9e01-7c4d8b2a6f30
+                      enabled: true
+                      lessonId: 6f1c2a9e-3b7d-4c51-9a2e-8d4f0b1c7e35
+                      order: 2
+                      statement: Exercício de modelagem de filtros.
+          headers:
+            Location:
+              description: URI do recurso criado.
+              schema:
+                type: string
+                format: uri-reference
+              example: /api/v1/lessons/6f1c2a9e-3b7d-4c51-9a2e-8d4f0b1c7e35
+        '400':
+          $ref: '#/components/responses/Error400'
+        '401':
+          $ref: '#/components/responses/Error401'
+        '403':
+          $ref: '#/components/responses/Error403'
+        '409':
+          $ref: '#/components/responses/Error409'
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/LessonCreate'
+            examples:
+              example:
+                value:
+                  classId: b3e8f0d2-71a4-4c9e-8f25-3d6a9c0e1f47
+                  date: '2026-11-05'
+                  timeSlotId: H
+                  modality: IN_PERSON
+                  hasAssessment: false
+                  topics:
+                  - &id005
+                    order: 1
+                    syllabusItemId: 8e2b6f41-c3d7-4a95-b0e8-7f1a4c6d2b59
+                    statement: Introdução a contratos OpenAPI 3.1.
+    get:
+      tags:
+      - Lessons
+      operationId: listLessons
+      summary: Listar ou filtrar aulas
+      description: Combina filtros com AND; sem operador explícito aplica igualdade. Sem filtros, uma coleção vazia 
+        retorna 200 com []. Com filtros sem correspondência, retorna 404, seguindo o exemplo do Moodle. Filtros 
+        desconhecidos ou operadores inválidos retornam 400. Não há paginação nesta entrega.
+      responses:
+        '200':
+          description: Lista de aulas com seus tópicos e sala efetiva.
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/LessonList'
+              examples:
+                example:
+                  value:
+                  - &id002
+                    id: 2b7f4d91-8c3e-4a16-b5d0-9e6a1f3c8b24
+                    enabled: true
+                    classId: b3e8f0d2-71a4-4c9e-8f25-3d6a9c0e1f47
+                    date: '2026-11-03'
+                    timeSlotId: H
+                    modality: IN_PERSON
+                    hasAssessment: false
+                    effectiveRoomId: d9a4c3b1-5e2f-4a78-9c60-1b7e2f8a4d93
+                    topics: []
+                  - *id001
+        '400':
+          $ref: '#/components/responses/Error400'
+        '401':
+          $ref: '#/components/responses/Error401'
+        '403':
+          $ref: '#/components/responses/Error403'
+        '404':
+          $ref: '#/components/responses/Error404'
+      parameters:
+      - $ref: '#/components/parameters/ClassIdFilter'
+      - $ref: '#/components/parameters/DateFilter'
+      - $ref: '#/components/parameters/TimeSlotIdFilter'
+      - $ref: '#/components/parameters/ModalityFilter'
+      - $ref: '#/components/parameters/HasAssessmentFilter'
+  /lessons/generate:
+    post:
+      tags:
+      - Lessons
+      operationId: generateLessons
+      summary: Gerar aulas a partir do esqueleto da turma
+      description: Chamado somente pela API classes após confirmar a abertura da turma. Lê a turma (período e 
+        WeeklySlot) e cria uma aula IN_PERSON, sem avaliação e sem tópicos, para cada par (dia, faixa) entre o início e 
+        o fim do período; feriados não são excluídos. Operação atômica. Retorna 409 se a turma já possuir aulas geradas.
+      responses:
+        '201':
+          description: Aulas geradas, em ordem de data e faixa.
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/LessonList'
+              examples:
+                example:
+                  value:
+                  - *id002
+        '400':
+          $ref: '#/components/responses/Error400'
+        '401':
+          $ref: '#/components/responses/Error401'
+        '403':
+          $ref: '#/components/responses/Error403'
+        '409':
+          $ref: '#/components/responses/Error409'
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/LessonGenerate'
+            examples:
+              example:
+                value:
+                  classId: b3e8f0d2-71a4-4c9e-8f25-3d6a9c0e1f47
+  /lessons/{lessonId}:
+    parameters:
+    - $ref: '#/components/parameters/LessonId'
+    get:
+      tags:
+      - Lessons
+      operationId: getLesson
+      summary: Consultar aula por ID
+      description: Retorna a aula com tópicos e sala efetiva já resolvida.
+      responses:
+        '200':
+          description: Aula completa.
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Lesson'
+              examples:
+                example:
+                  value: *id001
+        '400':
+          $ref: '#/components/responses/Error400'
+        '401':
+          $ref: '#/components/responses/Error401'
+        '403':
+          $ref: '#/components/responses/Error403'
+        '404':
+          $ref: '#/components/responses/Error404'
+    put:
+      tags:
+      - Lessons
+      operationId: replaceLesson
+      summary: Substituir campos editáveis da aula
+      description: Substitui `modality` e `hasAssessment`. `classId`, `date` e `timeSlotId` são imutáveis e não podem 
+        ser enviados. Preserva IDs e a coleção de tópicos. Somente professor atribuído à turma.
+      responses:
+        '200':
+          description: Aula completa após substituição.
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Lesson'
+              examples:
+                example:
+                  value:
+                    id: 6f1c2a9e-3b7d-4c51-9a2e-8d4f0b1c7e35
+                    enabled: true
+                    classId: b3e8f0d2-71a4-4c9e-8f25-3d6a9c0e1f47
+                    date: '2026-11-05'
+                    timeSlotId: H
+                    modality: IN_PERSON
+                    hasAssessment: true
+                    effectiveRoomId: d9a4c3b1-5e2f-4a78-9c60-1b7e2f8a4d93
+                    topics: *id003
+        '400':
+          $ref: '#/components/responses/Error400'
+        '401':
+          $ref: '#/components/responses/Error401'
+        '403':
+          $ref: '#/components/responses/Error403'
+        '404':
+          $ref: '#/components/responses/Error404'
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/LessonUpdate'
+            examples:
+              example:
+                value:
+                  modality: IN_PERSON
+                  hasAssessment: true
+    patch:
+      tags:
+      - Lessons
+      operationId: patchLesson
+      summary: Alterar parcialmente a aula
+      description: Objeto JSON com ao menos um campo editável. Campos omitidos permanecem inalterados. Não é JSON Patch 
+        nem JSON Merge Patch; null, campos imutáveis e alterações diretas na coleção não são aceitos. Mudar para REMOTE 
+        remove effectiveRoomId da resposta.
+      responses:
+        '200':
+          description: Aula completa após alteração.
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Lesson'
+              examples:
+                example:
+                  value:
+                    id: 6f1c2a9e-3b7d-4c51-9a2e-8d4f0b1c7e35
+                    enabled: true
+                    classId: b3e8f0d2-71a4-4c9e-8f25-3d6a9c0e1f47
+                    date: '2026-11-05'
+                    timeSlotId: H
+                    modality: IN_PERSON
+                    hasAssessment: true
+                    effectiveRoomId: d9a4c3b1-5e2f-4a78-9c60-1b7e2f8a4d93
+                    topics: *id003
+        '400':
+          $ref: '#/components/responses/Error400'
+        '401':
+          $ref: '#/components/responses/Error401'
+        '403':
+          $ref: '#/components/responses/Error403'
+        '404':
+          $ref: '#/components/responses/Error404'
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/LessonPatch'
+            examples:
+              example:
+                value:
+                  hasAssessment: true
+    delete:
+      tags:
+      - Lessons
+      operationId: deleteLesson
+      summary: Excluir aula e seus tópicos (exclusão lógica)
+      description: 'Exclusão lógica: define `enabled=false` na aula e em todos os seus tópicos, na mesma transação; nada é
+        removido do banco. Retorna 409 se houver reserva vinculada à aula (com `enabled=true`) na API reservations.'
+      responses:
+        '204':
+          description: Aula e seus tópicos excluídos logicamente (`enabled=false`); sem corpo.
+        '400':
+          $ref: '#/components/responses/Error400'
+        '401':
+          $ref: '#/components/responses/Error401'
+        '403':
+          $ref: '#/components/responses/Error403'
+        '404':
+          $ref: '#/components/responses/Error404'
+        '409':
+          $ref: '#/components/responses/Error409'
+  /lessons/{lessonId}/topics:
+    parameters:
+    - $ref: '#/components/parameters/LessonId'
+    post:
+      tags:
+      - Lesson topics
+      operationId: createLessonTopic
+      summary: Adicionar tópico à aula
+      description: O servidor atribui o ID e o vínculo à aula do path. Retorna 409 se a ordem já estiver em uso na aula.
+        Valida syllabusItemId pela API courses quando informado.
+      responses:
+        '201':
+          description: Tópico criado.
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/LessonTopic'
+              examples:
+                example:
+                  value: *id004
+          headers:
+            Location:
+              description: URI do recurso criado.
+              schema:
+                type: string
+                format: uri-reference
+              example: /api/v1/lessons/6f1c2a9e-3b7d-4c51-9a2e-8d4f0b1c7e35/topics/0c7d5e2a-9b14-4f3e-a861-5c2b7d9e0f18
+        '400':
+          $ref: '#/components/responses/Error400'
+        '401':
+          $ref: '#/components/responses/Error401'
+        '403':
+          $ref: '#/components/responses/Error403'
+        '404':
+          $ref: '#/components/responses/Error404'
+        '409':
+          $ref: '#/components/responses/Error409'
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/LessonTopicCreate'
+            examples:
+              example:
+                value: *id005
+    get:
+      tags:
+      - Lesson topics
+      operationId: listLessonTopics
+      summary: Listar ou filtrar tópicos da aula
+      description: Checa a existência da aula antes da busca. Combina filtros com AND e limita o resultado aos tópicos 
+        dessa aula, ordenados por `order`. Com filtros sem correspondência, retorna 404. Sem paginação; atributos ou 
+        operadores desconhecidos geram 400.
+      responses:
+        '200':
+          description: Tópicos da aula que atendem aos filtros.
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/LessonTopicList'
+              examples:
+                example:
+                  value:
+                  - *id004
+                  - *id006
+        '400':
+          $ref: '#/components/responses/Error400'
+        '401':
+          $ref: '#/components/responses/Error401'
+        '403':
+          $ref: '#/components/responses/Error403'
+        '404':
+          $ref: '#/components/responses/Error404'
+      parameters:
+      - $ref: '#/components/parameters/OrderFilter'
+      - $ref: '#/components/parameters/StatementFilter'
+      - $ref: '#/components/parameters/SyllabusItemIdFilter'
+  /lessons/{lessonId}/topics/{topicId}:
+    parameters:
+    - $ref: '#/components/parameters/LessonId'
+    - $ref: '#/components/parameters/TopicId'
+    get:
+      tags:
+      - Lesson topics
+      operationId: getLessonTopic
+      summary: Consultar tópico da aula
+      description: Retorna 404 se a aula não existir, se o tópico não existir ou se pertencer a outra aula.
+      responses:
+        '200':
+          description: Tópico completo.
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/LessonTopic'
+              examples:
+                example:
+                  value: *id004
+        '400':
+          $ref: '#/components/responses/Error400'
+        '401':
+          $ref: '#/components/responses/Error401'
+        '403':
+          $ref: '#/components/responses/Error403'
+        '404':
+          $ref: '#/components/responses/Error404'
+    put:
+      tags:
+      - Lesson topics
+      operationId: replaceLessonTopic
+      summary: Substituir tópico da aula
+      description: Checa o vínculo com a aula do path. Substitui os dados editáveis e remove opcionais omitidos, 
+        mantendo ao menos `syllabusItemId` ou `statement`. Preserva id e lessonId; ordem repetida retorna 409.
+      responses:
+        '200':
+          description: Tópico completo após substituição.
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/LessonTopic'
+              examples:
+                example:
+                  value:
+                    id: 0c7d5e2a-9b14-4f3e-a861-5c2b7d9e0f18
+                    enabled: true
+                    lessonId: 6f1c2a9e-3b7d-4c51-9a2e-8d4f0b1c7e35
+                    order: 1
+                    syllabusItemId: 8e2b6f41-c3d7-4a95-b0e8-7f1a4c6d2b59
+                    statement: Contratos OpenAPI 3.1 e JSON Schema.
+        '400':
+          $ref: '#/components/responses/Error400'
+        '401':
+          $ref: '#/components/responses/Error401'
+        '403':
+          $ref: '#/components/responses/Error403'
+        '404':
+          $ref: '#/components/responses/Error404'
+        '409':
+          $ref: '#/components/responses/Error409'
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/LessonTopicUpdate'
+            examples:
+              example:
+                value:
+                  order: 1
+                  syllabusItemId: 8e2b6f41-c3d7-4a95-b0e8-7f1a4c6d2b59
+                  statement: Contratos OpenAPI 3.1 e JSON Schema.
+    patch:
+      tags:
+      - Lesson topics
+      operationId: patchLessonTopic
+      summary: Alterar parcialmente o tópico
+      description: Checa o vínculo com a aula do path. Objeto JSON com ao menos um atributo editável; omissões preservam
+        valores. null e alterações de id ou lessonId não são aceitos. Ordem repetida retorna 409.
+      responses:
+        '200':
+          description: Tópico completo após alteração.
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/LessonTopic'
+              examples:
+                example:
+                  value:
+                    id: 0c7d5e2a-9b14-4f3e-a861-5c2b7d9e0f18
+                    enabled: true
+                    lessonId: 6f1c2a9e-3b7d-4c51-9a2e-8d4f0b1c7e35
+                    order: 1
+                    syllabusItemId: 8e2b6f41-c3d7-4a95-b0e8-7f1a4c6d2b59
+                    statement: Revisão de JSON Schema 2020-12.
+        '400':
+          $ref: '#/components/responses/Error400'
+        '401':
+          $ref: '#/components/responses/Error401'
+        '403':
+          $ref: '#/components/responses/Error403'
+        '404':
+          $ref: '#/components/responses/Error404'
+        '409':
+          $ref: '#/components/responses/Error409'
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/LessonTopicPatch'
+            examples:
+              example:
+                value:
+                  statement: Revisão de JSON Schema 2020-12.
+    delete:
+      tags:
+      - Lesson topics
+      operationId: deleteLessonTopic
+      summary: Excluir tópico da aula (exclusão lógica)
+      description: 'Checa o vínculo com a aula do path. Exclusão lógica: define `enabled=false` no tópico. Uma aula pode ficar
+        sem tópicos ativos.'
+      responses:
+        '204':
+          description: Tópico excluído logicamente (`enabled=false`); sem corpo.
+        '400':
+          $ref: '#/components/responses/Error400'
+        '401':
+          $ref: '#/components/responses/Error401'
+        '403':
+          $ref: '#/components/responses/Error403'
+        '404':
+          $ref: '#/components/responses/Error404'
+components:
+  securitySchemes:
+    bearerAuth:
+      type: http
+      scheme: bearer
+      bearerFormat: JWT
+      description: Token válido emitido pelo Keycloak/serviço OAuth do projeto.
+  schemas:
+    LessonTopicCreate:
+      type: object
+      additionalProperties: false
+      properties:
+        order:
+          type: integer
+          minimum: 1
+          maximum: 32767
+          description: Posição do tópico na aula; única por aula.
+        syllabusItemId:
+          type: string
+          format: uuid
+          description: Item do plano de ensino (SyllabusItem da API courses) abordado no tópico.
+        statement:
+          type: string
+          minLength: 1
+          pattern: \S
+          maxLength: 500
+          description: Enunciado extra do tópico.
+      required:
+      - order
+      anyOf:
+      - required:
+        - syllabusItemId
+      - required:
+        - statement
+      description: Novo tópico da aula indicada no path; exige `syllabusItemId` e/ou `statement`. id e lessonId são 
+        definidos pelo servidor.
+      title: LessonTopicCreate
+    LessonTopicUpdate:
+      type: object
+      additionalProperties: false
+      properties:
+        order:
+          type: integer
+          minimum: 1
+          maximum: 32767
+          description: Posição do tópico na aula; única por aula.
+        syllabusItemId:
+          type: string
+          format: uuid
+          description: Item do plano de ensino (SyllabusItem da API courses) abordado no tópico.
+        statement:
+          type: string
+          minLength: 1
+          pattern: \S
+          maxLength: 500
+          description: Enunciado extra do tópico.
+      required:
+      - order
+      anyOf:
+      - required:
+        - syllabusItemId
+      - required:
+        - statement
+      description: Substitui os campos do tópico. Opcionais omitidos são removidos, mas ao menos um entre 
+        `syllabusItemId` e `statement` deve permanecer; IDs são imutáveis.
+      title: LessonTopicUpdate
+    LessonTopicPatch:
+      type: object
+      additionalProperties: false
+      properties:
+        order:
+          type: integer
+          minimum: 1
+          maximum: 32767
+          description: Posição do tópico na aula; única por aula.
+        syllabusItemId:
+          type: string
+          format: uuid
+          description: Item do plano de ensino (SyllabusItem da API courses) abordado no tópico.
+        statement:
+          type: string
+          minLength: 1
+          pattern: \S
+          maxLength: 500
+          description: Enunciado extra do tópico.
+      description: Altera somente os campos informados. Campos omitidos permanecem inalterados; null não é aceito.
+      minProperties: 1
+      title: LessonTopicPatch
+    LessonTopic:
+      type: object
+      additionalProperties: false
+      properties:
+        id:
+          type: string
+          format: uuid
+          readOnly: true
+        enabled:
+          type: boolean
+          readOnly: true
+          default: true
+          description: 'Exclusão lógica: true para registro ativo; false para registro excluído logicamente. Controlado pelo
+            servidor.'
+        lessonId:
+          type: string
+          format: uuid
+          readOnly: true
+        order:
+          type: integer
+          minimum: 1
+          maximum: 32767
+          description: Posição do tópico na aula; única por aula.
+        syllabusItemId:
+          type: string
+          format: uuid
+          description: Item do plano de ensino (SyllabusItem da API courses) abordado no tópico.
+        statement:
+          type: string
+          minLength: 1
+          pattern: \S
+          maxLength: 500
+          description: Enunciado extra do tópico.
+      required:
+      - id
+      - enabled
+      - lessonId
+      - order
+      anyOf:
+      - required:
+        - syllabusItemId
+      - required:
+        - statement
+      title: LessonTopic
+    LessonCreate:
+      type: object
+      additionalProperties: false
+      properties:
+        classId:
+          type: string
+          format: uuid
+          description: Turma (API classes) à qual a aula pertence. Imutável após a criação.
+        date:
+          type: string
+          format: date
+          pattern: ^[0-9]{4}-(?:0[1-9]|1[0-2])-(?:0[1-9]|[12][0-9]|3[01])$
+          description: Data da aula (YYYY-MM-DD), de segunda a sábado. Imutável após a criação.
+        timeSlotId:
+          type: string
+          enum:
+          - A
+          - B
+          - C
+          - D
+          - E
+          - F
+          - G
+          - H
+          - I
+          - J
+          - K
+          - L
+          - M
+          - N
+          - P
+          description: Código da faixa da grade canônica (A–E, F–N, P). Nunca horário solto. Imutável após a criação.
+        modality:
+          type: string
+          enum:
+          - IN_PERSON
+          - REMOTE
+          default: IN_PERSON
+        hasAssessment:
+          type: boolean
+          description: Indica que a aula possui avaliação.
+          default: false
+        topics:
+          type: array
+          items:
+            $ref: '#/components/schemas/LessonTopicCreate'
+      required:
+      - classId
+      - date
+      - timeSlotId
+      description: Criação avulsa de uma aula da turma, opcionalmente com tópicos, na mesma transação. A criação em 
+        massa a partir do esqueleto usa POST /lessons/generate.
+      title: LessonCreate
+    LessonUpdate:
+      type: object
+      additionalProperties: false
+      properties:
+        modality:
+          type: string
+          enum:
+          - IN_PERSON
+          - REMOTE
+        hasAssessment:
+          type: boolean
+          description: Indica que a aula possui avaliação.
+      required:
+      - modality
+      - hasAssessment
+      description: Substitui os campos editáveis da aula. `classId`, `date` e `timeSlotId` são imutáveis; a coleção de 
+        tópicos é preservada e tem rotas próprias.
+      title: LessonUpdate
+    LessonPatch:
+      type: object
+      additionalProperties: false
+      properties:
+        modality:
+          type: string
+          enum:
+          - IN_PERSON
+          - REMOTE
+        hasAssessment:
+          type: boolean
+          description: Indica que a aula possui avaliação.
+      description: Altera somente os campos editáveis informados; tópicos são gerenciados nas rotas secundárias. Campos 
+        omitidos são preservados; null não é aceito.
+      minProperties: 1
+      title: LessonPatch
+    Lesson:
+      type: object
+      additionalProperties: false
+      properties:
+        id:
+          type: string
+          format: uuid
+          readOnly: true
+        enabled:
+          type: boolean
+          readOnly: true
+          default: true
+          description: 'Exclusão lógica: true para registro ativo; false para registro excluído logicamente. Controlado pelo
+            servidor.'
+        classId:
+          type: string
+          format: uuid
+          description: Turma (API classes) à qual a aula pertence. Imutável após a criação.
+        date:
+          type: string
+          format: date
+          pattern: ^[0-9]{4}-(?:0[1-9]|1[0-2])-(?:0[1-9]|[12][0-9]|3[01])$
+          description: Data da aula (YYYY-MM-DD), de segunda a sábado. Imutável após a criação.
+        timeSlotId:
+          type: string
+          enum:
+          - A
+          - B
+          - C
+          - D
+          - E
+          - F
+          - G
+          - H
+          - I
+          - J
+          - K
+          - L
+          - M
+          - N
+          - P
+          description: Código da faixa da grade canônica (A–E, F–N, P). Nunca horário solto. Imutável após a criação.
+        modality:
+          type: string
+          enum:
+          - IN_PERSON
+          - REMOTE
+        hasAssessment:
+          type: boolean
+          description: Indica que a aula possui avaliação.
+        effectiveRoomId:
+          type: string
+          format: uuid
+          readOnly: true
+          description: 'Sala efetiva (API rooms), derivada pelo servidor: linha SALA da reserva da aula ou, se não houver,
+            a sala padrão da turma. Ausente quando a aula é REMOTE.'
+        topics:
+          type: array
+          items:
+            $ref: '#/components/schemas/LessonTopic'
+          description: Tópicos da aula ordenados por `order`; pode ser vazia.
+      required:
+      - id
+      - enabled
+      - classId
+      - date
+      - timeSlotId
+      - modality
+      - hasAssessment
+      - topics
+      if:
+        properties:
+          modality:
+            const: REMOTE
+        required:
+        - modality
+      then:
+        not:
+          required:
+          - effectiveRoomId
+      else:
+        required:
+        - effectiveRoomId
+      title: Lesson
+    LessonList:
+      type: array
+      items:
+        $ref: '#/components/schemas/Lesson'
+      title: LessonList
+    LessonGenerate:
+      type: object
+      additionalProperties: false
+      properties:
+        classId:
+          type: string
+          format: uuid
+          description: Turma confirmada (API classes) cujo esqueleto (WeeklySlot) gera as aulas.
+      required:
+      - classId
+      description: Solicita a geração de uma aula por par (dia da semana, faixa) do esqueleto, entre o início e o fim do
+        período da turma. Chamado somente pela API classes após confirmar a turma.
+      title: LessonGenerate
+    LessonTopicList:
+      type: array
+      items:
+        $ref: '#/components/schemas/LessonTopic'
+      title: LessonTopicList
+    ApiError:
+      type: object
+      additionalProperties: false
+      properties:
+        error_code:
+          type: string
+          minLength: 1
+          pattern: \S
+        error_description:
+          type: string
+          minLength: 1
+          pattern: \S
+        error_source:
+          type: string
+          minLength: 1
+          pattern: \S
+        error_stack:
+          type: array
+          items:
+            type: object
+            additionalProperties: false
+            properties:
+              error_code:
+                type: string
+                minLength: 1
+                pattern: \S
+              error_description:
+                type: string
+                minLength: 1
+                pattern: \S
+              error_source:
+                type: string
+                minLength: 1
+                pattern: \S
+            required:
+            - error_code
+            - error_description
+            - error_source
+      required:
+      - error_code
+      - error_description
+      - error_source
+      - error_stack
+      description: Formato de erro do projeto; a pilha contém descrições de domínio sanitizadas, sem credenciais ou 
+        stack traces internos.
+      title: ApiError
+  parameters:
+    LessonId:
+      name: lessonId
+      in: path
+      required: true
+      description: UUID da aula.
+      schema:
+        type: string
+        format: uuid
+      example: 6f1c2a9e-3b7d-4c51-9a2e-8d4f0b1c7e35
+    TopicId:
+      name: topicId
+      in: path
+      required: true
+      description: UUID de um tópico pertencente à aula do path.
+      schema:
+        type: string
+        format: uuid
+      example: 0c7d5e2a-9b14-4f3e-a861-5c2b7d9e0f18
+    ClassIdFilter:
+      name: classId
+      in: query
+      required: false
+      description: Igualdade ou {neq} sobre o ID da turma.
+      schema:
+        type: string
+        pattern: ^(?:\{neq\})?[0-9a-fA-F]{8}-[0-9a-fA-F]{4}-[0-9a-fA-F]{4}-[0-9a-fA-F]{4}-[0-9a-fA-F]{12}$
+      examples:
+        '1':
+          value: b3e8f0d2-71a4-4c9e-8f25-3d6a9c0e1f47
+        '2':
+          value: '{neq}b3e8f0d2-71a4-4c9e-8f25-3d6a9c0e1f47'
+    DateFilter:
+      name: date
+      in: query
+      required: false
+      description: Igualdade (YYYY-MM-DD) ou comparações {neq}, {gt}, {gteq}, {lt}, {lteq}; um único operador por 
+        atributo nesta entrega.
+      schema:
+        oneOf:
+        - type: string
+          format: date
+          pattern: ^[0-9]{4}-(?:0[1-9]|1[0-2])-(?:0[1-9]|[12][0-9]|3[01])$
+        - type: string
+          pattern: ^\{(?:neq|gt|gteq|lt|lteq)\}[0-9]{4}-(?:0[1-9]|1[0-2])-(?:0[1-9]|[12][0-9]|3[01])$
+      examples:
+        '1':
+          value: '2026-11-05'
+        '2':
+          value: '{gteq}2026-11-01'
+        '3':
+          value: '{lt}2026-12-01'
+    TimeSlotIdFilter:
+      name: timeSlotId
+      in: query
+      required: false
+      description: Igualdade ou {neq} com um código da grade canônica (A–E, F–N, P).
+      schema:
+        type: string
+        pattern: ^(?:\{neq\})?[A-NP]$
+      examples:
+        '1':
+          value: H
+        '2':
+          value: '{neq}P'
+    ModalityFilter:
+      name: modality
+      in: query
+      required: false
+      description: Igualdade ou {neq} para IN_PERSON e REMOTE.
+      schema:
+        type: string
+        enum:
+        - IN_PERSON
+        - REMOTE
+        - '{neq}IN_PERSON'
+        - '{neq}REMOTE'
+      examples:
+        '1':
+          value: REMOTE
+        '2':
+          value: '{neq}REMOTE'
+    HasAssessmentFilter:
+      name: hasAssessment
+      in: query
+      required: false
+      description: true para aulas com avaliação; false para as demais.
+      schema:
+        type: boolean
+      examples:
+        '1':
+          value: true
+    OrderFilter:
+      name: order
+      in: query
+      required: false
+      description: Igualdade positiva ou comparações {neq}, {gt}, {gteq}, {lt}, {lteq}; operandos comparativos entre 0 e
+        32767, sem sinal nem zeros à esquerda.
+      schema:
+        oneOf:
+        - type: integer
+          minimum: 1
+          maximum: 32767
+        - type: string
+          pattern: 
+            ^\{(?:neq|gt|gteq|lt|lteq)\}(?:0|[1-9][0-9]{0,3}|[12][0-9]{4}|3[01][0-9]{3}|32[0-6][0-9]{2}|327[0-5][0-9]|3276[0-7])$
+      examples:
+        '1':
+          value: 1
+        '2':
+          value: '{lteq}3'
+    StatementFilter:
+      name: statement
+      in: query
+      required: false
+      description: Igualdade, {neq} ou {like}. Em {like}, % representa qualquer sequência e _ um caractere; 
+        percent-encode a URL.
+      schema:
+        oneOf:
+        - type: string
+          minLength: 1
+          pattern: ^(?!\{).*\S.*$
+          maxLength: 500
+        - type: string
+          pattern: ^\{(?:neq|like)\}.*\S.*$
+      examples:
+        '1':
+          value: Introdução a contratos OpenAPI 3.1.
+        '2':
+          value: '{like}%OpenAPI%'
+    SyllabusItemIdFilter:
+      name: syllabusItemId
+      in: query
+      required: false
+      description: Igualdade ou {neq} sobre o item do plano de ensino.
+      schema:
+        type: string
+        pattern: ^(?:\{neq\})?[0-9a-fA-F]{8}-[0-9a-fA-F]{4}-[0-9a-fA-F]{4}-[0-9a-fA-F]{4}-[0-9a-fA-F]{12}$
+      examples:
+        '1':
+          value: 8e2b6f41-c3d7-4a95-b0e8-7f1a4c6d2b59
+        '2':
+          value: '{neq}8e2b6f41-c3d7-4a95-b0e8-7f1a4c6d2b59'
+  responses:
+    Error400:
+      description: 'Requisição inválida: JSON, UUID, data, faixa, filtros ou atributos inválidos; turma ou item do plano inexistente
+        nas APIs externas. Propriedades desconhecidas e campos imutáveis também geram 400.'
+      content:
+        application/json:
+          schema:
+            $ref: '#/components/schemas/ApiError'
+          examples:
+            error:
+              value:
+                error_code: LE-400
+                error_description: 'Requisição inválida: JSON, UUID, data, faixa, filtros ou atributos inválidos; turma ou
+                  item do plano inexistente nas APIs externas. Propriedades desconhecidas e campos imutáveis também geram
+                  400.'
+                error_source: LessonsAPI
+                error_stack: []
+    Error401:
+      description: Token Bearer ausente, inválido ou expirado.
+      content:
+        application/json:
+          schema:
+            $ref: '#/components/schemas/ApiError'
+          examples:
+            error:
+              value:
+                error_code: LE-401
+                error_description: Token Bearer ausente, inválido ou expirado.
+                error_source: LessonsAPI
+                error_stack: []
+      headers:
+        WWW-Authenticate:
+          description: Desafio de autenticação Bearer.
+          schema:
+            type: string
+          example: Bearer
+    Error403:
+      description: Usuário autenticado sem permissão para esta operação (por exemplo, professor não atribuído à turma).
+      content:
+        application/json:
+          schema:
+            $ref: '#/components/schemas/ApiError'
+          examples:
+            error:
+              value:
+                error_code: LE-403
+                error_description: Usuário autenticado sem permissão para esta operação (por exemplo, professor não 
+                  atribuído à turma).
+                error_source: LessonsAPI
+                error_stack: []
+    Error404:
+      description: Aula ou tópico não encontrado; tópico não pertence à aula indicada; ou nenhum resultado para os 
+        filtros informados.
+      content:
+        application/json:
+          schema:
+            $ref: '#/components/schemas/ApiError'
+          examples:
+            error:
+              value:
+                error_code: LE-404
+                error_description: Aula ou tópico não encontrado; tópico não pertence à aula indicada; ou nenhum 
+                  resultado para os filtros informados.
+                error_source: LessonsAPI
+                error_stack: []
+    Error409:
+      description: 'Conflito com uma regra de domínio: aula da turma já existente na data e faixa, aulas já geradas para a
+        turma, ordem de tópico repetida ou aula com reserva vinculada.'
+      content:
+        application/json:
+          schema:
+            $ref: '#/components/schemas/ApiError'
+          examples:
+            error:
+              value:
+                error_code: LE-409
+                error_description: 'Conflito com uma regra de domínio: aula da turma já existente na data e faixa, aulas já
+                  geradas para a turma, ordem de tópico repetida ou aula com reserva vinculada.'
+                error_source: LessonsAPI
+                error_stack: []
