@@ -9,6 +9,8 @@ volumes:
   # No terminal, criar o volume externo: docker volume create constrsw-keycloak-data
   constrsw-keycloak-data:
     external: true
+  # Banco do contexto resources (criado automaticamente pelo compose)
+  constrsw-resources-data:
 
 services:
 
@@ -112,12 +114,22 @@ services:
       dockerfile: Dockerfile
     image: constrsw/oauth
     environment:
-      - KEYCLOAK_SERVER_URL=${KEYCLOAK_SERVER_URL}
+      - PORT=${OAUTH_INTERNAL_API_PORT}
+      - NODE_ENV=development
+      - PUBLIC_API_URL=${OAUTH_EXTERNAL_PROTOCOL}://${OAUTH_EXTERNAL_HOST}:${OAUTH_EXTERNAL_API_PORT}
+      - PUBLIC_KEYCLOAK_URL=${KEYCLOAK_EXTERNAL_PROTOCOL}://${KEYCLOAK_EXTERNAL_HOST}:${KEYCLOAK_EXTERNAL_CONSOLE_PORT}
+      - KEYCLOAK_URL=${KEYCLOAK_SERVER_URL}
       - KEYCLOAK_REALM=${KEYCLOAK_REALM}
       - KEYCLOAK_CLIENT_ID=${KEYCLOAK_CLIENT_ID}
       - KEYCLOAK_CLIENT_SECRET=${KEYCLOAK_CLIENT_SECRET}
+      - KEYCLOAK_TIMEOUT_MS=5000
       - KEYCLOAK_ADMIN=${KEYCLOAK_ADMIN}
       - KEYCLOAK_ADMIN_PASSWORD=${KEYCLOAK_ADMIN_PASSWORD}
+      - KEYCLOAK_ADMIN_CLIENT_ID=${OAUTH_ADMIN_CLIENT_ID}
+      - KEYCLOAK_ADMIN_CLIENT_SECRET=${OAUTH_ADMIN_CLIENT_SECRET}
+      - SESSION_COOKIE_NAME=${OAUTH_SESSION_COOKIE_NAME}
+      - COOKIE_SECURE=false
+      - COOKIE_SAME_SITE=lax
       - OAUTH_INTERNAL_PROTOCOL=${OAUTH_INTERNAL_PROTOCOL}
       - OAUTH_INTERNAL_HOST=${OAUTH_INTERNAL_HOST}
       - OAUTH_INTERNAL_API_PORT=${OAUTH_INTERNAL_API_PORT}
@@ -139,6 +151,71 @@ services:
           "node",
           "-e",
           "require('http').get('http://127.0.0.1:'+(process.env.OAUTH_INTERNAL_API_PORT)+'/health',(r)=>process.exit(r.statusCode===200?0:1)).on('error',()=>process.exit(1))",
+        ]
+      interval: 15s
+      timeout: 5s
+      retries: 5
+      start_period: 20s
+    restart: always
+
+  # PostgreSQL — banco do contexto resources
+  resources-db:
+    container_name: resources-db
+    image: postgres:15
+    environment:
+      - POSTGRES_DB=${RESOURCES_DB_NAME}
+      - POSTGRES_USER=${RESOURCES_DB_USER}
+      - POSTGRES_PASSWORD=${RESOURCES_DB_PASSWORD}
+    volumes:
+      - constrsw-resources-data:/var/lib/postgresql/data
+      - ./backend/resources/db/init:/docker-entrypoint-initdb.d:ro
+    networks:
+      - constrsw
+    ports:
+      - "${RESOURCES_DB_EXTERNAL_PORT}:${RESOURCES_DB_INTERNAL_PORT}"
+    healthcheck:
+      test: ["CMD-SHELL", "pg_isready -U $${POSTGRES_USER} -d $${POSTGRES_DB}"]
+      interval: 10s
+      timeout: 5s
+      retries: 10
+      start_period: 10s
+    restart: always
+
+  # API REST — contexto resources
+  resources:
+    container_name: resources
+    build:
+      context: ./backend/resources
+      dockerfile: Dockerfile
+    image: constrsw/resources
+    environment:
+      - PORT=${RESOURCES_INTERNAL_API_PORT}
+      - NODE_ENV=development
+      - DATABASE_URL=postgresql://${RESOURCES_DB_USER}:${RESOURCES_DB_PASSWORD}@resources-db:${RESOURCES_DB_INTERNAL_PORT}/${RESOURCES_DB_NAME}
+      - DB_SSL=false
+      - KEYCLOAK_JWKS_URL=http://keycloak:8080/realms/${KEYCLOAK_REALM}/protocol/openid-connect/certs
+      - KEYCLOAK_ISSUER=http://keycloak:8080/realms/${KEYCLOAK_REALM}
+      - JWT_AUDIENCE=oauth
+      - READ_ROLES=${RESOURCES_READ_ROLES}
+      - WRITE_ROLES=${RESOURCES_WRITE_ROLES}
+      - REQUIRE_EMPLOYEE_IDENTITY=false
+      - SERVICE_NAME=resources
+    networks:
+      - constrsw
+    ports:
+      - "${RESOURCES_EXTERNAL_API_PORT}:${RESOURCES_INTERNAL_API_PORT}"
+    depends_on:
+      resources-db:
+        condition: service_healthy
+      keycloak:
+        condition: service_healthy
+    healthcheck:
+      test:
+        [
+          "CMD",
+          "node",
+          "-e",
+          "fetch('http://127.0.0.1:'+(process.env.PORT||8106)+'/health').then((r)=>process.exit(r.ok?0:1)).catch(()=>process.exit(1))",
         ]
       interval: 15s
       timeout: 5s

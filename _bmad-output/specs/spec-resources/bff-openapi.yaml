@@ -1,0 +1,813 @@
+openapi: 3.1.0
+info:
+  title: bff — resources module
+  version: 1.0.0
+  description: |
+    Browser-facing subset for backend/bff/src/modules/resources/.
+    The browser authenticates with the BFF session cookie; the BFF forwards the
+    user's Bearer token to the resources context. This module owns no aggregate
+    and no table. It adds openOccurrenceCount to ResourceSummary and Resource.
+    It exposes no roster, Student data, availability, occupancy, inventory-item,
+    delete, or reopen route.
+  contact:
+    name: Closed CRAS — BFF resources module
+servers:
+  - url: http://localhost:8088
+    description: Local compose BFF
+tags:
+  - name: Resources
+    description: Browser-facing resource master data.
+  - name: Occurrences
+    description: Browser-facing occurrence history.
+security:
+  - bffSession: []
+paths:
+  /v1/resources:
+    get:
+      tags: [Resources]
+      operationId: bffListResources
+      summary: List resources with open occurrence counts
+      description: |
+        Browser-facing list. Filters combine with AND; order is code ascending;
+        no pagination. openOccurrenceCount is a BFF read-model field.
+      parameters:
+        - name: code
+          in: query
+          required: false
+          description: Exact code match after trimming and uppercasing.
+          schema:
+            type: string
+            minLength: 3
+            maxLength: 32
+            pattern: '^[A-Za-z0-9]+(-[A-Za-z0-9]+)*$'
+            example: PROJ-01
+        - name: type
+          in: query
+          required: false
+          schema:
+            $ref: '#/components/schemas/ResourceType'
+        - name: active
+          in: query
+          required: false
+          schema:
+            type: boolean
+        - name: tag
+          in: query
+          required: false
+          description: Exact tag match after trimming and lowercasing.
+          schema:
+            type: string
+            minLength: 1
+            maxLength: 30
+            pattern: '^[A-Za-z0-9]+(-[A-Za-z0-9]+)*$'
+            example: av
+      responses:
+        '200':
+          description: Matching resources with open occurrence counts.
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ResourceList'
+        '401':
+          $ref: '#/components/responses/Unauthorized'
+        '403':
+          $ref: '#/components/responses/Forbidden'
+        '422':
+          $ref: '#/components/responses/Validation'
+        '503':
+          $ref: '#/components/responses/DependencyUnavailable'
+        '500':
+          $ref: '#/components/responses/InternalError'
+    post:
+      tags: [Resources]
+      operationId: bffCreateResource
+      summary: Create a resource
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/ResourceCreate'
+      responses:
+        '201':
+          description: Resource created.
+          headers:
+            Location:
+              $ref: '#/components/headers/Location'
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Resource'
+        '400':
+          $ref: '#/components/responses/MalformedRequest'
+        '401':
+          $ref: '#/components/responses/Unauthorized'
+        '403':
+          $ref: '#/components/responses/Forbidden'
+        '409':
+          $ref: '#/components/responses/Conflict'
+        '415':
+          $ref: '#/components/responses/UnsupportedMediaType'
+        '422':
+          $ref: '#/components/responses/Validation'
+        '503':
+          $ref: '#/components/responses/DependencyUnavailable'
+        '500':
+          $ref: '#/components/responses/InternalError'
+
+  /v1/resources/{resourceId}:
+    parameters:
+      - $ref: '#/components/parameters/ResourceId'
+    get:
+      tags: [Resources]
+      operationId: bffGetResource
+      summary: Read a resource aggregate with its open occurrence count
+      responses:
+        '200':
+          description: Resource aggregate with the BFF count.
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Resource'
+        '401':
+          $ref: '#/components/responses/Unauthorized'
+        '403':
+          $ref: '#/components/responses/Forbidden'
+        '404':
+          $ref: '#/components/responses/NotFound'
+        '422':
+          $ref: '#/components/responses/Validation'
+        '503':
+          $ref: '#/components/responses/DependencyUnavailable'
+        '500':
+          $ref: '#/components/responses/InternalError'
+    patch:
+      tags: [Resources]
+      operationId: bffUpdateResource
+      summary: Update resource master data
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/ResourceUpdate'
+      responses:
+        '200':
+          description: Updated resource aggregate with the BFF count.
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Resource'
+        '400':
+          $ref: '#/components/responses/MalformedRequest'
+        '401':
+          $ref: '#/components/responses/Unauthorized'
+        '403':
+          $ref: '#/components/responses/Forbidden'
+        '404':
+          $ref: '#/components/responses/NotFound'
+        '415':
+          $ref: '#/components/responses/UnsupportedMediaType'
+        '422':
+          $ref: '#/components/responses/Validation'
+        '503':
+          $ref: '#/components/responses/DependencyUnavailable'
+        '500':
+          $ref: '#/components/responses/InternalError'
+
+  /v1/resources/{resourceId}/occurrences:
+    parameters:
+      - $ref: '#/components/parameters/ResourceId'
+    post:
+      tags: [Occurrences]
+      operationId: bffCreateOccurrence
+      summary: Record an occurrence
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/OccurrenceCreate'
+      responses:
+        '201':
+          description: Occurrence created.
+          headers:
+            Location:
+              $ref: '#/components/headers/Location'
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Occurrence'
+        '400':
+          $ref: '#/components/responses/MalformedRequest'
+        '401':
+          $ref: '#/components/responses/Unauthorized'
+        '403':
+          $ref: '#/components/responses/Forbidden'
+        '404':
+          $ref: '#/components/responses/NotFound'
+        '415':
+          $ref: '#/components/responses/UnsupportedMediaType'
+        '422':
+          $ref: '#/components/responses/Validation'
+        '503':
+          $ref: '#/components/responses/DependencyUnavailable'
+        '500':
+          $ref: '#/components/responses/InternalError'
+
+  /v1/resources/{resourceId}/occurrences/{occurrenceId}:
+    parameters:
+      - $ref: '#/components/parameters/ResourceId'
+      - $ref: '#/components/parameters/OccurrenceId'
+    patch:
+      tags: [Occurrences]
+      operationId: bffResolveOccurrence
+      summary: Resolve an occurrence
+      description: |
+        Forwards the domain resolve body unchanged: OPEN -> RESOLVED. The BFF
+        does not set status, resolvedBy, or resolvedAt.
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/OccurrenceResolve'
+      responses:
+        '200':
+          description: Occurrence resolved.
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Occurrence'
+        '400':
+          $ref: '#/components/responses/MalformedRequest'
+        '401':
+          $ref: '#/components/responses/Unauthorized'
+        '403':
+          $ref: '#/components/responses/Forbidden'
+        '404':
+          $ref: '#/components/responses/NotFound'
+        '409':
+          $ref: '#/components/responses/Conflict'
+        '415':
+          $ref: '#/components/responses/UnsupportedMediaType'
+        '422':
+          $ref: '#/components/responses/Validation'
+        '503':
+          $ref: '#/components/responses/DependencyUnavailable'
+        '500':
+          $ref: '#/components/responses/InternalError'
+
+components:
+  securitySchemes:
+    bffSession:
+      type: apiKey
+      in: cookie
+      name: cras_session
+      description: |
+        BFF session cookie set by the shared auth module. httpOnly, SameSite=Lax.
+        The BFF validates the session and forwards the user's Bearer token to the
+        resources context. This module does not set or refresh the cookie.
+
+  parameters:
+    ResourceId:
+      name: resourceId
+      in: path
+      required: true
+      schema:
+        type: string
+        format: uuid
+    OccurrenceId:
+      name: occurrenceId
+      in: path
+      required: true
+      schema:
+        type: string
+        format: uuid
+
+  headers:
+    Location:
+      description: Path-only location of the created resource or occurrence.
+      schema:
+        type: string
+        example: /v1/resources/6f1c2d3e-4a5b-4c6d-8e7f-901234567890
+
+  schemas:
+    ResourceType:
+      type: string
+      enum:
+        - PROJECTOR
+        - HEALTH_KIT
+        - COMPUTER
+        - NOTEBOOK
+        - CAMERA
+        - MICROPHONE
+        - DISPLAY
+        - CABLE
+        - ADAPTER
+
+    OccurrenceType:
+      type: string
+      enum: [MALFUNCTION, DAMAGE, MISSING, OTHER]
+
+    OccurrenceStatus:
+      type: string
+      enum: [OPEN, RESOLVED]
+
+    OccurrencePriority:
+      type: string
+      enum: [LOW, MEDIUM, HIGH]
+
+    ResourceSummary:
+      type: object
+      additionalProperties: false
+      required: [id, code, name, type, active, tags, createdAt, updatedAt, openOccurrenceCount]
+      properties:
+        id:
+          type: string
+          format: uuid
+          readOnly: true
+        code:
+          type: string
+          minLength: 3
+          maxLength: 32
+          pattern: '^[A-Z0-9]+(-[A-Z0-9]+)*$'
+          example: PROJ-01
+        name:
+          type: string
+          minLength: 1
+          maxLength: 120
+          example: Projector 1
+        type:
+          $ref: '#/components/schemas/ResourceType'
+        active:
+          type: boolean
+          example: true
+        tags:
+          type: array
+          maxItems: 10
+          uniqueItems: true
+          items:
+            type: string
+            minLength: 1
+            maxLength: 30
+            pattern: '^[a-z0-9]+(-[a-z0-9]+)*$'
+          example: [av, portable]
+        createdAt:
+          type: string
+          format: date-time
+          readOnly: true
+        updatedAt:
+          type: string
+          format: date-time
+          readOnly: true
+        openOccurrenceCount:
+          type: integer
+          minimum: 0
+          description: BFF read-model count of occurrences whose status is OPEN.
+          example: 1
+
+    Resource:
+      type: object
+      additionalProperties: false
+      required: [id, code, name, type, active, tags, createdAt, updatedAt, openOccurrenceCount, occurrences]
+      properties:
+        id:
+          type: string
+          format: uuid
+          readOnly: true
+        code:
+          type: string
+          minLength: 3
+          maxLength: 32
+          pattern: '^[A-Z0-9]+(-[A-Z0-9]+)*$'
+          example: PROJ-01
+        name:
+          type: string
+          minLength: 1
+          maxLength: 120
+          example: Projector 1
+        type:
+          $ref: '#/components/schemas/ResourceType'
+        active:
+          type: boolean
+          example: true
+        tags:
+          type: array
+          maxItems: 10
+          uniqueItems: true
+          items:
+            type: string
+            minLength: 1
+            maxLength: 30
+            pattern: '^[a-z0-9]+(-[a-z0-9]+)*$'
+          example: [av, portable]
+        createdAt:
+          type: string
+          format: date-time
+          readOnly: true
+        updatedAt:
+          type: string
+          format: date-time
+          readOnly: true
+        openOccurrenceCount:
+          type: integer
+          minimum: 0
+          description: BFF read-model count of occurrences whose status is OPEN.
+          example: 1
+        occurrences:
+          $ref: '#/components/schemas/OccurrenceList'
+
+    ResourceList:
+      type: object
+      additionalProperties: false
+      required: [items]
+      properties:
+        items:
+          type: array
+          items:
+            $ref: '#/components/schemas/ResourceSummary'
+
+    Occurrence:
+      type: object
+      additionalProperties: false
+      required:
+        - id
+        - resourceId
+        - description
+        - type
+        - priority
+        - status
+        - resolution
+        - reportedBy
+        - resolvedBy
+        - createdAt
+        - resolvedAt
+        - updatedAt
+      properties:
+        id:
+          type: string
+          format: uuid
+          readOnly: true
+        resourceId:
+          type: string
+          format: uuid
+          readOnly: true
+        description:
+          type: string
+          minLength: 1
+        type:
+          $ref: '#/components/schemas/OccurrenceType'
+        priority:
+          $ref: '#/components/schemas/OccurrencePriority'
+        status:
+          $ref: '#/components/schemas/OccurrenceStatus'
+        resolution:
+          type: [string, 'null']
+        reportedBy:
+          type: string
+          format: uuid
+          readOnly: true
+        resolvedBy:
+          type: [string, 'null']
+          format: uuid
+          readOnly: true
+        createdAt:
+          type: string
+          format: date-time
+          readOnly: true
+        resolvedAt:
+          type: [string, 'null']
+          format: date-time
+        updatedAt:
+          type: string
+          format: date-time
+          readOnly: true
+
+    OccurrenceList:
+      type: object
+      additionalProperties: false
+      required: [items]
+      properties:
+        items:
+          type: array
+          description: Ordered by createdAt descending, then id descending.
+          items:
+            $ref: '#/components/schemas/Occurrence'
+
+    ResourceCreate:
+      type: object
+      additionalProperties: false
+      required: [code, name, type]
+      properties:
+        code:
+          type: string
+          minLength: 3
+          maxLength: 32
+          pattern: '^[A-Za-z0-9]+(-[A-Za-z0-9]+)*$'
+        name:
+          type: string
+          minLength: 1
+          maxLength: 120
+        type:
+          $ref: '#/components/schemas/ResourceType'
+        active:
+          type: boolean
+          default: true
+        tags:
+          type: array
+          maxItems: 10
+          uniqueItems: true
+          default: []
+          items:
+            type: string
+            minLength: 1
+            maxLength: 30
+            pattern: '^[A-Za-z0-9]+(-[A-Za-z0-9]+)*$'
+
+    ResourceUpdate:
+      type: object
+      additionalProperties: false
+      minProperties: 1
+      properties:
+        name:
+          type: string
+          minLength: 1
+          maxLength: 120
+        type:
+          $ref: '#/components/schemas/ResourceType'
+        active:
+          type: boolean
+        tags:
+          type: array
+          maxItems: 10
+          uniqueItems: true
+          items:
+            type: string
+            minLength: 1
+            maxLength: 30
+            pattern: '^[A-Za-z0-9]+(-[A-Za-z0-9]+)*$'
+
+    OccurrenceCreate:
+      type: object
+      additionalProperties: false
+      required: [description, type]
+      properties:
+        description:
+          type: string
+          minLength: 1
+        type:
+          $ref: '#/components/schemas/OccurrenceType'
+        priority:
+          $ref: '#/components/schemas/OccurrencePriority'
+          default: MEDIUM
+
+    OccurrenceResolve:
+      type: object
+      additionalProperties: false
+      required: [resolution]
+      properties:
+        resolution:
+          type: string
+          minLength: 1
+          pattern: '.*\S.*'
+
+    FieldError:
+      type: object
+      additionalProperties: false
+      required: [field, message]
+      properties:
+        field:
+          type: string
+        message:
+          type: string
+
+    Problem:
+      type: object
+      additionalProperties: false
+      required: [type, title, status, detail, code]
+      properties:
+        type:
+          type: string
+          format: uri
+        title:
+          type: string
+        status:
+          type: integer
+          minimum: 400
+          maximum: 599
+        detail:
+          type: string
+        instance:
+          type: string
+          format: uri-reference
+        code:
+          type: string
+        reason:
+          type: string
+        errors:
+          type: array
+          items:
+            $ref: '#/components/schemas/FieldError'
+
+  responses:
+    MalformedRequest:
+      description: The request body is not parseable JSON.
+      content:
+        application/problem+json:
+          schema:
+            $ref: '#/components/schemas/Problem'
+          examples:
+            malformed:
+              value:
+                type: urn:closed-cras:malformed-request
+                title: Malformed request
+                status: 400
+                detail: The request body is not valid JSON.
+                instance: /v1/resources
+                code: MALFORMED_REQUEST
+
+    Unauthorized:
+      description: |
+        No session, expired session, or the BFF could not obtain a valid user
+        token. The browser redirects to UX-LOGIN; API clients receive this body.
+      content:
+        application/problem+json:
+          schema:
+            $ref: '#/components/schemas/Problem'
+          examples:
+            missingSession:
+              value:
+                type: urn:closed-cras:auth:unauthenticated
+                title: Authentication required
+                status: 401
+                detail: The BFF session is missing or expired.
+                instance: /v1/resources
+                code: AUTH_UNAUTHENTICATED
+                reason: MISSING_TOKEN
+
+    Forbidden:
+      description: The session role is not allowed for this operation.
+      content:
+        application/problem+json:
+          schema:
+            $ref: '#/components/schemas/Problem'
+          examples:
+            role:
+              value:
+                type: urn:closed-cras:auth:forbidden
+                title: Role not allowed
+                status: 403
+                detail: This operation requires the funcionario role.
+                instance: /v1/resources
+                code: AUTH_FORBIDDEN
+                reason: ROLE_NOT_ALLOWED
+            employeeIdentity:
+              value:
+                type: urn:closed-cras:auth:forbidden
+                title: Employee identity required
+                status: 403
+                detail: This write records an audit actor; the token has no employeeId claim.
+                instance: /v1/resources/6f1c2d3e-4a5b-4c6d-8e7f-901234567890/occurrences
+                code: AUTH_FORBIDDEN
+                reason: EMPLOYEE_IDENTITY_REQUIRED
+
+    NotFound:
+      description: The resource or occurrence does not exist.
+      content:
+        application/problem+json:
+          schema:
+            $ref: '#/components/schemas/Problem'
+          examples:
+            resource:
+              value:
+                type: urn:closed-cras:not-found
+                title: Resource not found
+                status: 404
+                detail: No resource exists with the supplied id.
+                instance: /v1/resources/6f1c2d3e-4a5b-4c6d-8e7f-901234567890
+                code: NOT_FOUND
+                reason: RESOURCE_NOT_FOUND
+            occurrence:
+              value:
+                type: urn:closed-cras:not-found
+                title: Occurrence not found
+                status: 404
+                detail: No occurrence exists for this resource with the supplied id.
+                instance: /v1/resources/6f1c2d3e-4a5b-4c6d-8e7f-901234567890/occurrences/7a2d3e4f-5b6c-4d7e-9f80-1234567890ab
+                code: NOT_FOUND
+                reason: OCCURRENCE_NOT_FOUND
+
+    Conflict:
+      description: A resource or occurrence invariant refused the request.
+      content:
+        application/problem+json:
+          schema:
+            $ref: '#/components/schemas/Problem'
+          examples:
+            duplicateCode:
+              value:
+                type: urn:closed-cras:recusa:FR-22
+                title: Resource code already in use
+                status: 409
+                detail: Resource code 'PROJ-01' is already in use.
+                instance: /v1/resources
+                code: FR-22
+                reason: RESOURCE_CODE_TAKEN
+            alreadyResolved:
+              value:
+                type: urn:closed-cras:recusa:FR-22
+                title: Occurrence already resolved
+                status: 409
+                detail: The occurrence is already RESOLVED and cannot change again.
+                instance: /v1/resources/6f1c2d3e-4a5b-4c6d-8e7f-901234567890/occurrences/7a2d3e4f-5b6c-4d7e-9f80-1234567890ab
+                code: FR-22
+                reason: OCCURRENCE_ALREADY_RESOLVED
+
+    UnsupportedMediaType:
+      description: The request body is not application/json.
+      content:
+        application/problem+json:
+          schema:
+            $ref: '#/components/schemas/Problem'
+          examples:
+            mediaType:
+              value:
+                type: urn:closed-cras:unsupported-media-type
+                title: Unsupported media type
+                status: 415
+                detail: Content-Type must be application/json.
+                instance: /v1/resources
+                code: UNSUPPORTED_MEDIA_TYPE
+
+    Validation:
+      description: Shape, type, enum, format, unknown-field, or empty-patch validation failed.
+      content:
+        application/problem+json:
+          schema:
+            $ref: '#/components/schemas/Problem'
+          examples:
+            code:
+              value:
+                type: urn:closed-cras:validation
+                title: Request validation failed
+                status: 422
+                detail: The request body has invalid fields.
+                instance: /v1/resources
+                code: VALIDATION
+                errors:
+                  - field: code
+                    message: must be 3-32 characters and match ^[A-Z0-9]+(-[A-Z0-9]+)*$
+            immutableCode:
+              value:
+                type: urn:closed-cras:validation
+                title: Request validation failed
+                status: 422
+                detail: code is immutable and must not be sent on PATCH.
+                instance: /v1/resources/6f1c2d3e-4a5b-4c6d-8e7f-901234567890
+                code: VALIDATION
+                errors:
+                  - field: code
+                    message: code is immutable; omit it
+
+    DependencyUnavailable:
+      description: The resources context or the identity provider is unavailable.
+      content:
+        application/problem+json:
+          schema:
+            $ref: '#/components/schemas/Problem'
+          examples:
+            resources:
+              value:
+                type: urn:closed-cras:dependency:unavailable
+                title: Resources context unavailable
+                status: 503
+                detail: The resources context did not respond.
+                instance: /v1/resources
+                code: DEPENDENCY_UNAVAILABLE
+                reason: RESOURCES_UPSTREAM_UNAVAILABLE
+            identity:
+              value:
+                type: urn:closed-cras:dependency:unavailable
+                title: Identity provider unavailable
+                status: 503
+                detail: The identity gateway cannot be reached.
+                instance: /v1/resources
+                code: DEPENDENCY_UNAVAILABLE
+                reason: IDENTITY_UNAVAILABLE
+
+    InternalError:
+      description: Unexpected server failure.
+      content:
+        application/problem+json:
+          schema:
+            $ref: '#/components/schemas/Problem'
+          examples:
+            unexpected:
+              value:
+                type: urn:closed-cras:internal
+                title: Internal error
+                status: 500
+                detail: An unexpected error occurred.
+                instance: /v1/resources
+                code: INTERNAL_ERROR
