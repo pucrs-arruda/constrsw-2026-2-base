@@ -1,0 +1,488 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "https://constrsw.pucrs.br/schemas/grupo05-courses-schemas.json",
+  "title": "Courses API (Grupo 05) — JSON Schemas",
+  "$defs": {
+    "CourseCreate": {
+      "type": "object",
+      "additionalProperties": false,
+      "properties": {
+        "code": {
+          "type": "string",
+          "minLength": 1,
+          "pattern": "\\S",
+          "maxLength": 20,
+          "description": "Código único da disciplina."
+        },
+        "name": {
+          "type": "string",
+          "minLength": 1,
+          "pattern": "\\S",
+          "maxLength": 200
+        },
+        "syllabus": {
+          "type": "string",
+          "minLength": 1,
+          "pattern": "\\S"
+        },
+        "workloadHours": {
+          "type": "integer",
+          "minimum": 1,
+          "maximum": 2147483647
+        },
+        "professorId": {
+          "type": "string",
+          "minLength": 1,
+          "pattern": "\\S",
+          "maxLength": 100,
+          "description": "Identificador do professor responsável na API externa; alinhar o formato com o grupo de professores."
+        },
+        "bibliographicReferences": {
+          "type": "array",
+          "minItems": 1,
+          "items": {
+            "$ref": "#/$defs/BibliographicReferenceCreate"
+          }
+        }
+      },
+      "required": [
+        "code",
+        "name",
+        "workloadHours",
+        "professorId",
+        "bibliographicReferences"
+      ],
+      "description": "Criação atômica da disciplina e de ao menos uma referência bibliográfica.",
+      "title": "CourseCreate"
+    },
+    "CoursePatch": {
+      "type": "object",
+      "additionalProperties": false,
+      "properties": {
+        "code": {
+          "type": "string",
+          "minLength": 1,
+          "pattern": "\\S",
+          "maxLength": 20,
+          "description": "Código único da disciplina."
+        },
+        "name": {
+          "type": "string",
+          "minLength": 1,
+          "pattern": "\\S",
+          "maxLength": 200
+        },
+        "syllabus": {
+          "type": "string",
+          "minLength": 1,
+          "pattern": "\\S"
+        },
+        "workloadHours": {
+          "type": "integer",
+          "minimum": 1,
+          "maximum": 2147483647
+        },
+        "professorId": {
+          "type": "string",
+          "minLength": 1,
+          "pattern": "\\S",
+          "maxLength": 100,
+          "description": "Identificador do professor responsável na API externa; alinhar o formato com o grupo de professores."
+        }
+      },
+      "description": "Altera somente campos escalares informados; referências são gerenciadas nas rotas secundárias. Campos omitidos são preservados; null não é aceito.",
+      "minProperties": 1,
+      "title": "CoursePatch"
+    },
+    "CourseUpdate": {
+      "type": "object",
+      "additionalProperties": false,
+      "properties": {
+        "code": {
+          "type": "string",
+          "minLength": 1,
+          "pattern": "\\S",
+          "maxLength": 20,
+          "description": "Código único da disciplina."
+        },
+        "name": {
+          "type": "string",
+          "minLength": 1,
+          "pattern": "\\S",
+          "maxLength": 200
+        },
+        "syllabus": {
+          "type": "string",
+          "minLength": 1,
+          "pattern": "\\S"
+        },
+        "workloadHours": {
+          "type": "integer",
+          "minimum": 1,
+          "maximum": 2147483647
+        },
+        "professorId": {
+          "type": "string",
+          "minLength": 1,
+          "pattern": "\\S",
+          "maxLength": 100,
+          "description": "Identificador do professor responsável na API externa; alinhar o formato com o grupo de professores."
+        }
+      },
+      "required": [
+        "code",
+        "name",
+        "workloadHours",
+        "professorId"
+      ],
+      "description": "Substitui todos os campos escalares editáveis da disciplina. Ementa omitida é removida. A coleção de referências é preservada e tem rotas próprias.",
+      "title": "CourseUpdate"
+    },
+    "Course": {
+      "type": "object",
+      "additionalProperties": false,
+      "properties": {
+        "id": {
+          "type": "string",
+          "format": "uuid",
+          "readOnly": true
+        },
+        "enabled": {
+          "type": "boolean",
+          "readOnly": true,
+          "default": true,
+          "description": "Exclusão lógica: true para registro ativo; false para registro excluído logicamente. Controlado pelo servidor."
+        },
+        "code": {
+          "type": "string",
+          "minLength": 1,
+          "pattern": "\\S",
+          "maxLength": 20,
+          "description": "Código único da disciplina."
+        },
+        "name": {
+          "type": "string",
+          "minLength": 1,
+          "pattern": "\\S",
+          "maxLength": 200
+        },
+        "syllabus": {
+          "type": "string",
+          "minLength": 1,
+          "pattern": "\\S"
+        },
+        "workloadHours": {
+          "type": "integer",
+          "minimum": 1,
+          "maximum": 2147483647
+        },
+        "professorId": {
+          "type": "string",
+          "minLength": 1,
+          "pattern": "\\S",
+          "maxLength": 100,
+          "description": "Identificador do professor responsável na API externa; alinhar o formato com o grupo de professores."
+        },
+        "bibliographicReferences": {
+          "type": "array",
+          "minItems": 1,
+          "items": {
+            "$ref": "#/$defs/BibliographicReference"
+          }
+        }
+      },
+      "required": [
+        "id",
+        "enabled",
+        "code",
+        "name",
+        "workloadHours",
+        "professorId",
+        "bibliographicReferences"
+      ],
+      "title": "Course"
+    },
+    "CourseList": {
+      "type": "array",
+      "items": {
+        "$ref": "#/$defs/Course"
+      },
+      "title": "CourseList"
+    },
+    "ApiError": {
+      "type": "object",
+      "additionalProperties": false,
+      "properties": {
+        "error_code": {
+          "type": "string",
+          "minLength": 1,
+          "pattern": "\\S"
+        },
+        "error_description": {
+          "type": "string",
+          "minLength": 1,
+          "pattern": "\\S"
+        },
+        "error_source": {
+          "type": "string",
+          "minLength": 1,
+          "pattern": "\\S"
+        },
+        "error_stack": {
+          "type": "array",
+          "items": {
+            "type": "object",
+            "additionalProperties": false,
+            "properties": {
+              "error_code": {
+                "type": "string",
+                "minLength": 1,
+                "pattern": "\\S"
+              },
+              "error_description": {
+                "type": "string",
+                "minLength": 1,
+                "pattern": "\\S"
+              },
+              "error_source": {
+                "type": "string",
+                "minLength": 1,
+                "pattern": "\\S"
+              }
+            },
+            "required": [
+              "error_code",
+              "error_description",
+              "error_source"
+            ]
+          }
+        }
+      },
+      "required": [
+        "error_code",
+        "error_description",
+        "error_source",
+        "error_stack"
+      ],
+      "description": "Formato de erro do projeto; a pilha contém descrições de domínio sanitizadas, sem credenciais ou stack traces internos.",
+      "title": "ApiError"
+    },
+    "BibliographicReferenceCreate": {
+      "type": "object",
+      "additionalProperties": false,
+      "properties": {
+        "title": {
+          "type": "string",
+          "minLength": 1,
+          "pattern": "\\S",
+          "maxLength": 300
+        },
+        "authors": {
+          "type": "string",
+          "minLength": 1,
+          "pattern": "\\S",
+          "description": "Autores em texto; pode conter vários nomes."
+        },
+        "publisher": {
+          "type": "string",
+          "minLength": 1,
+          "pattern": "\\S",
+          "maxLength": 150
+        },
+        "year": {
+          "type": "integer",
+          "minimum": 1,
+          "maximum": 9999
+        },
+        "edition": {
+          "type": "string",
+          "minLength": 1,
+          "pattern": "\\S",
+          "maxLength": 50
+        },
+        "type": {
+          "type": "string",
+          "enum": [
+            "BASIC",
+            "SUPPLEMENTARY"
+          ]
+        }
+      },
+      "required": [
+        "title",
+        "authors",
+        "type"
+      ],
+      "description": "Nova referência da disciplina indicada no path; id e courseId são definidos pelo servidor.",
+      "title": "BibliographicReferenceCreate"
+    },
+    "BibliographicReferencePatch": {
+      "type": "object",
+      "additionalProperties": false,
+      "properties": {
+        "title": {
+          "type": "string",
+          "minLength": 1,
+          "pattern": "\\S",
+          "maxLength": 300
+        },
+        "authors": {
+          "type": "string",
+          "minLength": 1,
+          "pattern": "\\S",
+          "description": "Autores em texto; pode conter vários nomes."
+        },
+        "publisher": {
+          "type": "string",
+          "minLength": 1,
+          "pattern": "\\S",
+          "maxLength": 150
+        },
+        "year": {
+          "type": "integer",
+          "minimum": 1,
+          "maximum": 9999
+        },
+        "edition": {
+          "type": "string",
+          "minLength": 1,
+          "pattern": "\\S",
+          "maxLength": 50
+        },
+        "type": {
+          "type": "string",
+          "enum": [
+            "BASIC",
+            "SUPPLEMENTARY"
+          ]
+        }
+      },
+      "description": "Altera somente os campos informados. Campos omitidos permanecem inalterados; null não é aceito.",
+      "minProperties": 1,
+      "title": "BibliographicReferencePatch"
+    },
+    "BibliographicReferenceUpdate": {
+      "type": "object",
+      "additionalProperties": false,
+      "properties": {
+        "title": {
+          "type": "string",
+          "minLength": 1,
+          "pattern": "\\S",
+          "maxLength": 300
+        },
+        "authors": {
+          "type": "string",
+          "minLength": 1,
+          "pattern": "\\S",
+          "description": "Autores em texto; pode conter vários nomes."
+        },
+        "publisher": {
+          "type": "string",
+          "minLength": 1,
+          "pattern": "\\S",
+          "maxLength": 150
+        },
+        "year": {
+          "type": "integer",
+          "minimum": 1,
+          "maximum": 9999
+        },
+        "edition": {
+          "type": "string",
+          "minLength": 1,
+          "pattern": "\\S",
+          "maxLength": 50
+        },
+        "type": {
+          "type": "string",
+          "enum": [
+            "BASIC",
+            "SUPPLEMENTARY"
+          ]
+        }
+      },
+      "required": [
+        "title",
+        "authors",
+        "type"
+      ],
+      "description": "Substitui os campos da referência. Campos opcionais omitidos são removidos; IDs permanecem imutáveis.",
+      "title": "BibliographicReferenceUpdate"
+    },
+    "BibliographicReference": {
+      "type": "object",
+      "additionalProperties": false,
+      "properties": {
+        "id": {
+          "type": "string",
+          "format": "uuid",
+          "readOnly": true
+        },
+        "enabled": {
+          "type": "boolean",
+          "readOnly": true,
+          "default": true,
+          "description": "Exclusão lógica: true para registro ativo; false para registro excluído logicamente. Controlado pelo servidor."
+        },
+        "courseId": {
+          "type": "string",
+          "format": "uuid",
+          "readOnly": true
+        },
+        "title": {
+          "type": "string",
+          "minLength": 1,
+          "pattern": "\\S",
+          "maxLength": 300
+        },
+        "authors": {
+          "type": "string",
+          "minLength": 1,
+          "pattern": "\\S",
+          "description": "Autores em texto; pode conter vários nomes."
+        },
+        "publisher": {
+          "type": "string",
+          "minLength": 1,
+          "pattern": "\\S",
+          "maxLength": 150
+        },
+        "year": {
+          "type": "integer",
+          "minimum": 1,
+          "maximum": 9999
+        },
+        "edition": {
+          "type": "string",
+          "minLength": 1,
+          "pattern": "\\S",
+          "maxLength": 50
+        },
+        "type": {
+          "type": "string",
+          "enum": [
+            "BASIC",
+            "SUPPLEMENTARY"
+          ]
+        }
+      },
+      "required": [
+        "id",
+        "enabled",
+        "courseId",
+        "title",
+        "authors",
+        "type"
+      ],
+      "title": "BibliographicReference"
+    },
+    "BibliographicReferenceList": {
+      "type": "array",
+      "items": {
+        "$ref": "#/$defs/BibliographicReference"
+      },
+      "title": "BibliographicReferenceList"
+    }
+  }
+}

@@ -1,0 +1,1048 @@
+openapi: 3.1.0
+info:
+  title: reservations
+  version: 2.1.0
+  summary: Reservas de Resources para Lessons, com ocorrências (Closed CRAS, Grupo 03)
+  description: |
+    Contexto `reservations` do Closed CRAS. Uma **Reservation** retém, numa data + faixa,
+    um ou mais **Resources** (`resourceIds`, relação N–N com o microsserviço `resources`) para
+    uma **Lesson** (`lessonId`, obrigatório; a sala já vem da Lesson). Cada reserva pode ter
+    **Details**: ocorrências como "projetor não liga" ou "tomada não funciona".
+    A confirmação é a própria checagem de conflito (FR-23); não há fluxo de aprovação.
+
+    - Autenticação: JWT do Keycloak (realm `constrsw`), validado localmente via JWKS.
+    - Escrita só pelo papel `professor`, e só nas próprias reservas. O `professorId` vem do token.
+    - Recusa de regra: **409** `application/problem+json` com `code` = id do FR. Erro de forma: **422**.
+    - Listas no envelope `{ "items": [...] }`, sem paginação.
+    - Campos opcionais sem valor são omitidos nas respostas.
+
+    Os schemas espelham `contracts/schemas/*.schema.json` (JSON Schema 2020-12).
+
+    ## Exclusão lógica
+
+    Todas as exclusões são lógicas e controladas pelo atributo `enabled` das classes. Um `DELETE` não remove o registro do banco: apenas define `enabled=false`. O atributo é somente leitura (`readOnly`): nasce `true` e não pode ser enviado pelo cliente.
+
+    Registros com `enabled=false` não aparecem nas listagens, a consulta por id responde `404` e não podem ser alterados nem excluídos novamente (`404`).
+servers:
+- url: http://localhost:8109
+  description: Local (docker compose)
+tags:
+- name: reservations
+  description: Coleção principal
+- name: details
+  description: Coleção secundária (ocorrências de uma reserva)
+- name: occupancy
+  description: Recursos ocupados numa data + faixa, consumido por outros contextos e pelo BFF
+- name: infra
+  description: Identidade e saúde do serviço
+security:
+- bearerAuth: []
+paths:
+  /v1/reservations:
+    post:
+      tags:
+      - reservations
+      operationId: createReservation
+      summary: Cria uma reserva de recursos para uma Lesson
+      description: |
+        Papel `professor`. O dono é o professor do token, que precisa estar em `professorIds` da Lesson.
+        A data e a faixa precisam ser as da Lesson. Cada Resource precisa existir, estar ativo e livre
+        na data + faixa (RN-01 a RN-06, RN-10).
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/ReservationCreate'
+      responses:
+        '201':
+          description: Reserva criada
+          headers:
+            Location:
+              $ref: '#/components/headers/Location'
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Reservation'
+        '400':
+          $ref: '#/components/responses/BadRequest'
+        '401':
+          $ref: '#/components/responses/Unauthorized'
+        '403':
+          $ref: '#/components/responses/Forbidden'
+        '409':
+          $ref: '#/components/responses/Conflict'
+        '422':
+          $ref: '#/components/responses/UnprocessableContent'
+        '503':
+          $ref: '#/components/responses/ServiceUnavailable'
+    get:
+      tags:
+      - reservations
+      operationId: listReservations
+      summary: Lista reservas, com query simples ou complexa
+      description: |
+        Sem parâmetros devolve todas as reservas com `enabled=true`. Cada parâmetro aceita:
+        - **query simples**: `campo=valor` (igualdade);
+        - **query complexa**: `campo={op}valor`, com `op` em `neq`, `gt`, `gteq`, `lt`, `lteq`, `like`.
+
+        `{like}` usa `%` como curinga (ex.: `purpose={like}%banca%`) e não diferencia maiúsculas.
+        `{gt}`, `{gteq}`, `{lt}` e `{lteq}` comparam `date` por data e `timeSlotId` pela ordem do cânone.
+        `resourceId` só aceita igualdade e significa "reservas que contêm este recurso".
+        Vários parâmetros se combinam com E. Operador desconhecido ou valor inválido → 400.
+
+        Exemplo: `GET /v1/reservations?date={gteq}2026-11-01&timeSlotId=C&resourceId=50000000-0000-4000-8000-000000000001`
+      parameters:
+      - $ref: '#/components/parameters/QProfessorId'
+      - $ref: '#/components/parameters/QLessonId'
+      - $ref: '#/components/parameters/QDate'
+      - $ref: '#/components/parameters/QTimeSlotId'
+      - $ref: '#/components/parameters/QPurpose'
+      - $ref: '#/components/parameters/QResourceId'
+      responses:
+        '200':
+          description: Reservas encontradas (pode ser vazia)
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ReservationList'
+        '400':
+          $ref: '#/components/responses/BadRequest'
+        '401':
+          $ref: '#/components/responses/Unauthorized'
+        '403':
+          $ref: '#/components/responses/Forbidden'
+  /v1/reservations/occupancy:
+    get:
+      tags:
+      - occupancy
+      operationId: getOccupancy
+      summary: Recursos ocupados numa data + faixa
+      description: |
+        Um item por Resource de reserva com `enabled=true` na data + faixa (Spine AD-5, só recursos).
+        Usado por outros contextos e pelo BFF no merge de conflitos.
+      parameters:
+      - name: date
+        in: query
+        required: true
+        schema:
+          $ref: '#/components/schemas/Date'
+      - name: timeSlotId
+        in: query
+        required: true
+        schema:
+          $ref: '#/components/schemas/TimeSlotId'
+      responses:
+        '200':
+          description: Itens ocupados
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/OccupancyList'
+        '400':
+          $ref: '#/components/responses/BadRequest'
+        '401':
+          $ref: '#/components/responses/Unauthorized'
+  /v1/reservations/{id}:
+    parameters:
+    - $ref: '#/components/parameters/ReservationId'
+    get:
+      tags:
+      - reservations
+      operationId: getReservation
+      summary: Busca uma reserva pelo id
+      responses:
+        '200':
+          description: Reserva encontrada
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Reservation'
+        '401':
+          $ref: '#/components/responses/Unauthorized'
+        '403':
+          $ref: '#/components/responses/Forbidden'
+        '404':
+          $ref: '#/components/responses/NotFound'
+    put:
+      tags:
+      - reservations
+      operationId: replaceReservation
+      summary: Substitui a reserva (inclusive a lista de recursos)
+      description: |
+        Professor dono. Substituição total: `resourceIds` é trocada inteira e `purpose` ausente é apagado.
+        Revalida todas as regras; a própria reserva não conta como conflito (RN-08).
+        Reserva excluída logicamente (`enabled=false`) não pode ser alterada: responde 404 (RN-07).
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/ReservationUpdate'
+      responses:
+        '200':
+          description: Reserva alterada
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Reservation'
+        '400':
+          $ref: '#/components/responses/BadRequest'
+        '401':
+          $ref: '#/components/responses/Unauthorized'
+        '403':
+          $ref: '#/components/responses/Forbidden'
+        '404':
+          $ref: '#/components/responses/NotFound'
+        '409':
+          $ref: '#/components/responses/Conflict'
+        '422':
+          $ref: '#/components/responses/UnprocessableContent'
+        '503':
+          $ref: '#/components/responses/ServiceUnavailable'
+    patch:
+      tags:
+      - reservations
+      operationId: patchReservation
+      summary: Altera parte da reserva (merge patch)
+      description: |
+        Professor dono. Campo ausente fica como está; `null` apaga `purpose`.
+        `resourceIds`, quando enviado, substitui a lista inteira. Mesmas regras do PUT.
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/ReservationPatch'
+          application/merge-patch+json:
+            schema:
+              $ref: '#/components/schemas/ReservationPatch'
+      responses:
+        '200':
+          description: Reserva alterada
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Reservation'
+        '400':
+          $ref: '#/components/responses/BadRequest'
+        '401':
+          $ref: '#/components/responses/Unauthorized'
+        '403':
+          $ref: '#/components/responses/Forbidden'
+        '404':
+          $ref: '#/components/responses/NotFound'
+        '409':
+          $ref: '#/components/responses/Conflict'
+        '422':
+          $ref: '#/components/responses/UnprocessableContent'
+        '503':
+          $ref: '#/components/responses/ServiceUnavailable'
+    delete:
+      tags:
+      - reservations
+      operationId: deleteReservation
+      summary: Exclui a reserva (exclusão lógica)
+      description: |
+        Professor dono. Exclusão lógica: não apaga do banco; define `enabled=false` e libera os recursos (RN-07).
+        A reserva excluída deixa de aparecer nas consultas e na ocupação. Excluir de novo responde 404.
+      responses:
+        '204':
+          description: Reserva excluída logicamente (`enabled=false`)
+        '401':
+          $ref: '#/components/responses/Unauthorized'
+        '403':
+          $ref: '#/components/responses/Forbidden'
+        '404':
+          $ref: '#/components/responses/NotFound'
+  /v1/reservations/{id}/details:
+    parameters:
+    - $ref: '#/components/parameters/ReservationId'
+    post:
+      tags:
+      - details
+      operationId: createDetail
+      summary: Registra uma ocorrência na reserva
+      description: |
+        Professor dono. `status` começa `OPEN` se não vier. `resourceId`, se vier, precisa estar
+        em `resourceIds` da reserva (RN-09 → 422). Reserva excluída logicamente (`enabled=false`) → 404.
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/DetailCreate'
+      responses:
+        '201':
+          description: Ocorrência criada
+          headers:
+            Location:
+              $ref: '#/components/headers/Location'
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Detail'
+        '400':
+          $ref: '#/components/responses/BadRequest'
+        '401':
+          $ref: '#/components/responses/Unauthorized'
+        '403':
+          $ref: '#/components/responses/Forbidden'
+        '404':
+          $ref: '#/components/responses/NotFound'
+        '422':
+          $ref: '#/components/responses/UnprocessableContent'
+    get:
+      tags:
+      - details
+      operationId: listDetails
+      summary: Lista as ocorrências da reserva, com query simples ou complexa
+      description: |
+        Sem parâmetros devolve todas as ocorrências da reserva com `enabled=true`. Mesma sintaxe da listagem de reservas:
+        `campo=valor` (igualdade) ou `campo={op}valor`. Vários parâmetros se combinam com E.
+        Operador desconhecido ou valor inválido → 400.
+
+        Exemplo: `GET /v1/reservations/{id}/details?status=OPEN&description={like}%projetor%`
+      parameters:
+      - $ref: '#/components/parameters/QDetailStatus'
+      - $ref: '#/components/parameters/QDetailResourceId'
+      - $ref: '#/components/parameters/QDescription'
+      responses:
+        '200':
+          description: Ocorrências encontradas (pode ser vazia)
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/DetailList'
+        '400':
+          $ref: '#/components/responses/BadRequest'
+        '401':
+          $ref: '#/components/responses/Unauthorized'
+        '403':
+          $ref: '#/components/responses/Forbidden'
+        '404':
+          $ref: '#/components/responses/NotFound'
+  /v1/reservations/{id}/details/{detailId}:
+    parameters:
+    - $ref: '#/components/parameters/ReservationId'
+    - $ref: '#/components/parameters/DetailId'
+    get:
+      tags:
+      - details
+      operationId: getDetail
+      summary: Busca uma ocorrência
+      responses:
+        '200':
+          description: Ocorrência encontrada
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Detail'
+        '401':
+          $ref: '#/components/responses/Unauthorized'
+        '403':
+          $ref: '#/components/responses/Forbidden'
+        '404':
+          $ref: '#/components/responses/NotFound'
+    put:
+      tags:
+      - details
+      operationId: replaceDetail
+      summary: Substitui a ocorrência
+      description: Professor dono. Substituição total; `resourceId` ausente é apagado. Mesmas regras do POST.
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/DetailUpdate'
+      responses:
+        '200':
+          description: Ocorrência alterada
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Detail'
+        '400':
+          $ref: '#/components/responses/BadRequest'
+        '401':
+          $ref: '#/components/responses/Unauthorized'
+        '403':
+          $ref: '#/components/responses/Forbidden'
+        '404':
+          $ref: '#/components/responses/NotFound'
+        '422':
+          $ref: '#/components/responses/UnprocessableContent'
+    patch:
+      tags:
+      - details
+      operationId: patchDetail
+      summary: 'Altera parte da ocorrência (ex.: marcar RESOLVED)'
+      description: Professor dono. Campo ausente fica como está; `null` apaga `resourceId`. Mesmas regras do POST.
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/DetailPatch'
+          application/merge-patch+json:
+            schema:
+              $ref: '#/components/schemas/DetailPatch'
+      responses:
+        '200':
+          description: Ocorrência alterada
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Detail'
+        '400':
+          $ref: '#/components/responses/BadRequest'
+        '401':
+          $ref: '#/components/responses/Unauthorized'
+        '403':
+          $ref: '#/components/responses/Forbidden'
+        '404':
+          $ref: '#/components/responses/NotFound'
+        '422':
+          $ref: '#/components/responses/UnprocessableContent'
+    delete:
+      tags:
+      - details
+      operationId: deleteDetail
+      summary: Remove a ocorrência (exclusão lógica)
+      description: 'Professor dono. Exclusão lógica: define `enabled=false` na ocorrência; nada é removido do banco. Reserva
+        excluída logicamente (`enabled=false`) → 404.'
+      responses:
+        '204':
+          description: Ocorrência excluída logicamente (`enabled=false`)
+        '401':
+          $ref: '#/components/responses/Unauthorized'
+        '403':
+          $ref: '#/components/responses/Forbidden'
+        '404':
+          $ref: '#/components/responses/NotFound'
+  /v1/identity/me:
+    get:
+      tags:
+      - infra
+      operationId: getIdentity
+      summary: Identidade do usuário autenticado (Spine AD-4)
+      responses:
+        '200':
+          description: Dados extraídos do JWT
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Identity'
+        '401':
+          $ref: '#/components/responses/Unauthorized'
+  /health:
+    get:
+      tags:
+      - infra
+      operationId: getHealth
+      summary: Saúde do serviço (anônimo)
+      security: []
+      responses:
+        '200':
+          description: Serviço no ar
+          content:
+            application/json:
+              schema:
+                type: object
+                required:
+                - status
+                properties:
+                  status:
+                    type: string
+                    enum:
+                    - UP
+              example:
+                status: UP
+        '503':
+          description: Serviço sem acesso ao banco
+          content:
+            application/json:
+              schema:
+                type: object
+                required:
+                - status
+                properties:
+                  status:
+                    type: string
+                    enum:
+                    - DOWN
+components:
+  securitySchemes:
+    bearerAuth:
+      type: http
+      scheme: bearer
+      bearerFormat: JWT
+      description: Access token do Keycloak (realm constrsw), obtido via oauth (`POST /login`).
+  headers:
+    Location:
+      description: URL do recurso criado
+      schema:
+        type: string
+        format: uri-reference
+  parameters:
+    ReservationId:
+      name: id
+      in: path
+      required: true
+      schema:
+        $ref: '#/components/schemas/Uuid'
+    DetailId:
+      name: detailId
+      in: path
+      required: true
+      schema:
+        $ref: '#/components/schemas/Uuid'
+    QProfessorId:
+      name: professorId
+      in: query
+      description: UUID, com operador opcional (`{neq}`).
+      schema:
+        $ref: '#/components/schemas/QueryValue'
+      example: b2d1c002-0000-4000-b000-000000000003
+    QLessonId:
+      name: lessonId
+      in: query
+      description: UUID, com operador opcional (`{neq}`).
+      schema:
+        $ref: '#/components/schemas/QueryValue'
+    QDate:
+      name: date
+      in: query
+      description: YYYY-MM-DD, com operador opcional (`{neq}`, `{gt}`, `{gteq}`, `{lt}`, `{lteq}`).
+      schema:
+        $ref: '#/components/schemas/QueryValue'
+      example: '{gteq}2026-11-01'
+    QTimeSlotId:
+      name: timeSlotId
+      in: query
+      description: Faixa do cânone, com operador opcional (comparação pela ordem A…N, P).
+      schema:
+        $ref: '#/components/schemas/QueryValue'
+      example: C
+    QPurpose:
+      name: purpose
+      in: query
+      description: Texto, com operador opcional (`{neq}`, `{like}` com curinga `%`).
+      schema:
+        $ref: '#/components/schemas/QueryValue'
+      example: '{like}%banca%'
+    QResourceId:
+      name: resourceId
+      in: query
+      description: UUID de um Resource; só igualdade. Devolve as reservas cuja lista `resourceIds` contém o recurso.
+      schema:
+        $ref: '#/components/schemas/Uuid'
+      example: 50000000-0000-4000-8000-000000000001
+    QDetailStatus:
+      name: status
+      in: query
+      description: OPEN ou RESOLVED, com operador opcional (`{neq}`).
+      schema:
+        $ref: '#/components/schemas/QueryValue'
+      example: OPEN
+    QDetailResourceId:
+      name: resourceId
+      in: query
+      description: UUID do Resource envolvido na ocorrência, com operador opcional (`{neq}`).
+      schema:
+        $ref: '#/components/schemas/QueryValue'
+      example: 50000000-0000-4000-8000-000000000001
+    QDescription:
+      name: description
+      in: query
+      description: Texto, com operador opcional (`{neq}`, `{like}` com curinga `%`, sem diferenciar maiúsculas).
+      schema:
+        $ref: '#/components/schemas/QueryValue'
+      example: '{like}%projetor%'
+  responses:
+    BadRequest:
+      description: Requisição malformada (JSON inválido, query com operador desconhecido)
+      content:
+        application/problem+json:
+          schema:
+            $ref: '#/components/schemas/Problem'
+    Unauthorized:
+      description: Token ausente, inválido ou expirado
+      content:
+        application/problem+json:
+          schema:
+            $ref: '#/components/schemas/Problem'
+    Forbidden:
+      description: Papel sem permissão, ou professor que não é o dono da reserva (RN-02)
+      content:
+        application/problem+json:
+          schema:
+            $ref: '#/components/schemas/Problem'
+    NotFound:
+      description: Reserva ou ocorrência não encontrada ou excluída logicamente (`enabled=false`)
+      content:
+        application/problem+json:
+          schema:
+            $ref: '#/components/schemas/Problem'
+    Conflict:
+      description: |
+        Recusa de regra de negócio. `code`:
+        - `FR-23`: Resource ocupado na data + faixa, Resource inexistente ou inativo, Employee inativo,
+          Lesson inexistente, com data/faixa diferente ou sem o professor em `professorIds`.
+      content:
+        application/problem+json:
+          schema:
+            $ref: '#/components/schemas/Problem'
+          example:
+            type: urn:closed-cras:recusa:FR-23
+            title: Recurso já reservado
+            status: 409
+            detail: O Resource 50000000-0000-4000-8000-000000000001 já está reservado em 2026-11-03, faixa C.
+            instance: /v1/reservations
+            code: FR-23
+    ServiceUnavailable:
+      description: Serviço de outro contexto fora do ar ou sem resposta no timeout (modo `http` dos clientes)
+      content:
+        application/problem+json:
+          schema:
+            $ref: '#/components/schemas/Problem'
+          example:
+            type: about:blank
+            title: Dependência indisponível
+            status: 503
+            detail: O serviço lessons não respondeu.
+            instance: /v1/reservations
+    UnprocessableContent:
+      description: |
+        Validação de forma (campo obrigatório, faixa fora do cânone, domingo, campo não permitido,
+        `resourceIds` vazio ou repetido, `resourceId` da ocorrência fora da reserva)
+      content:
+        application/problem+json:
+          schema:
+            $ref: '#/components/schemas/Problem'
+          example:
+            type: about:blank
+            title: Dados inválidos
+            status: 422
+            instance: /v1/reservations
+            errors:
+            - field: resourceIds
+              message: deve ter pelo menos 1 recurso, sem repetição
+  schemas:
+    Uuid:
+      description: Identificador UUID v4 em texto.
+      type: string
+      format: uuid
+      examples:
+      - 3f2b8c1e-6a4d-4f7b-9c2e-1a5d7e9b0c41
+    Date:
+      description: Data sem horário (YYYY-MM-DD). Domingo é recusado pelo serviço (RN-01), não pelo schema.
+      type: string
+      format: date
+      examples:
+      - '2026-11-03'
+    TimeSlotId:
+      description: 'Código da faixa no cânone do addendum: A–E, F–N, P (sem O, E1, E2).'
+      type: string
+      enum:
+      - A
+      - B
+      - C
+      - D
+      - E
+      - F
+      - G
+      - H
+      - I
+      - J
+      - K
+      - L
+      - M
+      - N
+      - P
+    Purpose:
+      description: Finalidade em texto livre (opcional, Q4).
+      type: string
+      minLength: 1
+      maxLength: 255
+      examples:
+      - Aula prática de redes
+    ResourceIds:
+      description: Resources reservados (N–N com Resource). Pelo menos 1, sem repetição (Q8).
+      type: array
+      minItems: 1
+      uniqueItems: true
+      items:
+        $ref: '#/components/schemas/Uuid'
+    DetailStatus:
+      description: Situação da ocorrência. Nasce OPEN.
+      type: string
+      enum:
+      - OPEN
+      - RESOLVED
+    Description:
+      description: Descrição da ocorrência (Q10).
+      type: string
+      minLength: 1
+      maxLength: 500
+      examples:
+      - Projetor não liga
+    QueryValue:
+      description: 'Valor de filtro: `valor` (igualdade) ou `{op}valor`, op em neq, gt, gteq, lt, lteq, like.'
+      type: string
+      pattern: ^(\{(neq|gt|gteq|lt|lteq|like)\})?[^{}]+$
+    Reservation:
+      title: Reservation
+      description: Reserva como devolvida pela API. Campos opcionais sem valor são omitidos. Ocorrências ficam em 
+        /details.
+      type: object
+      required:
+      - id
+      - enabled
+      - professorId
+      - lessonId
+      - date
+      - timeSlotId
+      - resourceIds
+      - createdAt
+      - updatedAt
+      properties:
+        id:
+          $ref: '#/components/schemas/Uuid'
+        enabled:
+          type: boolean
+          readOnly: true
+          default: true
+          description: 'Exclusão lógica: true para registro ativo; false para registro excluído logicamente. Controlado pelo
+            servidor.'
+        professorId:
+          $ref: '#/components/schemas/Uuid'
+          description: Dono da reserva. Vem do JWT, nunca do corpo.
+        lessonId:
+          $ref: '#/components/schemas/Uuid'
+          description: Lesson atendida pela reserva (obrigatória; a Lesson já tem a sala).
+        date:
+          $ref: '#/components/schemas/Date'
+        timeSlotId:
+          $ref: '#/components/schemas/TimeSlotId'
+        purpose:
+          $ref: '#/components/schemas/Purpose'
+        resourceIds:
+          $ref: '#/components/schemas/ResourceIds'
+        createdAt:
+          type: string
+          format: date-time
+        updatedAt:
+          type: string
+          format: date-time
+      additionalProperties: false
+      examples:
+      - id: 3f2b8c1e-6a4d-4f7b-9c2e-1a5d7e9b0c41
+        enabled: true
+        professorId: b2d1c002-0000-4000-b000-000000000003
+        lessonId: 30000000-0000-4000-8000-000000000001
+        date: '2026-11-03'
+        timeSlotId: C
+        purpose: Aula prática de redes
+        resourceIds:
+        - 50000000-0000-4000-8000-000000000001
+        - 50000000-0000-4000-8000-000000000002
+        createdAt: '2026-10-28T14:05:00Z'
+        updatedAt: '2026-10-28T14:05:00Z'
+    ReservationCreate:
+      title: ReservationCreate
+      description: Corpo do POST. professorId, enabled, id e datas são do servidor (enviar → 422).
+      type: object
+      required:
+      - lessonId
+      - date
+      - timeSlotId
+      - resourceIds
+      properties:
+        lessonId:
+          $ref: '#/components/schemas/Uuid'
+        date:
+          $ref: '#/components/schemas/Date'
+        timeSlotId:
+          $ref: '#/components/schemas/TimeSlotId'
+        purpose:
+          $ref: '#/components/schemas/Purpose'
+        resourceIds:
+          $ref: '#/components/schemas/ResourceIds'
+      additionalProperties: false
+      examples:
+      - lessonId: 30000000-0000-4000-8000-000000000001
+        date: '2026-11-03'
+        timeSlotId: C
+        purpose: Aula prática de redes
+        resourceIds:
+        - 50000000-0000-4000-8000-000000000001
+        - 50000000-0000-4000-8000-000000000002
+    ReservationUpdate:
+      title: ReservationUpdate
+      description: Corpo do PUT. Substituição total, inclusive resourceIds; purpose ausente é apagado.
+      type: object
+      required:
+      - lessonId
+      - date
+      - timeSlotId
+      - resourceIds
+      properties:
+        lessonId:
+          $ref: '#/components/schemas/Uuid'
+        date:
+          $ref: '#/components/schemas/Date'
+        timeSlotId:
+          $ref: '#/components/schemas/TimeSlotId'
+        purpose:
+          $ref: '#/components/schemas/Purpose'
+        resourceIds:
+          $ref: '#/components/schemas/ResourceIds'
+      additionalProperties: false
+      examples:
+      - lessonId: 30000000-0000-4000-8000-000000000001
+        date: '2026-11-03'
+        timeSlotId: C
+        resourceIds:
+        - 50000000-0000-4000-8000-000000000002
+    ReservationPatch:
+      title: ReservationPatch
+      description: Corpo do PATCH (merge patch). null só apaga purpose; resourceIds troca a lista inteira. Pelo menos um
+        campo.
+      type: object
+      minProperties: 1
+      properties:
+        lessonId:
+          $ref: '#/components/schemas/Uuid'
+        date:
+          $ref: '#/components/schemas/Date'
+        timeSlotId:
+          $ref: '#/components/schemas/TimeSlotId'
+        purpose:
+          oneOf:
+          - $ref: '#/components/schemas/Purpose'
+          - type: 'null'
+        resourceIds:
+          $ref: '#/components/schemas/ResourceIds'
+      additionalProperties: false
+      examples:
+      - resourceIds:
+        - 50000000-0000-4000-8000-000000000001
+      - purpose:
+    ReservationList:
+      type: object
+      required:
+      - items
+      properties:
+        items:
+          type: array
+          items:
+            $ref: '#/components/schemas/Reservation'
+      additionalProperties: false
+    Detail:
+      title: Detail
+      description: 'Ocorrência da reserva (ex.: projetor não liga), como devolvida pela API.'
+      type: object
+      required:
+      - id
+      - enabled
+      - reservationId
+      - description
+      - status
+      - createdAt
+      properties:
+        id:
+          $ref: '#/components/schemas/Uuid'
+        enabled:
+          type: boolean
+          readOnly: true
+          default: true
+          description: 'Exclusão lógica: true para registro ativo; false para registro excluído logicamente. Controlado pelo
+            servidor.'
+        reservationId:
+          $ref: '#/components/schemas/Uuid'
+        description:
+          $ref: '#/components/schemas/Description'
+        status:
+          $ref: '#/components/schemas/DetailStatus'
+        resourceId:
+          $ref: '#/components/schemas/Uuid'
+          description: Recurso envolvido, quando houver; precisa estar em resourceIds da reserva (RN-09).
+        createdAt:
+          type: string
+          format: date-time
+      additionalProperties: false
+      examples:
+      - id: 8d0e6b52-2f1c-4c3a-9b7e-5a4f3d2c1b10
+        enabled: true
+        reservationId: 3f2b8c1e-6a4d-4f7b-9c2e-1a5d7e9b0c41
+        description: Projetor não liga
+        status: OPEN
+        resourceId: 50000000-0000-4000-8000-000000000001
+        createdAt: '2026-11-03T10:20:00Z'
+    DetailCreate:
+      title: DetailCreate
+      description: Corpo do POST de ocorrência. status opcional (default OPEN).
+      type: object
+      required:
+      - description
+      properties:
+        description:
+          $ref: '#/components/schemas/Description'
+        status:
+          $ref: '#/components/schemas/DetailStatus'
+        resourceId:
+          $ref: '#/components/schemas/Uuid'
+      additionalProperties: false
+      examples:
+      - description: Projetor não liga
+        resourceId: 50000000-0000-4000-8000-000000000001
+    DetailUpdate:
+      title: DetailUpdate
+      description: Corpo do PUT de ocorrência. Substituição total; resourceId ausente é apagado.
+      type: object
+      required:
+      - description
+      - status
+      properties:
+        description:
+          $ref: '#/components/schemas/Description'
+        status:
+          $ref: '#/components/schemas/DetailStatus'
+        resourceId:
+          $ref: '#/components/schemas/Uuid'
+      additionalProperties: false
+      examples:
+      - description: Projetor não liga (cabo HDMI trocado)
+        status: RESOLVED
+        resourceId: 50000000-0000-4000-8000-000000000001
+    DetailPatch:
+      title: DetailPatch
+      description: Corpo do PATCH de ocorrência (merge patch). null só apaga resourceId. Pelo menos um campo.
+      type: object
+      minProperties: 1
+      properties:
+        description:
+          $ref: '#/components/schemas/Description'
+        status:
+          $ref: '#/components/schemas/DetailStatus'
+        resourceId:
+          oneOf:
+          - $ref: '#/components/schemas/Uuid'
+          - type: 'null'
+      additionalProperties: false
+      examples:
+      - status: RESOLVED
+      - resourceId:
+    DetailList:
+      type: object
+      required:
+      - items
+      properties:
+        items:
+          type: array
+          items:
+            $ref: '#/components/schemas/Detail'
+      additionalProperties: false
+    OccupancyItem:
+      title: OccupancyItem
+      type: object
+      required:
+      - reservationId
+      - professorId
+      - lessonId
+      - resourceId
+      properties:
+        reservationId:
+          $ref: '#/components/schemas/Uuid'
+        professorId:
+          $ref: '#/components/schemas/Uuid'
+        lessonId:
+          $ref: '#/components/schemas/Uuid'
+        resourceId:
+          $ref: '#/components/schemas/Uuid'
+      additionalProperties: false
+    OccupancyList:
+      type: object
+      required:
+      - items
+      properties:
+        items:
+          type: array
+          items:
+            $ref: '#/components/schemas/OccupancyItem'
+      additionalProperties: false
+    Problem:
+      title: Problem
+      description: RFC 9457. 409 com code = FR e type = urn:closed-cras:recusa:<code>; 422 com errors.
+      type: object
+      required:
+      - type
+      - title
+      - status
+      properties:
+        type:
+          type: string
+          format: uri
+        title:
+          type: string
+        status:
+          type: integer
+          minimum: 400
+          maximum: 599
+        detail:
+          type: string
+        instance:
+          type: string
+          format: uri-reference
+        code:
+          type: string
+          pattern: ^FR-[0-9]+$
+        errors:
+          type: array
+          items:
+            type: object
+            required:
+            - field
+            - message
+            properties:
+              field:
+                type: string
+              message:
+                type: string
+            additionalProperties: false
+    Identity:
+      title: Identity
+      description: Dados do JWT (Spine AD-4). IDs não aplicáveis vêm null.
+      type: object
+      required:
+      - sub
+      - email
+      - roles
+      - employeeId
+      - professorId
+      - studentId
+      properties:
+        sub:
+          type: string
+        email:
+          type: string
+          format: email
+        roles:
+          type: array
+          items:
+            type: string
+        employeeId:
+          type:
+          - string
+          - 'null'
+        professorId:
+          type:
+          - string
+          - 'null'
+        studentId:
+          type:
+          - string
+          - 'null'
+      additionalProperties: false

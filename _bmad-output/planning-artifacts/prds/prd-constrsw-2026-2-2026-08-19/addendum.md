@@ -40,7 +40,7 @@ Cada faixa é `[início, fim)`. Extremos que se tocam não conflitam. Depois de 
 
 | Contexto | Principal | Secundária (1–N) | Atributos da secundária (v1) |
 |---|---|---|---|
-| `employees` | Employee | EmploymentBond | tipo de vínculo, início, fim?, unidade/setor (texto), situação |
+| `employees` | Employee | EmploymentBond | tipo de vínculo, início, fim?, unidade/setor (texto), situação (`ativo` \| `encerrado`) |
 | `professors` | Professor | AcademicDegree | grau, área, instituição, ano. Principal: is-a Employee (`employeeId` 1–1) |
 | `students` | Student | AcademicAffiliation | código do curso, período de ingresso, situação (não é roster) |
 | `courses` | Course | SyllabusItem | `kind` (conteúdo \| bibliografia \| critério), enunciado, ordem |

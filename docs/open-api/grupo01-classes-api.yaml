@@ -1,0 +1,758 @@
+openapi: 3.1.0
+info:
+  title: Classes API
+  version: 0.1.0
+  summary: Domínio classes — Class (turma) 1–N Avaliação (review anônima)
+  description: |
+    Contrato OpenAPI 3.1 do contexto `classes` (ConstrSW 2026/2).
+
+    - IDs de contrato = UUID string
+    - JSON camelCase; listas em `items`
+    - Recusas `application/problem+json` com `code` estável (FR)
+    - `autorId` nunca no contrato público de leitura
+    - `averageRating` calculado (não persistido)
+    - `startDate`/`endDate` = datas do período da oferta (não horários)
+
+    Filtros: equals (`status=active`) ou `{op}` no valor —
+    `neq`, `gt`, `gteq`, `lt`, `lteq`, `like`
+    (ex. `status={neq}closed`, `seats={gteq}30`).
+
+    Schemas JSON Schema espelhados também em `./schemas/` (artefato separado).
+
+    ## Exclusão lógica
+
+    Todas as exclusões são lógicas e controladas pelo atributo `enabled` das classes. Um `DELETE` não remove o registro do banco: apenas define `enabled=false`. O atributo é somente leitura (`readOnly`): nasce `true` e não pode ser enviado pelo cliente.
+
+    Registros com `enabled=false` não aparecem nas listagens, a consulta por id responde `404` e não podem ser alterados nem excluídos novamente (`404`).
+  license:
+    name: Proprietary — PUCRS ConstrSW
+
+servers:
+  - url: http://localhost:8080
+    description: API classes (local / compose)
+
+tags:
+  - name: classes
+    description: Coleção principal — Class (turma)
+  - name: reviews
+    description: Coleção secundária — Avaliações da Class
+
+security:
+  - bearerAuth: []
+
+paths:
+  /v1/classes:
+    post:
+      tags: [classes]
+      operationId: createClass
+      summary: Criar Class
+      description: Coordenador cria turma. Realiza FR-1.
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: "#/components/schemas/ClassCreate"
+      responses:
+        "201":
+          description: Class criada
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/Class"
+        "400":
+          $ref: "#/components/responses/BadRequest"
+        "401":
+          $ref: "#/components/responses/Unauthorized"
+        "403":
+          $ref: "#/components/responses/Forbidden"
+        "422":
+          $ref: "#/components/responses/UnprocessableEntity"
+    get:
+      tags: [classes]
+      operationId: listClasses
+      summary: Listar Classes (filtros simples/complexos)
+      description: |
+        FR-2. Equals: `status=active`.
+        Operadores: `status={neq}closed`, `seats={gt}20`,
+        `startDate={gteq}2026-02-01`, `label={like}%BD%`.
+      parameters:
+        - $ref: "#/components/parameters/filterId"
+        - $ref: "#/components/parameters/filterStatus"
+        - $ref: "#/components/parameters/filterCourseId"
+        - $ref: "#/components/parameters/filterRoomId"
+        - $ref: "#/components/parameters/filterStartDate"
+        - $ref: "#/components/parameters/filterEndDate"
+        - $ref: "#/components/parameters/filterSeats"
+        - $ref: "#/components/parameters/filterCode"
+        - $ref: "#/components/parameters/filterLabel"
+        - $ref: "#/components/parameters/filterModality"
+      responses:
+        "200":
+          description: Lista de Classes
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/ClassList"
+        "401":
+          $ref: "#/components/responses/Unauthorized"
+        "403":
+          $ref: "#/components/responses/Forbidden"
+
+  /v1/classes/{classId}:
+    parameters:
+      - $ref: "#/components/parameters/classId"
+    get:
+      tags: [classes]
+      operationId: getClassById
+      summary: Obter Class por id
+      responses:
+        "200":
+          description: Class
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/Class"
+        "401":
+          $ref: "#/components/responses/Unauthorized"
+        "403":
+          $ref: "#/components/responses/Forbidden"
+        "404":
+          $ref: "#/components/responses/NotFound"
+    put:
+      tags: [classes]
+      operationId: replaceClass
+      summary: Atualizar Class (total)
+      description: PUT total. startDate/endDate imutáveis após create → 422 se alterados.
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: "#/components/schemas/ClassUpdate"
+      responses:
+        "200":
+          description: Class atualizada
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/Class"
+        "400":
+          $ref: "#/components/responses/BadRequest"
+        "401":
+          $ref: "#/components/responses/Unauthorized"
+        "403":
+          $ref: "#/components/responses/Forbidden"
+        "404":
+          $ref: "#/components/responses/NotFound"
+        "422":
+          $ref: "#/components/responses/UnprocessableEntity"
+    patch:
+      tags: [classes]
+      operationId: patchClass
+      summary: Atualizar Class (parcial)
+      description: PATCH parcial (FR-3). Encerrar via `status=closed` (FR-4).
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: "#/components/schemas/ClassPatch"
+      responses:
+        "200":
+          description: Class atualizada
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/Class"
+        "400":
+          $ref: "#/components/responses/BadRequest"
+        "401":
+          $ref: "#/components/responses/Unauthorized"
+        "403":
+          $ref: "#/components/responses/Forbidden"
+        "404":
+          $ref: "#/components/responses/NotFound"
+        "422":
+          $ref: "#/components/responses/UnprocessableEntity"
+    delete:
+      tags: [classes]
+      operationId: deleteClass
+      summary: Excluir Class (exclusão lógica)
+      description: |
+        DELETE exigido pela rubrica da disciplina. Exclusão lógica: define `enabled=false` na Class e nas suas Avaliações; nada é removido do banco.
+        Encerrar a turma (`status=closed`, FR-4) não é exclusão: a Class encerrada continua visível com `enabled=true`.
+      responses:
+        "204":
+          description: Excluída logicamente (`enabled=false`)
+        "401":
+          $ref: "#/components/responses/Unauthorized"
+        "403":
+          $ref: "#/components/responses/Forbidden"
+        "404":
+          $ref: "#/components/responses/NotFound"
+
+  /v1/classes/{classId}/reviews:
+    parameters:
+      - $ref: "#/components/parameters/classId"
+    post:
+      tags: [reviews]
+      operationId: createReview
+      summary: Criar Avaliação na Class
+      description: |
+        FR-6. Caller no roster. Uma Avaliação por autor×Class.
+        Class encerrada → 422. Body sem autorId.
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: "#/components/schemas/ReviewCreate"
+      responses:
+        "201":
+          description: Avaliação criada (sem autorId)
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/Review"
+        "400":
+          $ref: "#/components/responses/BadRequest"
+        "401":
+          $ref: "#/components/responses/Unauthorized"
+        "403":
+          $ref: "#/components/responses/Forbidden"
+        "404":
+          $ref: "#/components/responses/NotFound"
+        "409":
+          description: Já existe Avaliação deste autor nesta Class
+          content:
+            application/problem+json:
+              schema:
+                $ref: "#/components/schemas/ProblemDetails"
+        "422":
+          $ref: "#/components/responses/UnprocessableEntity"
+    get:
+      tags: [reviews]
+      operationId: listReviews
+      summary: Listar Avaliações da Class
+      description: FR-7 / FR-8. Sem autorId. Inclui averageRating.
+      parameters:
+        - name: ordinalRating
+          in: query
+          required: false
+          schema:
+            $ref: "#/components/schemas/FilterOperatorValue"
+        - name: createdAt
+          in: query
+          required: false
+          schema:
+            $ref: "#/components/schemas/FilterOperatorValue"
+      responses:
+        "200":
+          description: Lista + média
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/ReviewList"
+        "401":
+          $ref: "#/components/responses/Unauthorized"
+        "403":
+          $ref: "#/components/responses/Forbidden"
+        "404":
+          $ref: "#/components/responses/NotFound"
+
+  /v1/classes/{classId}/reviews/{reviewId}:
+    parameters:
+      - $ref: "#/components/parameters/classId"
+      - $ref: "#/components/parameters/reviewId"
+    get:
+      tags: [reviews]
+      operationId: getReviewById
+      summary: Obter Avaliação por id
+      responses:
+        "200":
+          description: Avaliação (sem autorId)
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/Review"
+        "401":
+          $ref: "#/components/responses/Unauthorized"
+        "403":
+          $ref: "#/components/responses/Forbidden"
+        "404":
+          $ref: "#/components/responses/NotFound"
+    put:
+      tags: [reviews]
+      operationId: replaceReview
+      summary: Atualizar Avaliação (total)
+      description: FR-9. Somente o próprio autor.
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: "#/components/schemas/ReviewUpdate"
+      responses:
+        "200":
+          description: Atualizada
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/Review"
+        "400":
+          $ref: "#/components/responses/BadRequest"
+        "401":
+          $ref: "#/components/responses/Unauthorized"
+        "403":
+          $ref: "#/components/responses/Forbidden"
+        "404":
+          $ref: "#/components/responses/NotFound"
+        "422":
+          $ref: "#/components/responses/UnprocessableEntity"
+    patch:
+      tags: [reviews]
+      operationId: patchReview
+      summary: Atualizar Avaliação (parcial)
+      description: FR-9. Somente o próprio autor.
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: "#/components/schemas/ReviewPatch"
+      responses:
+        "200":
+          description: Atualizada
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/Review"
+        "400":
+          $ref: "#/components/responses/BadRequest"
+        "401":
+          $ref: "#/components/responses/Unauthorized"
+        "403":
+          $ref: "#/components/responses/Forbidden"
+        "404":
+          $ref: "#/components/responses/NotFound"
+        "422":
+          $ref: "#/components/responses/UnprocessableEntity"
+    delete:
+      tags: [reviews]
+      operationId: deleteReview
+      summary: Excluir Avaliação (exclusão lógica)
+      description: 'FR-9. Somente o próprio autor. Exclusão lógica: define `enabled=false`; a Avaliação deixa de contar no
+        `averageRating`.'
+      responses:
+        "204":
+          description: Excluída logicamente (`enabled=false`)
+        "401":
+          $ref: "#/components/responses/Unauthorized"
+        "403":
+          $ref: "#/components/responses/Forbidden"
+        "404":
+          $ref: "#/components/responses/NotFound"
+
+components:
+  securitySchemes:
+    bearerAuth:
+      type: http
+      scheme: bearer
+      bearerFormat: JWT
+      description: JWT via gateway OAuth / BFF (papéis Closed CRAS).
+
+  parameters:
+    classId:
+      name: classId
+      in: path
+      required: true
+      schema:
+        $ref: "#/components/schemas/Uuid"
+    reviewId:
+      name: reviewId
+      in: path
+      required: true
+      schema:
+        $ref: "#/components/schemas/Uuid"
+    filterId:
+      name: id
+      in: query
+      required: false
+      schema:
+        $ref: "#/components/schemas/FilterOperatorValue"
+    filterStatus:
+      name: status
+      in: query
+      required: false
+      schema:
+        $ref: "#/components/schemas/FilterOperatorValue"
+      examples:
+        equals:
+          value: active
+        notEquals:
+          value: "{neq}closed"
+    filterCourseId:
+      name: courseId
+      in: query
+      required: false
+      schema:
+        $ref: "#/components/schemas/FilterOperatorValue"
+    filterRoomId:
+      name: roomId
+      in: query
+      required: false
+      schema:
+        $ref: "#/components/schemas/FilterOperatorValue"
+    filterStartDate:
+      name: startDate
+      in: query
+      required: false
+      schema:
+        $ref: "#/components/schemas/FilterOperatorValue"
+      example: "{gteq}2026-02-01"
+    filterEndDate:
+      name: endDate
+      in: query
+      required: false
+      schema:
+        $ref: "#/components/schemas/FilterOperatorValue"
+      example: "{lteq}2026-07-31"
+    filterSeats:
+      name: seats
+      in: query
+      required: false
+      schema:
+        $ref: "#/components/schemas/FilterOperatorValue"
+      examples:
+        gt:
+          value: "{gt}20"
+        lteq:
+          value: "{lteq}40"
+    filterCode:
+      name: code
+      in: query
+      required: false
+      schema:
+        $ref: "#/components/schemas/FilterOperatorValue"
+    filterLabel:
+      name: label
+      in: query
+      required: false
+      schema:
+        $ref: "#/components/schemas/FilterOperatorValue"
+      example: "{like}%Lab%"
+    filterModality:
+      name: modality
+      in: query
+      required: false
+      schema:
+        $ref: "#/components/schemas/FilterOperatorValue"
+
+  schemas:
+    Uuid:
+      type: string
+      format: uuid
+      description: Identificador opaco UUID (contrato = string).
+
+    UuidArray:
+      type: array
+      items:
+        $ref: "#/components/schemas/Uuid"
+      uniqueItems: true
+
+    ClassStatus:
+      type: string
+      enum: [active, closed]
+    OrdinalRating:
+      type: string
+      enum: [very_bad, bad, fair, good, very_good]
+      description: Escala ordinal (mapa interno 1..5 só para média).
+
+    AverageRating:
+      type: [number, "null"]
+      minimum: 1
+      maximum: 5
+      multipleOf: 0.1
+      description: Média 1.0..5.0 uma casa; null se n=0. Calculado, não persistido.
+
+    IsoDate:
+      type: string
+      format: date
+      description: Data do período da oferta (calendário), não horário.
+
+    IsoDateTime:
+      type: string
+      format: date-time
+
+    FilterOperatorValue:
+      type: string
+      description: |
+        Equals sem op, ou valor com `{op}`: `{neq}`, `{gt}`, `{gteq}`, `{lt}`, `{lteq}`, `{like}`.
+
+    ProblemDetails:
+      type: object
+      additionalProperties: true
+      required: [type, title, status]
+      properties:
+        type:
+          type: string
+          format: uri
+        title:
+          type: string
+        status:
+          type: integer
+          minimum: 400
+          maximum: 599
+        detail:
+          type: string
+        instance:
+          type: string
+          format: uri
+        code:
+          type: string
+          description: Código estável do FR (ex. FR-6).
+
+    ClassCreate:
+      type: object
+      additionalProperties: false
+      required: [courseId, startDate, endDate, seats, roomId, professorIds, studentIds]
+      properties:
+        courseId:
+          $ref: "#/components/schemas/Uuid"
+        startDate:
+          $ref: "#/components/schemas/IsoDate"
+        endDate:
+          $ref: "#/components/schemas/IsoDate"
+        seats:
+          type: integer
+          minimum: 1
+        roomId:
+          $ref: "#/components/schemas/Uuid"
+        professorIds:
+          $ref: "#/components/schemas/UuidArray"
+        studentIds:
+          $ref: "#/components/schemas/UuidArray"
+        code:
+          type: string
+          maxLength: 64
+        label:
+          type: string
+          maxLength: 255
+        status:
+          $ref: "#/components/schemas/ClassStatus"
+        modality:
+          type: string
+          maxLength: 64
+
+    ClassUpdate:
+      type: object
+      additionalProperties: false
+      required: [courseId, startDate, endDate, seats, roomId, professorIds, studentIds, status]
+      properties:
+        courseId:
+          $ref: "#/components/schemas/Uuid"
+        startDate:
+          $ref: "#/components/schemas/IsoDate"
+        endDate:
+          $ref: "#/components/schemas/IsoDate"
+        seats:
+          type: integer
+          minimum: 1
+        roomId:
+          $ref: "#/components/schemas/Uuid"
+        professorIds:
+          $ref: "#/components/schemas/UuidArray"
+        studentIds:
+          $ref: "#/components/schemas/UuidArray"
+        code:
+          type: [string, "null"]
+          maxLength: 64
+        label:
+          type: [string, "null"]
+          maxLength: 255
+        status:
+          $ref: "#/components/schemas/ClassStatus"
+        modality:
+          type: [string, "null"]
+          maxLength: 64
+
+    ClassPatch:
+      type: object
+      additionalProperties: false
+      minProperties: 1
+      properties:
+        seats:
+          type: integer
+          minimum: 1
+        roomId:
+          $ref: "#/components/schemas/Uuid"
+        professorIds:
+          $ref: "#/components/schemas/UuidArray"
+        studentIds:
+          $ref: "#/components/schemas/UuidArray"
+        code:
+          type: [string, "null"]
+          maxLength: 64
+        label:
+          type: [string, "null"]
+          maxLength: 255
+        status:
+          $ref: "#/components/schemas/ClassStatus"
+        modality:
+          type: [string, "null"]
+          maxLength: 64
+
+    Class:
+      type: object
+      additionalProperties: false
+      required: [id, enabled, courseId, startDate, endDate, seats, roomId, professorIds, studentIds, status, 
+            averageRating]
+      properties:
+        id:
+          $ref: "#/components/schemas/Uuid"
+        enabled:
+          type: boolean
+          readOnly: true
+          default: true
+          description: 'Exclusão lógica: true para registro ativo; false para registro excluído logicamente. Controlado pelo
+            servidor.'
+        courseId:
+          $ref: "#/components/schemas/Uuid"
+        startDate:
+          $ref: "#/components/schemas/IsoDate"
+        endDate:
+          $ref: "#/components/schemas/IsoDate"
+        seats:
+          type: integer
+          minimum: 1
+        roomId:
+          $ref: "#/components/schemas/Uuid"
+        professorIds:
+          $ref: "#/components/schemas/UuidArray"
+        studentIds:
+          $ref: "#/components/schemas/UuidArray"
+        code:
+          type: [string, "null"]
+          maxLength: 64
+        label:
+          type: [string, "null"]
+          maxLength: 255
+        status:
+          $ref: "#/components/schemas/ClassStatus"
+        modality:
+          type: [string, "null"]
+          maxLength: 64
+        averageRating:
+          $ref: "#/components/schemas/AverageRating"
+
+    ClassList:
+      type: object
+      additionalProperties: false
+      required: [items]
+      properties:
+        items:
+          type: array
+          items:
+            $ref: "#/components/schemas/Class"
+
+    ReviewCreate:
+      type: object
+      additionalProperties: false
+      required: [ordinalRating]
+      properties:
+        ordinalRating:
+          $ref: "#/components/schemas/OrdinalRating"
+        text:
+          type: string
+          maxLength: 2000
+
+    ReviewUpdate:
+      type: object
+      additionalProperties: false
+      required: [ordinalRating]
+      properties:
+        ordinalRating:
+          $ref: "#/components/schemas/OrdinalRating"
+        text:
+          type: [string, "null"]
+          maxLength: 2000
+
+    ReviewPatch:
+      type: object
+      additionalProperties: false
+      minProperties: 1
+      properties:
+        ordinalRating:
+          $ref: "#/components/schemas/OrdinalRating"
+        text:
+          type: [string, "null"]
+          maxLength: 2000
+
+    Review:
+      type: object
+      additionalProperties: false
+      required: [id, enabled, classId, ordinalRating, createdAt]
+      properties:
+        id:
+          $ref: "#/components/schemas/Uuid"
+        enabled:
+          type: boolean
+          readOnly: true
+          default: true
+          description: 'Exclusão lógica: true para registro ativo; false para registro excluído logicamente. Controlado pelo
+            servidor.'
+        classId:
+          $ref: "#/components/schemas/Uuid"
+        ordinalRating:
+          $ref: "#/components/schemas/OrdinalRating"
+        text:
+          type: [string, "null"]
+          maxLength: 2000
+        createdAt:
+          $ref: "#/components/schemas/IsoDateTime"
+      description: Sem autorId no contrato público.
+
+    ReviewList:
+      type: object
+      additionalProperties: false
+      required: [items, averageRating]
+      properties:
+        items:
+          type: array
+          items:
+            $ref: "#/components/schemas/Review"
+        averageRating:
+          $ref: "#/components/schemas/AverageRating"
+
+  responses:
+    BadRequest:
+      description: Requisição inválida
+      content:
+        application/problem+json:
+          schema:
+            $ref: "#/components/schemas/ProblemDetails"
+    Unauthorized:
+      description: Não autenticado
+      content:
+        application/problem+json:
+          schema:
+            $ref: "#/components/schemas/ProblemDetails"
+    Forbidden:
+      description: Sem permissão / fora do roster
+      content:
+        application/problem+json:
+          schema:
+            $ref: "#/components/schemas/ProblemDetails"
+    NotFound:
+      description: Recurso não encontrado
+      content:
+        application/problem+json:
+          schema:
+            $ref: "#/components/schemas/ProblemDetails"
+    UnprocessableEntity:
+      description: Regra de negócio (período inválido, Class encerrada, FR-1a RO)
+      content:
+        application/problem+json:
+          schema:
+            $ref: "#/components/schemas/ProblemDetails"

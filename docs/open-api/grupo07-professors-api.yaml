@@ -1,0 +1,487 @@
+openapi: 3.1.0
+info:
+  title: Professors API
+  version: 1.0.0
+  description: |
+    Grupo 07 CRUD for Professor and AcademicDegree. Identity tokens come from another group's OAuth service.
+
+    ## Soft delete
+
+    All deletions are logical and controlled by the `enabled` attribute of the classes. A `DELETE` never removes the record from the database: it only sets `enabled=false`. The attribute is read-only (`readOnly`): it starts as `true` and cannot be sent by clients.
+
+    Records with `enabled=false` are omitted from listings, a lookup by id returns `404`, and they cannot be updated or deleted again (`404`).
+servers:
+  - url: http://localhost:8102
+paths:
+  /health:
+    get:
+      operationId: health
+      security: []
+      responses:
+        "200":
+          description: Database is reachable
+          content:
+            application/json:
+              schema:
+                type: object
+                required: [status]
+                properties:
+                  status:
+                    const: ok
+  /api/v1/professors:
+    get:
+      operationId: listProfessors
+      parameters:
+        - $ref: "#/components/parameters/query"
+      responses:
+        "200":
+          description: Matching professors. Empty match is an empty array.
+          content:
+            application/json:
+              schema:
+                type: array
+                items:
+                  $ref: "#/components/schemas/Professor"
+        "400":
+          $ref: "#/components/responses/BadRequest"
+        "401":
+          $ref: "#/components/responses/Unauthorized"
+        "403":
+          $ref: "#/components/responses/Forbidden"
+    post:
+      operationId: createProfessor
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: "#/components/schemas/ProfessorWrite"
+      responses:
+        "201":
+          description: Created
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/Professor"
+        "400":
+          $ref: "#/components/responses/BadRequest"
+        "401":
+          $ref: "#/components/responses/Unauthorized"
+        "403":
+          $ref: "#/components/responses/Forbidden"
+        "409":
+          $ref: "#/components/responses/Conflict"
+  /api/v1/professors/{id}:
+    parameters:
+      - $ref: "#/components/parameters/id"
+    get:
+      operationId: getProfessor
+      responses:
+        "200":
+          description: One professor
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/Professor"
+        "400":
+          $ref: "#/components/responses/BadRequest"
+        "401":
+          $ref: "#/components/responses/Unauthorized"
+        "403":
+          $ref: "#/components/responses/Forbidden"
+        "404":
+          $ref: "#/components/responses/NotFound"
+    put:
+      operationId: replaceProfessor
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: "#/components/schemas/ProfessorWrite"
+      responses:
+        "200":
+          description: Replaced principal attributes. Academic degrees are untouched.
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/Professor"
+        "400":
+          $ref: "#/components/responses/BadRequest"
+        "401":
+          $ref: "#/components/responses/Unauthorized"
+        "403":
+          $ref: "#/components/responses/Forbidden"
+        "404":
+          $ref: "#/components/responses/NotFound"
+        "409":
+          $ref: "#/components/responses/Conflict"
+    patch:
+      operationId: patchProfessor
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: "#/components/schemas/ProfessorPatch"
+      responses:
+        "200":
+          description: Partially updated
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/Professor"
+        "400":
+          $ref: "#/components/responses/BadRequest"
+        "401":
+          $ref: "#/components/responses/Unauthorized"
+        "403":
+          $ref: "#/components/responses/Forbidden"
+        "404":
+          $ref: "#/components/responses/NotFound"
+        "409":
+          $ref: "#/components/responses/Conflict"
+    delete:
+      operationId: deleteProfessor
+      summary: Delete a professor (soft delete)
+      description: 'Soft delete: sets `enabled=false` on the professor and on all of its academic degrees. Nothing is removed
+        from the database.'
+      responses:
+        "204":
+          description: Professor and its academic degrees soft-deleted (`enabled=false`)
+        "401":
+          $ref: "#/components/responses/Unauthorized"
+        "403":
+          $ref: "#/components/responses/Forbidden"
+        "404":
+          $ref: "#/components/responses/NotFound"
+  /api/v1/professors/{id}/academic-degrees:
+    parameters:
+      - $ref: "#/components/parameters/id"
+    get:
+      operationId: listAcademicDegrees
+      parameters:
+        - $ref: "#/components/parameters/query"
+      responses:
+        "200":
+          description: Degrees of this professor. Empty collection is an empty array.
+          content:
+            application/json:
+              schema:
+                type: array
+                items:
+                  $ref: "#/components/schemas/AcademicDegree"
+        "400":
+          $ref: "#/components/responses/BadRequest"
+        "401":
+          $ref: "#/components/responses/Unauthorized"
+        "403":
+          $ref: "#/components/responses/Forbidden"
+        "404":
+          $ref: "#/components/responses/NotFound"
+    post:
+      operationId: createAcademicDegree
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: "#/components/schemas/AcademicDegreeWrite"
+      responses:
+        "201":
+          description: Created
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/AcademicDegree"
+        "400":
+          $ref: "#/components/responses/BadRequest"
+        "401":
+          $ref: "#/components/responses/Unauthorized"
+        "403":
+          $ref: "#/components/responses/Forbidden"
+        "404":
+          $ref: "#/components/responses/NotFound"
+  /api/v1/professors/{id}/academic-degrees/{academicDegreeId}:
+    parameters:
+      - $ref: "#/components/parameters/id"
+      - $ref: "#/components/parameters/academicDegreeId"
+    get:
+      operationId: getAcademicDegree
+      responses:
+        "200":
+          description: One degree
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/AcademicDegree"
+        "401":
+          $ref: "#/components/responses/Unauthorized"
+        "403":
+          $ref: "#/components/responses/Forbidden"
+        "404":
+          $ref: "#/components/responses/NotFound"
+    put:
+      operationId: replaceAcademicDegree
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: "#/components/schemas/AcademicDegreeWrite"
+      responses:
+        "200":
+          description: Replaced
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/AcademicDegree"
+        "400":
+          $ref: "#/components/responses/BadRequest"
+        "401":
+          $ref: "#/components/responses/Unauthorized"
+        "403":
+          $ref: "#/components/responses/Forbidden"
+        "404":
+          $ref: "#/components/responses/NotFound"
+    patch:
+      operationId: patchAcademicDegree
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: "#/components/schemas/AcademicDegreePatch"
+      responses:
+        "200":
+          description: Partially updated
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/AcademicDegree"
+        "400":
+          $ref: "#/components/responses/BadRequest"
+        "401":
+          $ref: "#/components/responses/Unauthorized"
+        "403":
+          $ref: "#/components/responses/Forbidden"
+        "404":
+          $ref: "#/components/responses/NotFound"
+    delete:
+      operationId: deleteAcademicDegree
+      summary: Delete an academic degree (soft delete)
+      description: 'Soft delete: sets `enabled=false` on the degree. Nothing is removed from the database.'
+      responses:
+        "204":
+          description: Degree soft-deleted (`enabled=false`). The professor remains.
+        "401":
+          $ref: "#/components/responses/Unauthorized"
+        "403":
+          $ref: "#/components/responses/Forbidden"
+        "404":
+          $ref: "#/components/responses/NotFound"
+components:
+  securitySchemes:
+    bearerAuth:
+      type: http
+      scheme: bearer
+      bearerFormat: JWT
+  parameters:
+    id:
+      name: id
+      in: path
+      required: true
+      schema:
+        type: string
+        format: uuid
+    academicDegreeId:
+      name: academicDegreeId
+      in: path
+      required: true
+      schema:
+        type: string
+        format: uuid
+    query:
+      name: attribute
+      in: query
+      required: false
+      description: >
+        Illustrates the filter language. Each filter is its own query key, named as the attribute. Simple form: `appointment=permanent`.
+        Complex form: startDate={gteq}2020-01-01. Operators: neq, gt, gteq, lt, lteq, like. like is valid only on string fields.
+        Repeat the parameter for each attribute. There is no parameter named query.
+      schema:
+        type: string
+      explode: true
+  schemas:
+    Professor:
+      title: Professor
+      type: object
+      additionalProperties: false
+      required:
+        - _id
+        - enabled
+        - employeeId
+        - active
+        - startDate
+        - appointment
+      properties:
+        _id:
+          type: string
+          format: uuid
+        enabled:
+          type: boolean
+          readOnly: true
+          default: true
+          description: 'Soft delete flag: true for an active record; false for a logically deleted record. Server-managed.'
+        employeeId:
+          type: string
+          format: uuid
+          description: Employees resource _id. Not a registration number.
+        active:
+          type: boolean
+        startDate:
+          type: string
+          format: date
+        appointment:
+          enum:
+            - permanent
+            - substitute
+            - visiting
+    AcademicDegree:
+      title: AcademicDegree
+      type: object
+      additionalProperties: false
+      required:
+        - _id
+        - enabled
+        - level
+        - field
+        - institution
+        - year
+      properties:
+        _id:
+          type: string
+          format: uuid
+        enabled:
+          type: boolean
+          readOnly: true
+          default: true
+          description: 'Soft delete flag: true for an active record; false for a logically deleted record. Server-managed.'
+        level:
+          type: string
+          minLength: 1
+        field:
+          type: string
+          minLength: 1
+        institution:
+          type: string
+          minLength: 1
+        year:
+          type: integer
+          minimum: 1900
+    ProfessorWrite:
+      type: object
+      additionalProperties: false
+      required: [employeeId, active, startDate, appointment]
+      properties:
+        employeeId:
+          type: string
+          format: uuid
+        active:
+          type: boolean
+        startDate:
+          type: string
+          format: date
+        appointment:
+          enum: [permanent, substitute, visiting]
+    ProfessorPatch:
+      type: object
+      additionalProperties: false
+      minProperties: 1
+      properties:
+        employeeId:
+          type: string
+          format: uuid
+        active:
+          type: boolean
+        startDate:
+          type: string
+          format: date
+        appointment:
+          enum: [permanent, substitute, visiting]
+    AcademicDegreeWrite:
+      type: object
+      additionalProperties: false
+      required: [level, field, institution, year]
+      properties:
+        level:
+          type: string
+          minLength: 1
+        field:
+          type: string
+          minLength: 1
+        institution:
+          type: string
+          minLength: 1
+        year:
+          type: integer
+          minimum: 1900
+    AcademicDegreePatch:
+      type: object
+      additionalProperties: false
+      minProperties: 1
+      properties:
+        level:
+          type: string
+          minLength: 1
+        field:
+          type: string
+          minLength: 1
+        institution:
+          type: string
+          minLength: 1
+        year:
+          type: integer
+          minimum: 1900
+    Error:
+      type: object
+      additionalProperties: false
+      required: [code, detail]
+      properties:
+        code:
+          type: string
+        detail:
+          type: string
+  responses:
+    BadRequest:
+      description: Malformed request or illegal operator
+      content:
+        application/json:
+          schema:
+            $ref: "#/components/schemas/Error"
+    Unauthorized:
+      description: Missing or invalid bearer token
+      content:
+        application/json:
+          schema:
+            $ref: "#/components/schemas/Error"
+    Forbidden:
+      description: Authenticated role may not use this method
+      content:
+        application/json:
+          schema:
+            $ref: "#/components/schemas/Error"
+    NotFound:
+      description: Id not found on this resource
+      content:
+        application/json:
+          schema:
+            $ref: "#/components/schemas/Error"
+    Conflict:
+      description: employeeId already used by another professor
+      content:
+        application/json:
+          schema:
+            $ref: "#/components/schemas/Error"
+security:
+  - bearerAuth: []

@@ -1,0 +1,476 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "https://constrsw.pucrs.br/schemas/grupo02-lessons-schemas.json",
+  "title": "Lessons API (Grupo 02) — JSON Schemas",
+  "$defs": {
+    "LessonCreate": {
+      "type": "object",
+      "additionalProperties": false,
+      "properties": {
+        "classId": {
+          "type": "string",
+          "format": "uuid",
+          "description": "Turma (API classes) à qual a aula pertence. Imutável após a criação."
+        },
+        "date": {
+          "type": "string",
+          "format": "date",
+          "pattern": "^[0-9]{4}-(?:0[1-9]|1[0-2])-(?:0[1-9]|[12][0-9]|3[01])$",
+          "description": "Data da aula (YYYY-MM-DD), de segunda a sábado. Imutável após a criação."
+        },
+        "timeSlotId": {
+          "type": "string",
+          "enum": [
+            "A",
+            "B",
+            "C",
+            "D",
+            "E",
+            "F",
+            "G",
+            "H",
+            "I",
+            "J",
+            "K",
+            "L",
+            "M",
+            "N",
+            "P"
+          ],
+          "description": "Código da faixa da grade canônica (A–E, F–N, P). Nunca horário solto. Imutável após a criação."
+        },
+        "modality": {
+          "type": "string",
+          "enum": [
+            "IN_PERSON",
+            "REMOTE"
+          ],
+          "default": "IN_PERSON"
+        },
+        "hasAssessment": {
+          "type": "boolean",
+          "description": "Indica que a aula possui avaliação.",
+          "default": false
+        },
+        "topics": {
+          "type": "array",
+          "items": {
+            "$ref": "#/$defs/LessonTopicCreate"
+          }
+        }
+      },
+      "required": [
+        "classId",
+        "date",
+        "timeSlotId"
+      ],
+      "description": "Criação avulsa de uma aula da turma, opcionalmente com tópicos, na mesma transação. A criação em massa a partir do esqueleto usa POST /lessons/generate.",
+      "title": "LessonCreate"
+    },
+    "LessonGenerate": {
+      "type": "object",
+      "additionalProperties": false,
+      "properties": {
+        "classId": {
+          "type": "string",
+          "format": "uuid",
+          "description": "Turma confirmada (API classes) cujo esqueleto (WeeklySlot) gera as aulas."
+        }
+      },
+      "required": [
+        "classId"
+      ],
+      "description": "Solicita a geração de uma aula por par (dia da semana, faixa) do esqueleto, entre o início e o fim do período da turma. Chamado somente pela API classes após confirmar a turma.",
+      "title": "LessonGenerate"
+    },
+    "LessonPatch": {
+      "type": "object",
+      "additionalProperties": false,
+      "properties": {
+        "modality": {
+          "type": "string",
+          "enum": [
+            "IN_PERSON",
+            "REMOTE"
+          ]
+        },
+        "hasAssessment": {
+          "type": "boolean",
+          "description": "Indica que a aula possui avaliação."
+        }
+      },
+      "description": "Altera somente os campos editáveis informados; tópicos são gerenciados nas rotas secundárias. Campos omitidos são preservados; null não é aceito.",
+      "minProperties": 1,
+      "title": "LessonPatch"
+    },
+    "LessonUpdate": {
+      "type": "object",
+      "additionalProperties": false,
+      "properties": {
+        "modality": {
+          "type": "string",
+          "enum": [
+            "IN_PERSON",
+            "REMOTE"
+          ]
+        },
+        "hasAssessment": {
+          "type": "boolean",
+          "description": "Indica que a aula possui avaliação."
+        }
+      },
+      "required": [
+        "modality",
+        "hasAssessment"
+      ],
+      "description": "Substitui os campos editáveis da aula. `classId`, `date` e `timeSlotId` são imutáveis; a coleção de tópicos é preservada e tem rotas próprias.",
+      "title": "LessonUpdate"
+    },
+    "Lesson": {
+      "type": "object",
+      "additionalProperties": false,
+      "properties": {
+        "id": {
+          "type": "string",
+          "format": "uuid",
+          "readOnly": true
+        },
+        "enabled": {
+          "type": "boolean",
+          "readOnly": true,
+          "default": true,
+          "description": "Exclusão lógica: true para registro ativo; false para registro excluído logicamente. Controlado pelo servidor."
+        },
+        "classId": {
+          "type": "string",
+          "format": "uuid",
+          "description": "Turma (API classes) à qual a aula pertence. Imutável após a criação."
+        },
+        "date": {
+          "type": "string",
+          "format": "date",
+          "pattern": "^[0-9]{4}-(?:0[1-9]|1[0-2])-(?:0[1-9]|[12][0-9]|3[01])$",
+          "description": "Data da aula (YYYY-MM-DD), de segunda a sábado. Imutável após a criação."
+        },
+        "timeSlotId": {
+          "type": "string",
+          "enum": [
+            "A",
+            "B",
+            "C",
+            "D",
+            "E",
+            "F",
+            "G",
+            "H",
+            "I",
+            "J",
+            "K",
+            "L",
+            "M",
+            "N",
+            "P"
+          ],
+          "description": "Código da faixa da grade canônica (A–E, F–N, P). Nunca horário solto. Imutável após a criação."
+        },
+        "modality": {
+          "type": "string",
+          "enum": [
+            "IN_PERSON",
+            "REMOTE"
+          ]
+        },
+        "hasAssessment": {
+          "type": "boolean",
+          "description": "Indica que a aula possui avaliação."
+        },
+        "effectiveRoomId": {
+          "type": "string",
+          "format": "uuid",
+          "readOnly": true,
+          "description": "Sala efetiva (API rooms), derivada pelo servidor: linha SALA da reserva da aula ou, se não houver, a sala padrão da turma. Ausente quando a aula é REMOTE."
+        },
+        "topics": {
+          "type": "array",
+          "items": {
+            "$ref": "#/$defs/LessonTopic"
+          },
+          "description": "Tópicos da aula ordenados por `order`; pode ser vazia."
+        }
+      },
+      "required": [
+        "id",
+        "enabled",
+        "classId",
+        "date",
+        "timeSlotId",
+        "modality",
+        "hasAssessment",
+        "topics"
+      ],
+      "if": {
+        "properties": {
+          "modality": {
+            "const": "REMOTE"
+          }
+        },
+        "required": [
+          "modality"
+        ]
+      },
+      "then": {
+        "not": {
+          "required": [
+            "effectiveRoomId"
+          ]
+        }
+      },
+      "else": {
+        "required": [
+          "effectiveRoomId"
+        ]
+      },
+      "title": "Lesson"
+    },
+    "LessonList": {
+      "type": "array",
+      "items": {
+        "$ref": "#/$defs/Lesson"
+      },
+      "title": "LessonList"
+    },
+    "ApiError": {
+      "type": "object",
+      "additionalProperties": false,
+      "properties": {
+        "error_code": {
+          "type": "string",
+          "minLength": 1,
+          "pattern": "\\S"
+        },
+        "error_description": {
+          "type": "string",
+          "minLength": 1,
+          "pattern": "\\S"
+        },
+        "error_source": {
+          "type": "string",
+          "minLength": 1,
+          "pattern": "\\S"
+        },
+        "error_stack": {
+          "type": "array",
+          "items": {
+            "type": "object",
+            "additionalProperties": false,
+            "properties": {
+              "error_code": {
+                "type": "string",
+                "minLength": 1,
+                "pattern": "\\S"
+              },
+              "error_description": {
+                "type": "string",
+                "minLength": 1,
+                "pattern": "\\S"
+              },
+              "error_source": {
+                "type": "string",
+                "minLength": 1,
+                "pattern": "\\S"
+              }
+            },
+            "required": [
+              "error_code",
+              "error_description",
+              "error_source"
+            ]
+          }
+        }
+      },
+      "required": [
+        "error_code",
+        "error_description",
+        "error_source",
+        "error_stack"
+      ],
+      "description": "Formato de erro do projeto; a pilha contém descrições de domínio sanitizadas, sem credenciais ou stack traces internos.",
+      "title": "ApiError"
+    },
+    "LessonTopicCreate": {
+      "type": "object",
+      "additionalProperties": false,
+      "properties": {
+        "order": {
+          "type": "integer",
+          "minimum": 1,
+          "maximum": 32767,
+          "description": "Posição do tópico na aula; única por aula."
+        },
+        "syllabusItemId": {
+          "type": "string",
+          "format": "uuid",
+          "description": "Item do plano de ensino (SyllabusItem da API courses) abordado no tópico."
+        },
+        "statement": {
+          "type": "string",
+          "minLength": 1,
+          "pattern": "\\S",
+          "maxLength": 500,
+          "description": "Enunciado extra do tópico."
+        }
+      },
+      "required": [
+        "order"
+      ],
+      "anyOf": [
+        {
+          "required": [
+            "syllabusItemId"
+          ]
+        },
+        {
+          "required": [
+            "statement"
+          ]
+        }
+      ],
+      "description": "Novo tópico da aula indicada no path; exige `syllabusItemId` e/ou `statement`. id e lessonId são definidos pelo servidor.",
+      "title": "LessonTopicCreate"
+    },
+    "LessonTopicPatch": {
+      "type": "object",
+      "additionalProperties": false,
+      "properties": {
+        "order": {
+          "type": "integer",
+          "minimum": 1,
+          "maximum": 32767,
+          "description": "Posição do tópico na aula; única por aula."
+        },
+        "syllabusItemId": {
+          "type": "string",
+          "format": "uuid",
+          "description": "Item do plano de ensino (SyllabusItem da API courses) abordado no tópico."
+        },
+        "statement": {
+          "type": "string",
+          "minLength": 1,
+          "pattern": "\\S",
+          "maxLength": 500,
+          "description": "Enunciado extra do tópico."
+        }
+      },
+      "description": "Altera somente os campos informados. Campos omitidos permanecem inalterados; null não é aceito.",
+      "minProperties": 1,
+      "title": "LessonTopicPatch"
+    },
+    "LessonTopicUpdate": {
+      "type": "object",
+      "additionalProperties": false,
+      "properties": {
+        "order": {
+          "type": "integer",
+          "minimum": 1,
+          "maximum": 32767,
+          "description": "Posição do tópico na aula; única por aula."
+        },
+        "syllabusItemId": {
+          "type": "string",
+          "format": "uuid",
+          "description": "Item do plano de ensino (SyllabusItem da API courses) abordado no tópico."
+        },
+        "statement": {
+          "type": "string",
+          "minLength": 1,
+          "pattern": "\\S",
+          "maxLength": 500,
+          "description": "Enunciado extra do tópico."
+        }
+      },
+      "required": [
+        "order"
+      ],
+      "anyOf": [
+        {
+          "required": [
+            "syllabusItemId"
+          ]
+        },
+        {
+          "required": [
+            "statement"
+          ]
+        }
+      ],
+      "description": "Substitui os campos do tópico. Opcionais omitidos são removidos, mas ao menos um entre `syllabusItemId` e `statement` deve permanecer; IDs são imutáveis.",
+      "title": "LessonTopicUpdate"
+    },
+    "LessonTopic": {
+      "type": "object",
+      "additionalProperties": false,
+      "properties": {
+        "id": {
+          "type": "string",
+          "format": "uuid",
+          "readOnly": true
+        },
+        "enabled": {
+          "type": "boolean",
+          "readOnly": true,
+          "default": true,
+          "description": "Exclusão lógica: true para registro ativo; false para registro excluído logicamente. Controlado pelo servidor."
+        },
+        "lessonId": {
+          "type": "string",
+          "format": "uuid",
+          "readOnly": true
+        },
+        "order": {
+          "type": "integer",
+          "minimum": 1,
+          "maximum": 32767,
+          "description": "Posição do tópico na aula; única por aula."
+        },
+        "syllabusItemId": {
+          "type": "string",
+          "format": "uuid",
+          "description": "Item do plano de ensino (SyllabusItem da API courses) abordado no tópico."
+        },
+        "statement": {
+          "type": "string",
+          "minLength": 1,
+          "pattern": "\\S",
+          "maxLength": 500,
+          "description": "Enunciado extra do tópico."
+        }
+      },
+      "required": [
+        "id",
+        "enabled",
+        "lessonId",
+        "order"
+      ],
+      "anyOf": [
+        {
+          "required": [
+            "syllabusItemId"
+          ]
+        },
+        {
+          "required": [
+            "statement"
+          ]
+        }
+      ],
+      "title": "LessonTopic"
+    },
+    "LessonTopicList": {
+      "type": "array",
+      "items": {
+        "$ref": "#/$defs/LessonTopic"
+      },
+      "title": "LessonTopicList"
+    }
+  }
+}

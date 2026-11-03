@@ -1,0 +1,465 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "https://constrsw.pucrs.br/schemas/grupo01-classes-schemas.json",
+  "title": "Classes API (Grupo 01) — JSON Schemas",
+  "$defs": {
+    "Uuid": {
+      "type": "string",
+      "format": "uuid",
+      "description": "Identificador opaco UUID (contrato = string)."
+    },
+    "UuidArray": {
+      "type": "array",
+      "items": {
+        "$ref": "#/$defs/Uuid"
+      },
+      "uniqueItems": true
+    },
+    "ClassStatus": {
+      "type": "string",
+      "enum": [
+        "active",
+        "closed"
+      ],
+      "description": "Estado da oferta da turma."
+    },
+    "OrdinalRating": {
+      "type": "string",
+      "enum": [
+        "very_bad",
+        "bad",
+        "fair",
+        "good",
+        "very_good"
+      ],
+      "description": "Escala ordinal simétrica (5 tokens). Mapa interno 1..5 só para média."
+    },
+    "AverageRating": {
+      "type": [
+        "number",
+        "null"
+      ],
+      "minimum": 1,
+      "maximum": 5,
+      "multipleOf": 0.1,
+      "description": "Média aritmética 1.0..5.0 com uma casa decimal; null se n=0. Campo calculado (não persistido)."
+    },
+    "IsoDate": {
+      "type": "string",
+      "format": "date",
+      "description": "Data do período da oferta (calendário), não horário do dia."
+    },
+    "IsoDateTime": {
+      "type": "string",
+      "format": "date-time"
+    },
+    "FilterOperatorValue": {
+      "type": "string",
+      "description": "Valor de filtro simples (`status=active`) ou com operador `{op}` prefixado: `{neq}active`, `{gt}20`, `{gteq}2026-01-01`, `{lt}2026-12-31`, `{lteq}2.5`, `{like}%algo%`. Sem `{op}` = equals."
+    },
+    "ProblemDetails": {
+      "type": "object",
+      "additionalProperties": true,
+      "required": [
+        "type",
+        "title",
+        "status"
+      ],
+      "properties": {
+        "type": {
+          "type": "string",
+          "format": "uri",
+          "description": "URI que identifica o tipo do problema."
+        },
+        "title": {
+          "type": "string"
+        },
+        "status": {
+          "type": "integer",
+          "minimum": 400,
+          "maximum": 599
+        },
+        "detail": {
+          "type": "string"
+        },
+        "instance": {
+          "type": "string",
+          "format": "uri"
+        },
+        "code": {
+          "type": "string",
+          "description": "Código estável alinhado ao FR do PRD quando aplicável (ex. FR-6)."
+        }
+      }
+    },
+    "ClassCreate": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": [
+        "courseId",
+        "startDate",
+        "endDate",
+        "seats",
+        "roomId",
+        "professorIds",
+        "studentIds"
+      ],
+      "properties": {
+        "courseId": {
+          "$ref": "#/$defs/Uuid"
+        },
+        "startDate": {
+          "$ref": "#/$defs/IsoDate"
+        },
+        "endDate": {
+          "$ref": "#/$defs/IsoDate"
+        },
+        "seats": {
+          "type": "integer",
+          "minimum": 1
+        },
+        "roomId": {
+          "$ref": "#/$defs/Uuid"
+        },
+        "professorIds": {
+          "$ref": "#/$defs/UuidArray"
+        },
+        "studentIds": {
+          "$ref": "#/$defs/UuidArray"
+        },
+        "code": {
+          "type": "string",
+          "maxLength": 64
+        },
+        "label": {
+          "type": "string",
+          "maxLength": 255
+        },
+        "status": {
+          "$ref": "#/$defs/ClassStatus"
+        },
+        "modality": {
+          "type": "string",
+          "maxLength": 64
+        }
+      },
+      "description": "Criação de Class. status default `active` se omitido. startDate ≤ endDate."
+    },
+    "ClassUpdate": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": [
+        "courseId",
+        "startDate",
+        "endDate",
+        "seats",
+        "roomId",
+        "professorIds",
+        "studentIds",
+        "status"
+      ],
+      "properties": {
+        "courseId": {
+          "$ref": "#/$defs/Uuid"
+        },
+        "startDate": {
+          "$ref": "#/$defs/IsoDate"
+        },
+        "endDate": {
+          "$ref": "#/$defs/IsoDate"
+        },
+        "seats": {
+          "type": "integer",
+          "minimum": 1
+        },
+        "roomId": {
+          "$ref": "#/$defs/Uuid"
+        },
+        "professorIds": {
+          "$ref": "#/$defs/UuidArray"
+        },
+        "studentIds": {
+          "$ref": "#/$defs/UuidArray"
+        },
+        "code": {
+          "type": [
+            "string",
+            "null"
+          ],
+          "maxLength": 64
+        },
+        "label": {
+          "type": [
+            "string",
+            "null"
+          ],
+          "maxLength": 255
+        },
+        "status": {
+          "$ref": "#/$defs/ClassStatus"
+        },
+        "modality": {
+          "type": [
+            "string",
+            "null"
+          ],
+          "maxLength": 64
+        }
+      },
+      "description": "Substituição total (PUT). Na prática startDate/endDate são imutáveis após create — alteração → 422."
+    },
+    "ClassPatch": {
+      "type": "object",
+      "additionalProperties": false,
+      "minProperties": 1,
+      "properties": {
+        "seats": {
+          "type": "integer",
+          "minimum": 1
+        },
+        "roomId": {
+          "$ref": "#/$defs/Uuid"
+        },
+        "professorIds": {
+          "$ref": "#/$defs/UuidArray"
+        },
+        "studentIds": {
+          "$ref": "#/$defs/UuidArray"
+        },
+        "code": {
+          "type": [
+            "string",
+            "null"
+          ],
+          "maxLength": 64
+        },
+        "label": {
+          "type": [
+            "string",
+            "null"
+          ],
+          "maxLength": 255
+        },
+        "status": {
+          "$ref": "#/$defs/ClassStatus"
+        },
+        "modality": {
+          "type": [
+            "string",
+            "null"
+          ],
+          "maxLength": 64
+        }
+      },
+      "description": "Atualização parcial. Não inclui startDate/endDate (imutáveis)."
+    },
+    "Class": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": [
+        "id",
+        "enabled",
+        "courseId",
+        "startDate",
+        "endDate",
+        "seats",
+        "roomId",
+        "professorIds",
+        "studentIds",
+        "status",
+        "averageRating"
+      ],
+      "properties": {
+        "id": {
+          "$ref": "#/$defs/Uuid"
+        },
+        "enabled": {
+          "type": "boolean",
+          "readOnly": true,
+          "default": true,
+          "description": "Exclusão lógica: true para registro ativo; false para registro excluído logicamente. Controlado pelo servidor."
+        },
+        "courseId": {
+          "$ref": "#/$defs/Uuid"
+        },
+        "startDate": {
+          "$ref": "#/$defs/IsoDate"
+        },
+        "endDate": {
+          "$ref": "#/$defs/IsoDate"
+        },
+        "seats": {
+          "type": "integer",
+          "minimum": 1
+        },
+        "roomId": {
+          "$ref": "#/$defs/Uuid"
+        },
+        "professorIds": {
+          "$ref": "#/$defs/UuidArray"
+        },
+        "studentIds": {
+          "$ref": "#/$defs/UuidArray"
+        },
+        "code": {
+          "type": [
+            "string",
+            "null"
+          ],
+          "maxLength": 64
+        },
+        "label": {
+          "type": [
+            "string",
+            "null"
+          ],
+          "maxLength": 255
+        },
+        "status": {
+          "$ref": "#/$defs/ClassStatus"
+        },
+        "modality": {
+          "type": [
+            "string",
+            "null"
+          ],
+          "maxLength": 64
+        },
+        "averageRating": {
+          "$ref": "#/$defs/AverageRating"
+        }
+      },
+      "description": "Leitura de Class. Não embute Avaliações. averageRating sempre presente (null se sem reviews)."
+    },
+    "ClassList": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": [
+        "items"
+      ],
+      "properties": {
+        "items": {
+          "type": "array",
+          "items": {
+            "$ref": "#/$defs/Class"
+          }
+        }
+      }
+    },
+    "ReviewCreate": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": [
+        "ordinalRating"
+      ],
+      "properties": {
+        "ordinalRating": {
+          "$ref": "#/$defs/OrdinalRating"
+        },
+        "text": {
+          "type": "string",
+          "maxLength": 2000,
+          "description": "Texto opcional. Ausente ou vazio é aceito."
+        }
+      },
+      "description": "Criação de Avaliação. autorId vem do token + roster (nunca no body)."
+    },
+    "ReviewUpdate": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": [
+        "ordinalRating"
+      ],
+      "properties": {
+        "ordinalRating": {
+          "$ref": "#/$defs/OrdinalRating"
+        },
+        "text": {
+          "type": [
+            "string",
+            "null"
+          ],
+          "maxLength": 2000
+        }
+      },
+      "description": "Substituição total (PUT) pelo próprio autor."
+    },
+    "ReviewPatch": {
+      "type": "object",
+      "additionalProperties": false,
+      "minProperties": 1,
+      "properties": {
+        "ordinalRating": {
+          "$ref": "#/$defs/OrdinalRating"
+        },
+        "text": {
+          "type": [
+            "string",
+            "null"
+          ],
+          "maxLength": 2000
+        }
+      },
+      "description": "Atualização parcial pelo próprio autor."
+    },
+    "Review": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": [
+        "id",
+        "enabled",
+        "classId",
+        "ordinalRating",
+        "createdAt"
+      ],
+      "properties": {
+        "id": {
+          "$ref": "#/$defs/Uuid"
+        },
+        "enabled": {
+          "type": "boolean",
+          "readOnly": true,
+          "default": true,
+          "description": "Exclusão lógica: true para registro ativo; false para registro excluído logicamente. Controlado pelo servidor."
+        },
+        "classId": {
+          "$ref": "#/$defs/Uuid"
+        },
+        "ordinalRating": {
+          "$ref": "#/$defs/OrdinalRating"
+        },
+        "text": {
+          "type": [
+            "string",
+            "null"
+          ],
+          "maxLength": 2000
+        },
+        "createdAt": {
+          "$ref": "#/$defs/IsoDateTime"
+        }
+      },
+      "description": "Leitura pública de Avaliação. Sem autorId e sem papel do autor."
+    },
+    "ReviewList": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": [
+        "items",
+        "averageRating"
+      ],
+      "properties": {
+        "items": {
+          "type": "array",
+          "items": {
+            "$ref": "#/$defs/Review"
+          },
+          "description": "Ordenação default: createdAt descendente."
+        },
+        "averageRating": {
+          "$ref": "#/$defs/AverageRating"
+        }
+      }
+    }
+  }
+}

@@ -1,13 +1,13 @@
 <#
 .SYNOPSIS
-  Convida usuários para a organização GitHub pucrs-constrsw-2026-2.
+  Convida usuários para a organização GitHub pucrs-arruda.
 
 .DESCRIPTION
   Usa a GitHub CLI (gh) para enviar convites via API:
   PUT /orgs/{org}/memberships/{username}
 
 .PARAMETER Org
-  Slug da organização. Default: pucrs-constrsw-2026-2
+  Slug da organização. Default: pucrs-arruda
 
 .PARAMETER Role
   Papel do convite: member (padrão) ou admin
@@ -23,7 +23,7 @@
 
 [CmdletBinding()]
 param(
-  [string]$Org = "pucrs-constrsw-2026-2",
+  [string]$Org = "pucrs-arruda",
   [ValidateSet("member", "admin")]
   [string]$Role = "member",
   [switch]$DryRun

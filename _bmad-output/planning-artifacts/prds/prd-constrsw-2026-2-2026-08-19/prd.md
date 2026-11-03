@@ -2,7 +2,7 @@
 title: Closed CRAS
 status: final
 created: 2026-08-19
-updated: 2026-08-24
+updated: 2026-10-07
 ---
 
 # PRD: Closed CRAS
@@ -29,7 +29,7 @@ Não compete com SIGAA, TOTVS ou Ellucian; senta *ao lado* do sistema de registr
 - **sala padrão** — Room da turma na abertura (`Class.roomId`). Toda turma tem uma.
 - **sala efetiva** — Room da aula, **derivada**: ReservationLine `kind=SALA` daquela aula, senão sala padrão; aula remota sem sala. Ocupação, conflito e *onde* do Student usam somente a sala efetiva.
 - **Employee** — identidade da pessoa que trabalha na IES, inclusive quem leciona. Dono: `employees`.
-- **EmploymentBond** — vínculo 1–N do Employee (tipo, início, fim?, unidade/setor em texto, situação). Não é SIGRH: sem cargo, salário ou ponto.
+- **EmploymentBond** — vínculo 1–N do Employee (tipo, início, fim?, unidade/setor em texto, situação: ativo \| encerrado). Não é SIGRH: sem cargo, salário ou ponto.
 - **Professor** — papel docente **is-a** Employee: `employeeId` obrigatório 1–1; não copia nome/e-mail. Todo Professor é Employee; nem todo Employee é Professor.
 - **AcademicDegree** — titulação 1–N do Professor (grau, área, instituição, ano).
 - **Student** — aprendiz; não é Employee. Identidade **não se cadastra** no Closed CRAS; chega pronta (seed/import).
@@ -102,43 +102,85 @@ Folha/SIGRH, secretaria de matrícula no Closed CRAS, protocolo e-MEC, operador 
 
 ### 5.1 Identidade de quem trabalha (Employee 1–N EmploymentBond)
 
-`employees` é cadastro-mestre da pessoa institucional; não é dono de Room, Resource nem da classe Professor. Realiza UJ-1. Fora: §7.
+`employees` é o **system of record** da pessoa institucional que trabalha na IES. Publica identidade consumível por `id` estável; não é dono de Room, Resource nem da classe Professor; não é SIGRH (folha, cargo, salário, ponto). Realiza UJ-1. Fora: §7.
 
-#### FR-1: Cadastrar Employee
+**Papel IdP × escrita neste contexto.** Só a persona Funcionário — papel **Administrator** no Keycloak, autorizado via gateway REST de identidade (FR-27) — cria, edita, desativa e reativa Employee e EmploymentBond. Coordenador, Professor e Student **não** escrevem em `employees`. Autenticação no IdP ≠ cadastro Employee: o subject Keycloak autoriza a sessão; o `employeeId` vive só neste contexto e é a chave que `professors` e a alocação consomem.
 
-Funcionário cria e edita Employee com `id`, nome, e-mail institucional e ativo.
+**Junção sessão ↔ Employee (v1).** Quando o operador autenticado é um Employee, a sessão resolve para no máximo um `employeeId` via claim/atributo estável do realm (mecanismo no addendum). `employees` não armazena senha nem replica roles do IdP. Criar Employee **não** provisiona automaticamente usuário no Keycloak na v1 — provisionamento IdP é seed/admin do realm (fora do CRUD de cadastro-mestre).
+
+#### FR-1: Ciclo de vida do Employee
+
+Funcionário cria, edita, desativa e reativa Employee com `id` estável, nome, e-mail institucional e flag `ativo`.
+
+**Atores / pré-condições:**
+- Ator: Funcionário autenticado (papel Administrator no gateway).
+- Criação: nome e e-mail institucionais obrigatórios e não vazios; `id` gerado ou atribuído na create e **imutável** depois.
+- Edição de cadastro: Employee existente; altera nome e/ou e-mail (respeitando unicidade); não altera `id`.
+- Desativação / reativação: Employee existente; altera somente `ativo`.
 
 **Consequences (testable):**
-- Employee ativo é endereçável por `id` estável pelos contextos consumidores.
-- E-mail institucional é único entre Employee. `[ASSUMPTION]`
-- Desativar Employee não apaga EmploymentBond nem o histórico de `id`. `[ASSUMPTION]`
+- Employee (ativo ou não) permanece endereçável por `id` estável; consumidores nunca “perdem” a chave.
+- E-mail institucional é único entre **todos** os Employee (ativos e desativados).
+- Desativar não apaga EmploymentBond, não apaga o `id` e não remove o registro (soft-deactivate). Reativar restaura `ativo=true` sem novo `id`.
+- Delete físico de Employee está fora da v1 (NFR-LGPD-4; §7).
+- Employee com `ativo=false` **não** satisfaz a pré-condição de **criar** Professor (FR-4 / FR-5).
+- Sinal publicado aos consumidores: `ativo`. Efeito em Class / Reservation já existentes: FR-1a.
 
-#### FR-2: Vínculos 1–N
+**Edge cases / recusas:**
+- Create ou update com nome ou e-mail vazios → recusa.
+- Create ou update cujo e-mail já exista em outro Employee → recusa.
+- Operação de escrita por papel que não seja Administrator → recusa no gateway / BFF.
+
+#### FR-1a: Employee desativado e alocação já existente
+
+Fecha OQ-2. Quando `employees` publica `ativo=false` para um Employee que já é referenciado via Professor:
+
+- Class já atribuídas a esse Professor ficam **somente leitura** para mutações de oferta que dependem do docente.
+- Novas Reservation cujo `professorId` resolve para esse Employee são **recusadas**.
+- A v1 **não** exige substituição de Professor nem apaga Class / Lesson / Reservation históricas.
+
+A enforcement dessas consequências cabe aos contextos consumidores (`professors`, `classes`, `reservations`); `employees` só publica o sinal `ativo` e o contrato (FR-3).
+
+#### FR-2: Vínculos 1–N (EmploymentBond)
 
 Funcionário adiciona, altera e encerra EmploymentBond de um Employee existente.
 
+**Atores / pré-condições:**
+- Ator: Funcionário (Administrator).
+- Employee-alvo deve existir (ativo ou não — vínculos históricos permanecem legíveis).
+- Não existe EmploymentBond sem `employeeId` válido.
+
 **Consequences (testable):**
 - Um Employee tem zero ou mais EmploymentBond; não existe EmploymentBond órfão.
-- Atributos v1: tipo de vínculo, início, fim (opcional), unidade/setor (texto), situação.
+- Atributos v1: tipo de vínculo, início, fim (opcional), unidade/setor (texto), situação (`ativo` \| `encerrado`).
 - Tipos v1: efetivo, temporário, bolsista. `[ASSUMPTION]`
+- Encerrar vínculo: situação → `encerrado` e `fim` preenchido (ou igual à data de encerramento); não apaga o registro do vínculo.
 - Não há cargo, salário, carga de ponto nem tabela SIGRH neste contexto.
 - Unidade/setor não é terceira classe nem contexto `rooms`.
 
+**Edge cases / recusas:**
+- Bond com `fim` anterior a `início` → recusa.
+- Bond órfão (Employee inexistente) → recusa.
+- Múltiplos vínculos ativos no mesmo Employee → permitido na v1 (não há regra de exclusividade).
+
 #### FR-3: Publicar identidade, não copiar cadastro
 
-Alocação e o papel docente consomem o `id` de Employee; nenhum contexto replica nome, e-mail ou documento pessoal do Employee.
+Alocação e o papel docente consomem o `id` de Employee; nenhum contexto replica nome, e-mail ou documento pessoal do Employee como cópia de cadastro.
 
 **Consequences (testable):**
-- Contrato publicado por `employees` inclui `id`, nome, e-mail, ativo — consumidores guardam o `id`, não uma cópia de cadastro.
-- Não há campo CPF em Employee na v1. `[ASSUMPTION]`
-- Falha de produto: nove OpenAPIs com `pessoa` copiada.
+- Contrato publicado por `employees` inclui no mínimo: `id`, nome, e-mail, `ativo` — e, sob o agregado, EmploymentBond quando a leitura for do próprio contexto / BFF autorizado.
+- Consumidores (`professors`, `classes`, BFF) guardam o `id` (e resolvem nome/e-mail/`ativo` sob demanda ou via projeção do BFF); não embutem `pessoa` própria no OpenAPI.
+- Não há campo CPF (nem documento pessoal equivalente) em Employee na v1.
+- Falha de produto: nove OpenAPIs com `pessoa` copiada ou cadastro de “professor” com nome/e-mail duplicados fora de `employees`.
 
 #### FR-4: Professor não nasce sem Employee
 
-Não se cria Professor sem Employee existente. Realiza UJ-1.
+Não se cria Professor sem Employee **existente e ativo**. Realiza UJ-1. O contexto `employees` **não** implementa a classe Professor — só publica a pré-condição.
 
 **Consequences (testable):**
-- O `id` de Employee é pré-condição do papel docente (FR-5) e o que a alocação referencia via Professor.
+- O `id` de Employee ativo é pré-condição do papel docente (FR-5) e a chave que a alocação referencia via Professor (`employeeId`).
+- Tentativa de criar Professor com `employeeId` inexistente ou com Employee `ativo=false` → recusa (enforcement em `professors`; contrato de existência/`ativo` em `employees`).
+- Nem todo Employee tem Professor; todo Professor aponta para exatamente um Employee.
 
 ### 5.2 Papel docente (Professor is-a Employee)
 
@@ -146,11 +188,11 @@ Especialização 1–1 sobre Employee, com AcademicDegree 1–N. Realiza UJ-1, U
 
 #### FR-5: Criar Professor sobre Employee existente
 
-Funcionário cria Professor somente se o `employeeId` já existir.
+Funcionário cria Professor somente se o `employeeId` já existir **e** o Employee estiver `ativo` (FR-4).
 
 **Consequences (testable):**
 - `employeeId` obrigatório, cardinalidade 1–1 (um Professor por Employee que leciona).
-- Recusa criação sem Employee.
+- Recusa criação sem Employee ou com Employee `ativo=false`.
 - Professor **não** copia nome nem e-mail; leitura de cadastro resolve via Employee.
 - Nem todo Employee tem Professor.
 
@@ -450,6 +492,8 @@ Cada grupo implementa, no `frontend` compartilhado, as telas de **um domínio qu
 - Substituir SIGAA/TOTVS/Lyceum/Ellucian; tesouraria/ERP; LMS como produto (AVA).
 - Tela de cadastro de Student; histórico, notas/frequência; faixas E1 e E2; SIS de Student ao vivo.
 - Folha, cargos SIGRH, ponto, alvará; Lattes/progressão/encargos; protocolo e-MEC, DCN, autorização/reconhecimento.
+- Delete físico de Employee / EmploymentBond para “limpar tela”; exclusividade de um único EmploymentBond ativo por Employee.
+- Provisionar automaticamente usuário Keycloak ao criar Employee (provisionamento IdP = seed/admin do realm na v1).
 - Federação CAFe/BAITA de produção; planta BIM; motor de alvará de bombeiros.
 
 ## 8. MVP Scope
@@ -463,7 +507,7 @@ Cada grupo implementa, no `frontend` compartilhado, as telas de **um domínio qu
 Critérios demonstráveis em laboratório — não há rubrica numérica da disciplina neste repositório. `[ASSUMPTION]`
 
 **Primary**
-- **SM-1:** Zero Professor sem Employee; tentativa recusada. Valida FR-4, FR-5.
+- **SM-1:** Zero Professor sem Employee **ativo**; tentativa com `employeeId` inexistente ou Employee inativo é recusada. Valida FR-4, FR-5, FR-1a.
 - **SM-2:** UJ-2 sem criar Reservation da sala padrão; Student em UJ-4 vê sala efetiva (nunca a padrão quando a efetiva for outra). Valida FR-15, FR-18, FR-19, FR-24.
 - **SM-3:** As quatro personas completam UJ-1–UJ-4 na UI sem escolher microsserviço. Valida FR-26, FR-28, FR-29.
 - **SM-4:** Cada grupo demonstra par 1–N + rota BFF + gateway REST de identidade + telas de domínio alheio. Valida FR-2/6/8/12/14/21/22 (pares), FR-26, FR-27, FR-28.
@@ -480,17 +524,20 @@ Critérios demonstráveis em laboratório — não há rubrica numérica da disc
 ## 10. Open Questions
 
 1. **OQ-1.** Emparelhamento: qual grupo implementa as telas de qual domínio (restrição: não o próprio). Dono: turma/docente. Bloqueia UX detalhada, não o restante deste PRD. Inventário v1 das telas está no addendum.
-2. **OQ-2.** Employee desativado: Professor e Class já atribuídos ficam somente leitura, recusam nova Reservation, ou exigem substituição? Dono: grupos `employees` + `professors` + `classes`. `[NOTE FOR PM]` Default de demo até fechar: desativar recusa nova Reservation e deixa Class somente leitura; não exige substituição de Professor.
+2. ~~**OQ-2.** Employee desativado…~~ **Fechada** → FR-1a: Class somente leitura; nova Reservation recusada; sem exigência de substituição na v1.
 3. **OQ-3.** LessonTopic: `syllabusItemId` obrigatório, enunciado extra obrigatório, ou pelo menos um dos dois?
 
 ## 11. Assumptions Index
 
-| Assunção | Onde |
+| Assunção / decisão | Onde |
 |---|---|
-| E-mail institucional único entre Employee | FR-1 |
-| Desativar Employee não apaga EmploymentBond nem `id` | FR-1 |
+| E-mail institucional único entre Employee (ativos e desativados) — **decisão** | FR-1 |
+| Soft-deactivate: não apaga EmploymentBond nem `id`; reativar reusa `id` — **decisão** | FR-1 |
+| Employee inativo bloqueia criar Professor; Class RO + recusa nova Reservation — **decisão (ex-OQ-2)** | FR-1a, FR-4 |
 | Tipos de vínculo v1: efetivo, temporário, bolsista | FR-2 |
-| Sem campo CPF em Employee na v1 | FR-3 |
+| Situação do vínculo: ativo \| encerrado — **decisão** | FR-2 |
+| Sem campo CPF em Employee na v1 — **decisão** | FR-3 |
+| Criar Employee não provisiona Keycloak automaticamente na v1 — **decisão** | §5.1, §7 |
 | Roster Student↔Class no mesmo seed/import | FR-9 |
 | Código de Course alinhável a cadastro oficial basta na v1 | FR-10 |
 | Publicar plano depois do início do período é recusado | FR-11 |

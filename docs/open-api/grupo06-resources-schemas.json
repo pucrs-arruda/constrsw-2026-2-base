@@ -1,0 +1,615 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "https://constrsw.pucrs.br/schemas/grupo06-resources-schemas.json",
+  "title": "Resources API (Grupo 06) — JSON Schemas",
+  "$defs": {
+    "ResourceType": {
+      "type": "string",
+      "enum": [
+        "PROJECTOR",
+        "HEALTH_KIT",
+        "COMPUTER",
+        "NOTEBOOK",
+        "CAMERA",
+        "MICROPHONE",
+        "DISPLAY",
+        "CABLE",
+        "ADAPTER"
+      ],
+      "description": "Resource kind. Descriptive only; active is the reservation gate. ROOM is not a resource type and there is no OTHER fallback."
+    },
+    "OccurrenceType": {
+      "type": "string",
+      "enum": [
+        "MALFUNCTION",
+        "DAMAGE",
+        "MISSING",
+        "OTHER"
+      ],
+      "description": "Kind of occurrence."
+    },
+    "OccurrenceStatus": {
+      "type": "string",
+      "enum": [
+        "OPEN",
+        "RESOLVED"
+      ],
+      "description": "Occurrence lifecycle state, set by the server. OPEN -> RESOLVED once.\nRESOLVED is terminal.\n",
+      "x-enum-descriptions": {
+        "OPEN": "Recorded and not resolved.",
+        "RESOLVED": "Closed with resolution, resolvedBy, and resolvedAt."
+      }
+    },
+    "OccurrencePriority": {
+      "type": "string",
+      "enum": [
+        "LOW",
+        "MEDIUM",
+        "HIGH"
+      ],
+      "description": "Staff-assigned operational priority."
+    },
+    "ResourceSummary": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": [
+        "id",
+        "enabled",
+        "code",
+        "name",
+        "type",
+        "active",
+        "tags",
+        "createdAt",
+        "updatedAt"
+      ],
+      "properties": {
+        "id": {
+          "type": "string",
+          "format": "uuid",
+          "readOnly": true
+        },
+        "enabled": {
+          "type": "boolean",
+          "readOnly": true,
+          "default": true,
+          "description": "Soft delete flag: true for an active record; false for a logically deleted record. Server-managed."
+        },
+        "code": {
+          "type": "string",
+          "minLength": 3,
+          "maxLength": 32,
+          "pattern": "^[A-Z0-9]+(-[A-Z0-9]+)*$",
+          "example": "PROJ-01"
+        },
+        "name": {
+          "type": "string",
+          "minLength": 1,
+          "maxLength": 120,
+          "example": "Projector 1"
+        },
+        "type": {
+          "$ref": "#/$defs/ResourceType"
+        },
+        "active": {
+          "type": "boolean",
+          "example": true
+        },
+        "tags": {
+          "type": "array",
+          "maxItems": 10,
+          "uniqueItems": true,
+          "description": "Lowercase, unique, sorted tags.",
+          "items": {
+            "type": "string",
+            "minLength": 1,
+            "maxLength": 30,
+            "pattern": "^[a-z0-9]+(-[a-z0-9]+)*$"
+          },
+          "example": [
+            "av",
+            "portable"
+          ]
+        },
+        "createdAt": {
+          "type": "string",
+          "format": "date-time",
+          "readOnly": true,
+          "example": "2026-10-26T23:34:19Z"
+        },
+        "updatedAt": {
+          "type": "string",
+          "format": "date-time",
+          "readOnly": true,
+          "example": "2026-10-26T23:34:19Z"
+        }
+      }
+    },
+    "Resource": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": [
+        "id",
+        "enabled",
+        "code",
+        "name",
+        "type",
+        "active",
+        "tags",
+        "createdAt",
+        "updatedAt",
+        "occurrences"
+      ],
+      "properties": {
+        "id": {
+          "type": "string",
+          "format": "uuid",
+          "readOnly": true
+        },
+        "enabled": {
+          "type": "boolean",
+          "readOnly": true,
+          "default": true,
+          "description": "Soft delete flag: true for an active record; false for a logically deleted record. Server-managed."
+        },
+        "code": {
+          "type": "string",
+          "minLength": 3,
+          "maxLength": 32,
+          "pattern": "^[A-Z0-9]+(-[A-Z0-9]+)*$",
+          "example": "PROJ-01"
+        },
+        "name": {
+          "type": "string",
+          "minLength": 1,
+          "maxLength": 120,
+          "example": "Projector 1"
+        },
+        "type": {
+          "$ref": "#/$defs/ResourceType"
+        },
+        "active": {
+          "type": "boolean",
+          "example": true
+        },
+        "tags": {
+          "type": "array",
+          "maxItems": 10,
+          "uniqueItems": true,
+          "description": "Lowercase, unique, sorted tags.",
+          "items": {
+            "type": "string",
+            "minLength": 1,
+            "maxLength": 30,
+            "pattern": "^[a-z0-9]+(-[a-z0-9]+)*$"
+          },
+          "example": [
+            "av",
+            "portable"
+          ]
+        },
+        "createdAt": {
+          "type": "string",
+          "format": "date-time",
+          "readOnly": true,
+          "example": "2026-10-26T23:34:19Z"
+        },
+        "updatedAt": {
+          "type": "string",
+          "format": "date-time",
+          "readOnly": true,
+          "example": "2026-10-26T23:34:19Z"
+        },
+        "occurrences": {
+          "$ref": "#/$defs/OccurrenceList"
+        }
+      }
+    },
+    "ResourceList": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": [
+        "items"
+      ],
+      "properties": {
+        "items": {
+          "type": "array",
+          "items": {
+            "$ref": "#/$defs/ResourceSummary"
+          }
+        }
+      }
+    },
+    "Occurrence": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": [
+        "id",
+        "enabled",
+        "resourceId",
+        "description",
+        "type",
+        "priority",
+        "status",
+        "resolution",
+        "reportedBy",
+        "resolvedBy",
+        "createdAt",
+        "resolvedAt",
+        "updatedAt"
+      ],
+      "properties": {
+        "id": {
+          "type": "string",
+          "format": "uuid",
+          "readOnly": true
+        },
+        "enabled": {
+          "type": "boolean",
+          "readOnly": true,
+          "default": true,
+          "description": "Soft delete flag: true for an active record; false for a logically deleted record. Server-managed."
+        },
+        "resourceId": {
+          "type": "string",
+          "format": "uuid",
+          "readOnly": true
+        },
+        "description": {
+          "type": "string",
+          "minLength": 1,
+          "example": "Lamp does not turn on"
+        },
+        "type": {
+          "$ref": "#/$defs/OccurrenceType"
+        },
+        "priority": {
+          "$ref": "#/$defs/OccurrencePriority"
+        },
+        "status": {
+          "$ref": "#/$defs/OccurrenceStatus"
+        },
+        "resolution": {
+          "type": [
+            "string",
+            "null"
+          ],
+          "description": "Required and non-blank when RESOLVED; null otherwise.",
+          "example": "Lamp replaced"
+        },
+        "reportedBy": {
+          "type": "string",
+          "format": "uuid",
+          "readOnly": true,
+          "description": "Employee id of the reporter, from the JWT employeeId claim."
+        },
+        "resolvedBy": {
+          "type": [
+            "string",
+            "null"
+          ],
+          "format": "uuid",
+          "readOnly": true,
+          "description": "Employee id that resolved the occurrence, from the JWT employeeId claim."
+        },
+        "createdAt": {
+          "type": "string",
+          "format": "date-time",
+          "readOnly": true,
+          "example": "2026-10-26T23:40:00Z"
+        },
+        "resolvedAt": {
+          "type": [
+            "string",
+            "null"
+          ],
+          "format": "date-time",
+          "description": "Server-set when RESOLVED; null otherwise.",
+          "example": "2026-10-27T00:05:00Z"
+        },
+        "updatedAt": {
+          "type": "string",
+          "format": "date-time",
+          "readOnly": true,
+          "example": "2026-10-27T00:05:00Z"
+        }
+      }
+    },
+    "OccurrenceList": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": [
+        "items"
+      ],
+      "properties": {
+        "items": {
+          "type": "array",
+          "description": "Ordered by createdAt descending, then id descending.",
+          "items": {
+            "$ref": "#/$defs/Occurrence"
+          }
+        }
+      }
+    },
+    "ResourceCreate": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": [
+        "code",
+        "name",
+        "type"
+      ],
+      "properties": {
+        "code": {
+          "type": "string",
+          "minLength": 3,
+          "maxLength": 32,
+          "pattern": "^[A-Za-z0-9]+(-[A-Za-z0-9]+)*$",
+          "description": "Trimmed and uppercased before validation; final form must match ^[A-Z0-9]+(-[A-Z0-9]+)*$.",
+          "example": "PROJ-01"
+        },
+        "name": {
+          "type": "string",
+          "minLength": 1,
+          "maxLength": 120,
+          "description": "Trimmed; must be non-blank after trimming.",
+          "example": "Projector 1"
+        },
+        "type": {
+          "$ref": "#/$defs/ResourceType"
+        },
+        "active": {
+          "type": "boolean",
+          "default": true
+        },
+        "tags": {
+          "type": "array",
+          "maxItems": 10,
+          "uniqueItems": true,
+          "default": [],
+          "description": "Trimmed, lowercased, deduplicated, and sorted before storage.",
+          "items": {
+            "type": "string",
+            "minLength": 1,
+            "maxLength": 30,
+            "pattern": "^[A-Za-z0-9]+(-[A-Za-z0-9]+)*$"
+          },
+          "example": [
+            "AV",
+            "portable"
+          ]
+        }
+      }
+    },
+    "ResourceUpdate": {
+      "type": "object",
+      "additionalProperties": false,
+      "minProperties": 1,
+      "description": "At least one of name, type, active, or tags. code is not accepted.",
+      "properties": {
+        "name": {
+          "type": "string",
+          "minLength": 1,
+          "maxLength": 120,
+          "description": "Trimmed; must be non-blank after trimming.",
+          "example": "Projector 1"
+        },
+        "type": {
+          "$ref": "#/$defs/ResourceType"
+        },
+        "active": {
+          "type": "boolean"
+        },
+        "tags": {
+          "type": "array",
+          "maxItems": 10,
+          "uniqueItems": true,
+          "description": "Replaces the whole tag array; normalized as on create.",
+          "items": {
+            "type": "string",
+            "minLength": 1,
+            "maxLength": 30,
+            "pattern": "^[A-Za-z0-9]+(-[A-Za-z0-9]+)*$"
+          },
+          "example": [
+            "av",
+            "portable"
+          ]
+        }
+      }
+    },
+    "OccurrenceCreate": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": [
+        "description",
+        "type"
+      ],
+      "properties": {
+        "description": {
+          "type": "string",
+          "minLength": 1,
+          "description": "Trimmed; must be non-blank after trimming.",
+          "example": "Lamp does not turn on"
+        },
+        "type": {
+          "$ref": "#/$defs/OccurrenceType"
+        },
+        "priority": {
+          "$ref": "#/$defs/OccurrencePriority",
+          "default": "MEDIUM"
+        }
+      }
+    },
+    "OccurrenceResolve": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": [
+        "resolution"
+      ],
+      "description": "Moves OPEN -> RESOLVED. Illegal on RESOLVED (409). status, resolvedBy,\nand resolvedAt are server-set.\n",
+      "properties": {
+        "resolution": {
+          "type": "string",
+          "minLength": 1,
+          "pattern": ".*\\S.*",
+          "description": "Trimmed; must be non-blank after trimming.",
+          "example": "Lamp replaced"
+        }
+      }
+    },
+    "Identity": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": [
+        "sub",
+        "email",
+        "roles",
+        "employeeId",
+        "professorId",
+        "studentId"
+      ],
+      "properties": {
+        "sub": {
+          "type": "string"
+        },
+        "email": {
+          "type": "string",
+          "format": "email"
+        },
+        "roles": {
+          "type": "array",
+          "items": {
+            "type": "string",
+            "enum": [
+              "employee",
+              "coordinator",
+              "professor",
+              "student"
+            ]
+          }
+        },
+        "employeeId": {
+          "type": [
+            "string",
+            "null"
+          ],
+          "description": "Null when the caller has no Employee identity."
+        },
+        "professorId": {
+          "type": [
+            "string",
+            "null"
+          ],
+          "description": "Null when the caller has no Professor identity."
+        },
+        "studentId": {
+          "type": [
+            "string",
+            "null"
+          ],
+          "description": "Null when the caller has no Student identity."
+        }
+      }
+    },
+    "Health": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": [
+        "status",
+        "service"
+      ],
+      "properties": {
+        "status": {
+          "type": "string",
+          "enum": [
+            "ok",
+            "degraded"
+          ]
+        },
+        "service": {
+          "type": "string",
+          "const": "resources"
+        },
+        "database": {
+          "type": "string",
+          "enum": [
+            "up",
+            "down"
+          ]
+        }
+      }
+    },
+    "FieldError": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": [
+        "field",
+        "message"
+      ],
+      "properties": {
+        "field": {
+          "type": "string",
+          "example": "code"
+        },
+        "message": {
+          "type": "string",
+          "example": "must be 3-32 characters and match ^[A-Z0-9]+(-[A-Z0-9]+)*$"
+        }
+      }
+    },
+    "Problem": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": [
+        "type",
+        "title",
+        "status",
+        "detail",
+        "code"
+      ],
+      "properties": {
+        "type": {
+          "type": "string",
+          "format": "uri",
+          "example": "urn:closed-cras:recusa:FR-22"
+        },
+        "title": {
+          "type": "string",
+          "example": "Resource code already in use"
+        },
+        "status": {
+          "type": "integer",
+          "minimum": 400,
+          "maximum": 599,
+          "example": 409
+        },
+        "detail": {
+          "type": "string",
+          "example": "Resource code 'PROJ-01' is already in use."
+        },
+        "instance": {
+          "type": "string",
+          "format": "uri-reference",
+          "example": "/v1/resources"
+        },
+        "code": {
+          "type": "string",
+          "description": "FR id for invariant refusals; otherwise a stable error code.",
+          "example": "FR-22"
+        },
+        "reason": {
+          "type": "string",
+          "description": "Machine-readable discriminator within the code.",
+          "example": "RESOURCE_CODE_TAKEN"
+        },
+        "errors": {
+          "type": "array",
+          "items": {
+            "$ref": "#/$defs/FieldError"
+          }
+        }
+      }
+    }
+  }
+}
