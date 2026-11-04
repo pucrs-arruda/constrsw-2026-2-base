@@ -101,7 +101,7 @@ paths:
       operationId: listResources
       summary: List resources
       description: |
-        Returns every matching resource with `enabled=true` in one items envelope. Filters combine
+        Returns every matching resource with `enabled=true` as a JSON array. Filters combine
         with AND. Order is code ascending. There is no pagination.
       parameters:
       - name: code
@@ -598,15 +598,9 @@ components:
         occurrences:
           $ref: '#/components/schemas/OccurrenceList'
     ResourceList:
-      type: object
-      additionalProperties: false
-      required:
-      - items
-      properties:
-        items:
-          type: array
-          items:
-            $ref: '#/components/schemas/ResourceSummary'
+      type: array
+      items:
+        $ref: '#/components/schemas/ResourceSummary'
     Occurrence:
       type: object
       additionalProperties: false
@@ -684,16 +678,10 @@ components:
           readOnly: true
           example: '2026-10-27T00:05:00Z'
     OccurrenceList:
-      type: object
-      additionalProperties: false
-      required:
-      - items
-      properties:
-        items:
-          type: array
-          description: Ordered by createdAt descending, then id descending.
-          items:
-            $ref: '#/components/schemas/Occurrence'
+      type: array
+      description: Ordered by createdAt descending, then id descending.
+      items:
+        $ref: '#/components/schemas/Occurrence'
     ResourceCreate:
       type: object
       additionalProperties: false

@@ -118,3 +118,54 @@ stddev(rate(http_server_requests_seconds_sum[5m]) / rate(http_server_requests_se
 - Use queries 9-12 para análise específica de endpoints
 - Use queries 13-15 para análise por método/status HTTP
 - Use queries 16-20 para análises comparativas e de tendências 
+---
+
+# Queries para Gráficos de Negócio - Resources
+
+## 1. Resources por estado
+```
+sum by (state) (resources_current{job="resources"})
+```
+
+## 2. Resources ativos, inativos e excluídos
+```
+sum(resources_current{job="resources",state="active"})
+sum(resources_current{job="resources",state="inactive"})
+sum(resources_current{job="resources",state="deleted"})
+```
+
+## 3. Resources habilitados (não excluídos)
+```
+sum(resources_current{job="resources",state=~"active|inactive"})
+```
+
+## 4. Resources por tipo e estado
+```
+sum by (type, state) (resources_by_type_current{job="resources"})
+```
+
+## 5. Occurrences por estado
+```
+sum by (state) (occurrences_current{job="resources"})
+```
+
+## 6. Occurrences abertas, resolvidas e excluídas
+```
+sum(occurrences_current{job="resources",state="open"})
+sum(occurrences_current{job="resources",state="resolved"})
+sum(occurrences_current{job="resources",state="deleted"})
+```
+
+## 7. Occurrences por tipo e estado
+```
+sum by (type, state) (occurrences_by_type_current{job="resources"})
+```
+
+## 8. Resources com pelo menos uma ocorrência aberta
+```
+resources_with_open_occurrences_current{job="resources"}
+```
+
+> Essas métricas são gauges atualizados a cada scrape de `/metrics`, lendo o
+> PostgreSQL do contexto. Use o dashboard `ConstrSW Resources — Negócio`
+> (UID `resources-business`) no Grafana.

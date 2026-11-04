@@ -206,18 +206,9 @@
       }
     },
     "ResourceList": {
-      "type": "object",
-      "additionalProperties": false,
-      "required": [
-        "items"
-      ],
-      "properties": {
-        "items": {
-          "type": "array",
-          "items": {
-            "$ref": "#/$defs/ResourceSummary"
-          }
-        }
+      "type": "array",
+      "items": {
+        "$ref": "#/$defs/ResourceSummary"
       }
     },
     "Occurrence": {
@@ -316,19 +307,10 @@
       }
     },
     "OccurrenceList": {
-      "type": "object",
-      "additionalProperties": false,
-      "required": [
-        "items"
-      ],
-      "properties": {
-        "items": {
-          "type": "array",
-          "description": "Ordered by createdAt descending, then id descending.",
-          "items": {
-            "$ref": "#/$defs/Occurrence"
-          }
-        }
+      "type": "array",
+      "description": "Ordered by createdAt descending, then id descending.",
+      "items": {
+        "$ref": "#/$defs/Occurrence"
       }
     },
     "ResourceCreate": {

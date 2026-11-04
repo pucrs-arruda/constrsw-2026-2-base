@@ -129,7 +129,7 @@
         ],
         "operationId": "listResources",
         "summary": "List resources",
-        "description": "Returns every matching resource in one items envelope. Filters combine\nwith AND. Order is code ascending. There is no pagination.\n",
+        "description": "Returns every matching resource as a JSON array. Filters combine\nwith AND. Order is code ascending. There is no pagination.\n",
         "parameters": [
           {
             "name": "code",
@@ -727,18 +727,9 @@
         }
       },
       "ResourceList": {
-        "type": "object",
-        "additionalProperties": false,
-        "required": [
-          "items"
-        ],
-        "properties": {
-          "items": {
-            "type": "array",
-            "items": {
-              "$ref": "#/components/schemas/ResourceSummary"
-            }
-          }
+        "type": "array",
+        "items": {
+          "$ref": "#/components/schemas/ResourceSummary"
         }
       },
       "Occurrence": {
@@ -830,19 +821,10 @@
         }
       },
       "OccurrenceList": {
-        "type": "object",
-        "additionalProperties": false,
-        "required": [
-          "items"
-        ],
-        "properties": {
-          "items": {
-            "type": "array",
-            "description": "Ordered by createdAt descending, then id descending.",
-            "items": {
-              "$ref": "#/components/schemas/Occurrence"
-            }
-          }
+        "type": "array",
+        "description": "Ordered by createdAt descending, then id descending.",
+        "items": {
+          "$ref": "#/components/schemas/Occurrence"
         }
       },
       "ResourceCreate": {

@@ -45,7 +45,7 @@ Closed CRAS needs a master record for every physical reservable asset, separate 
 - **funcionário** — the realm role allowed to write the resources context. `coordenador`, `professor`, and `student` are read-only here.
 - **resource-server** — the service validates a Keycloak JWT via JWKS and enforces roles; the browser never calls it directly.
 - **BFF** — the browser-facing NestJS composition layer. It owns the session cookie and may add read-model fields such as `openOccurrenceCount`.
-- **items envelope** — every JSON collection is `{ "items": [...] }`; there is no bare collection and no pagination envelope in v1.
+- **bare collection** — every JSON collection is a top-level array (`[...]`); there is no `items` envelope and no pagination envelope in v1.
 - **FR-22 / FR-23** — the source PRD requirements for Resource registration and Resource reservation. FR-22 is rewritten by Model A; FR-23 semantics are preserved.
 
 ## Invariants
@@ -62,7 +62,7 @@ Closed CRAS needs a master record for every physical reservable asset, separate 
 - **INV-10 — Identity.** Resource and Occurrence IDs are server-generated UUID v4 values, emitted lowercase. Clients never supply IDs.
 - **INV-11 — Time.** `createdAt` is server-set and is report time, not event time. `updatedAt` is server-set on every update. `resolvedAt` is server-set on resolve. All timestamps are RFC 3339 UTC in JSON and `TIMESTAMPTZ` in PostgreSQL. No client-supplied timestamps are accepted.
 - **INV-12 — Wire shape.** JSON properties are camelCase; enum values are uppercase; the removed `dataHora` and InventoryItem fields (`identifier`, `estado`) never appear. `status` is never client-supplied: the PATCH body carries only the `resolution` and the server derives the state, the actor, and the timestamps.
-- **INV-13 — Collections.** Every collection, including the nested occurrence collection, uses the `items` envelope. No pagination in v1. Ordering is deterministic: resources by `code` ascending; occurrences by `createdAt` descending, then `id` descending.
+- **INV-13 — Collections.** Every collection, including the nested occurrence collection, is a top-level array (`[...]`). No pagination in v1. Ordering is deterministic: resources by `code` ascending; occurrences by `createdAt` descending, then `id` descending.
 - **INV-14 — Access.** Writes require `funcionario`. Reads require any authenticated realm role (`funcionario`, `coordenador`, `professor`, `student`). An occurrence write token must also carry `employeeId`; a `funcionario` without it receives 403 `EMPLOYEE_IDENTITY_REQUIRED`, because every occurrence write records an audit actor. Resource writes do not require the claim. `/health` is the only anonymous route. The browser talks only to the BFF.
 - **INV-15 — Refusals.** Invariant refusals use RFC 9457 `application/problem+json`, HTTP 409, `code` equal to `FR-22`, and `type` equal to `urn:closed-cras:recusa:FR-22`. A `reason` extension discriminates the condition. Shape and format errors use 422 with `code: VALIDATION` and an `errors[]` array. No ad hoc `{ "message": ... }` envelope exists.
 - **INV-16 — Retention.** There is no Resource or Occurrence DELETE route and no soft-delete column. The occurrence FK is `ON DELETE RESTRICT`. `active=false` is retirement; occurrence history is retained. Deletion is an operational database decision outside this contract.
@@ -79,11 +79,11 @@ Closed CRAS needs a master record for every physical reservable asset, separate 
 
 - **CAP-2 — List and filter Resources**
   - **intent:** Authenticated callers can find resources by code, type, active state, and tag without paginating or joining other contexts.
-  - **success:** `GET /v1/resources` returns an `items` collection; `code`, `type`, `active`, and `tag` filters combine with AND; the order is `code` ascending; no pagination fields exist.
+  - **success:** `GET /v1/resources` returns a JSON array; `code`, `type`, `active`, and `tag` filters combine with AND; the order is `code` ascending; no pagination fields exist.
 
 - **CAP-3 — Read Resource aggregate**
   - **intent:** Authenticated callers can inspect one resource together with its full occurrence history.
-  - **success:** `GET /v1/resources/{resourceId}` returns the resource and `occurrences.items` ordered newest first; an unknown ID returns 404 with `reason=RESOURCE_NOT_FOUND`.
+  - **success:** `GET /v1/resources/{resourceId}` returns the resource and `occurrences` ordered newest first; an unknown ID returns 404 with `reason=RESOURCE_NOT_FOUND`.
 
 - **CAP-4 — Update Resource master data**
   - **intent:** Staff can correct a resource's name, type, active state, and tags without changing its stable code.
@@ -155,8 +155,8 @@ The DDL model and the contract tests demonstrate the full loop: a `funcionario` 
 | AC-03 | Given an invalid code (2 or 33 characters, `PROJ_01`, `-PROJ`, blank, or non-string), when a create is attempted, then the response is 422 with `code="VALIDATION"` and an `errors[]` entry for `code`. |
 | AC-04 | Given tags `["AV", "av", " Audio-Visual "]`, when a resource is created, then the stored and returned tags are `["audio-visual", "av"]`; more than 10 tags, a blank tag, a tag over 30 characters, a duplicate after normalization that cannot be deduplicated, or a tag outside the pattern returns 422. |
 | AC-05 | Given resources with different types, active states, and tags, when `GET /v1/resources?code=proj-01&type=PROJECTOR&active=true&tag=av` is called, then only resources satisfying all four filters are returned, the `code` filter is case-normalized, and the order is `code` ascending. |
-| AC-06 | Given a list request, when the response is inspected, then it is `{items:[...]}` and contains no `page`, `pageSize`, `limit`, `offset`, `total`, or `next` field. |
-| AC-07 | Given a resource with occurrences, when `GET /v1/resources/{resourceId}` is called, then the body is the Resource aggregate and `occurrences.items` is ordered `createdAt` descending, then `id` descending; an unknown ID returns 404 with `reason="RESOURCE_NOT_FOUND"`. |
+| AC-06 | Given a list request, when the response is inspected, then it is a top-level array `[...]` and contains no `page`, `pageSize`, `limit`, `offset`, `total`, or `next` field. |
+| AC-07 | Given a resource with occurrences, when `GET /v1/resources/{resourceId}` is called, then the body is the Resource aggregate and `occurrences` is ordered `createdAt` descending, then `id` descending; an unknown ID returns 404 with `reason="RESOURCE_NOT_FOUND"`. |
 | AC-08 | Given an existing resource, when PATCH sends only `{name, active}`, then only those fields change, `code` and `tags` are unchanged, and `updatedAt` advances; when PATCH sends `{tags:[...]}`, the array is replaced in full. |
 | AC-09 | Given an existing resource, when PATCH includes `code`, includes an unknown property, or is `{}`, then the response is 422 with `code="VALIDATION"` and the database row is unchanged. |
 | AC-10 | Given an existing resource, when `POST /v1/resources/{resourceId}/occurrences` sends `{description:"Lamp does not turn on", type:"MALFUNCTION"}`, then the response is 201 with `Location`, `status="OPEN"`, `priority="MEDIUM"`, `resolution=null`, `resolvedAt=null`, `reportedBy` equal to the caller's `employeeId`, and a server-set `createdAt`. |
@@ -232,7 +232,7 @@ Base URL: `http://localhost:8106` in the local compose, paths under `/v1`. The f
 
 | Method | Path | Authorization | Success | Errors |
 |---|---|---|---|---|
-| GET | `/v1/resources` | any authenticated role | 200 `{items: ResourceSummary[]}` | 401, 403, 422, 503 |
+| GET | `/v1/resources` | any authenticated role | 200 `ResourceSummary[]` | 401, 403, 422, 503 |
 | POST | `/v1/resources` | `funcionario` | 201 `Resource` + `Location` | 400, 401, 403, 409, 415, 422, 503 |
 | GET | `/v1/resources/{resourceId}` | any authenticated role | 200 `Resource` | 401, 403, 404, 422, 503 |
 | PATCH | `/v1/resources/{resourceId}` | `funcionario` | 200 `Resource` | 400, 401, 403, 404, 415, 422, 503 |
@@ -257,7 +257,7 @@ Base URL: `http://localhost:8106` in the local compose, paths under `/v1`. The f
 - `createdAt`, `resolvedAt`, `updatedAt`: server-set; clients cannot send them.
 - `resourceId`/`occurrenceId`: UUID; output lowercase; malformed path UUID is 422.
 
-**Collection and ordering.** `ResourceList` and the nested `occurrences` use `{items:[...]}`. Resources are ordered by `code` ascending. Occurrences are ordered by `createdAt` descending, then `id` descending. There is no pagination.
+**Collection and ordering.** `ResourceList` and the nested `occurrences` are top-level arrays. Resources are ordered by `code` ascending. Occurrences are ordered by `createdAt` descending, then `id` descending. There is no pagination.
 
 **Location.** 201 responses carry a path-only `Location`: `/v1/resources/{resourceId}` or `/v1/resources/{resourceId}/occurrences/{occurrenceId}`.
 
@@ -297,7 +297,7 @@ UX-S3 is one surface with two zones: Room and Resource. This SPEC fixes the Reso
 - **A-6.** PATCH occurrence is resolve-only (`resolution`); PATCH resource is partial; `tags` full-replaces; there is no optimistic concurrency or ETag.
 - **A-7.** There are no delete endpoints; `active=false` is retirement; the code remains reserved.
 - **A-8.** Reads are open to any authenticated realm role; writes are `funcionario` only.
-- **A-9.** Every collection, including nested occurrences, uses the `items` envelope; `Location` is path-only; timestamps are UTC; UUIDs are lowercase.
+- **A-9.** Every collection, including nested occurrences, is a top-level array; `Location` is path-only; timestamps are UTC; UUIDs are lowercase.
 - **A-10.** The BFF computes `openOccurrenceCount` without a domain count field; the N+1 read is acceptable at lab scale.
 - **A-11.** The schema enforces tag value checks and the 10-tag limit on `resource_tags`, plus the resolution/status checks on `occurrences`. `created_at` immutability is enforced by the API, with the database default as a backstop.
 - **A-12.** `cras_session` is the BFF cookie name placeholder; the shared auth module must either implement it or update the BFF contract.

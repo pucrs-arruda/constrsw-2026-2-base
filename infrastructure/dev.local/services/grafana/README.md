@@ -7,9 +7,9 @@ existente fora do `docker-compose.yml` deste repositório).
 - Acesso anônimo: habilitado como Viewer
 - Datasource provisionado no container: `Prometheus` → `http://prometheus:9090`
 
-## Dashboard de Resources
+## Dashboards de Resources
 
-Dashboard `ConstrSW Resources`:
+### Técnico — `ConstrSW Resources`
 
 - URL: http://localhost:3030/d/resources-overview/constrsw-resources
 - UID: `resources-overview`
@@ -26,6 +26,30 @@ Painéis:
 7. Requests/s por método.
 8. Taxa de erros 4xx/5xx por status.
 
+### Negócio — `ConstrSW Resources — Negócio`
+
+- URL: http://localhost:3030/d/resources-business/constrsw-resources-e28094-negocio
+- UID: `resources-business`
+- JSON: [`dashboards/resources-business.json`](dashboards/resources-business.json)
+
+Painéis:
+
+1. Resources ativos (`active=true` e `enabled=true`).
+2. Resources inativos (`active=false` e `enabled=true`).
+3. Resources excluídos logicamente (`enabled=false`).
+4. Resources habilitados no total.
+5. Occurrences abertas, resolvidas e excluídas.
+6. Resources com pelo menos uma ocorrência aberta.
+7. Pizza de resources e occurrences por estado.
+8. Barras de resources e occurrences por tipo e estado.
+9. Histórico dos contadores por estado.
+
+As métricas vêm do próprio `/metrics` do serviço
+(`resources_current`, `resources_by_type_current`, `occurrences_current`,
+`occurrences_by_type_current`, `resources_with_open_occurrences_current`), que
+consulta o PostgreSQL a cada scrape. O dashboard usa o datasource `prometheus`
+e o job `resources`.
+
 Para movimentar os painéis, rode o script de carga do módulo:
 
 ```bash
@@ -41,15 +65,17 @@ Se o container for recriado e o dashboard sumir:
 
 1. Abra http://localhost:3030.
 2. **Dashboards → New → Import**.
-3. Envie `dashboards/resources-overview.json`.
+3. Envie `dashboards/resources-overview.json` e `dashboards/resources-business.json`.
 4. Selecione o datasource `Prometheus` e confirme.
 
 Via API:
 
 ```bash
-curl -u admin:a12345678 -X POST http://localhost:3030/api/dashboards/db \
-  -H 'Content-Type: application/json' \
-  -d "{\"dashboard\": $(cat dashboards/resources-overview.json), \"overwrite\": true}"
+for file in dashboards/resources-overview.json dashboards/resources-business.json; do
+  curl -u admin:a12345678 -X POST http://localhost:3030/api/dashboards/db \
+    -H 'Content-Type: application/json' \
+    -d "{\"dashboard\": $(cat "$file"), \"overwrite\": true}"
+done
 ```
 
 O datasource precisa existir com UID `prometheus`. Se for recriado, cadastre em

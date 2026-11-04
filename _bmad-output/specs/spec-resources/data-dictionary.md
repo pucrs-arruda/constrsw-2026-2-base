@@ -14,7 +14,7 @@ This dictionary covers every table, column, enum, constraint, index, and trigger
 | Timestamps | `TIMESTAMPTZ`; JSON is RFC 3339 UTC (`2026-10-26T23:34:19Z`). `createdAt` and `updatedAt` are server-set; `resolvedAt` is server-set on resolve. |
 | Enums | Stored as uppercase labels; JSON values are the same uppercase strings. |
 | Empty collection | A resource with no `resource_tags` rows; JSON `[]`. |
-| Lists | Every JSON collection uses `{ "items": [...] }`; no pagination in v1. |
+| Lists | Every JSON collection is a top-level array (`[...]`); no pagination in v1. |
 | Deletion | No API delete; `active=false` retires. Occurrence history is retained. |
 | Timestamp trigger | `set_updated_at()` overwrites `updated_at` on every row update. |
 | Code immutability | API rejects `code` on PATCH; trigger `trg_resources_code_immutable` is the database backstop. |
@@ -313,8 +313,6 @@ Resource aggregate:
   "tags": ["av", "portable"],
   "createdAt": "2026-10-26T23:34:19Z",
   "updatedAt": "2026-10-26T23:34:19Z",
-  "occurrences": {
-    "items": []
-  }
+  "occurrences": []
 }
 ```

@@ -29,10 +29,9 @@ Usuários de teste (senha `a12345678`): `admin@pucrs.br`,
 
 ## Módulo Resources
 
-Documentação completa (arquitetura, diagrama de classes, rotas, filtros
-simples/complexos e exemplos): **[`backend/resources/README.md`](backend/resources/README.md)**.
-Resumo de entrega (arquitetura, URL do Swagger e execução):
-**[`backend/resources/README-ENTREGA.md`](backend/resources/README-ENTREGA.md)**.
+Documentação completa e única do módulo (arquitetura, execução, Swagger,
+diagramas, rotas, filtros, observabilidade, testes e divergências):
+**[`backend/resources/README.md`](backend/resources/README.md)**.
 
 Resumo da entrega:
 
