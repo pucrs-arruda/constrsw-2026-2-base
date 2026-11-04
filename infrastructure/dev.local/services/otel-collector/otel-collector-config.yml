@@ -29,14 +29,17 @@ exporters:
     const_labels:
       environment: development
   debug:
-    verbosity: detailed
+    verbosity: basic
 
 service:
   pipelines:
     metrics:
       receivers: [otlp, prometheus]
       processors: [batch, resource]
-      exporters: [prometheus, debug]
+      # O exporter debug fica fora do pipeline de métricas para não inundar o
+      # log com um bloco "ResourceMetrics" a cada batch. Use [prometheus, debug]
+      # temporariamente ao depurar.
+      exporters: [prometheus]
     traces:
       receivers: [otlp]
       processors: [batch, resource]

@@ -19,8 +19,10 @@ docker compose up --build
 |---|---|
 | Keycloak | http://localhost:8081 |
 | OAuth (login) | http://localhost:8181 |
-| Resources API — Swagger | **http://localhost:8106/docs** |
-| Resources API — OpenAPI JSON | http://localhost:8106/docs/json |
+| Resources API — Swagger (OpenAPI 3.1) | **http://localhost:8106/docs** |
+| Resources API — OpenAPI 3.1 JSON | http://localhost:8106/docs/json |
+| Resources API — readiness | http://localhost:8106/health/ready |
+| Resources API — métricas | http://localhost:8106/metrics |
 
 Usuários de teste (senha `a12345678`): `admin@pucrs.br`,
 `coordinator@pucrs.br`, `professor@pucrs.br`, `student@pucrs.br`.
@@ -29,15 +31,23 @@ Usuários de teste (senha `a12345678`): `admin@pucrs.br`,
 
 Documentação completa (arquitetura, diagrama de classes, rotas, filtros
 simples/complexos e exemplos): **[`backend/resources/README.md`](backend/resources/README.md)**.
+Resumo de entrega (arquitetura, URL do Swagger e execução):
+**[`backend/resources/README-ENTREGA.md`](backend/resources/README-ENTREGA.md)**.
 
 Resumo da entrega:
 
-- CRUD completo de `Resource` (`/v1/resources`).
+- CRUD completo de `Resource` (`/resources`).
 - Coleção secundária 1–N `Occurrence`
-  (`/v1/resources/{id}/occurrences`), com PUT/PATCH/DELETE.
+  (`/resources/{id}/occurrences`), com PUT/PATCH/DELETE.
 - Query string simples (`?type=PROJECTOR&active=true`) e complexa
   (`?status=%7Bneq%7DRESOLVED&createdAt=%7Bgteq%7D2026-11-01T00:00:00Z`).
 - Autenticação JWT do Keycloak (JWKS, `iss`, `aud`, papéis de leitura/escrita).
 - Erros RFC 9457 `application/problem+json`.
 - PostgreSQL com schema versionado e seed idempotente.
-- Swagger gerado em `/docs` e disponível também em `/docs/json` e `/docs/yaml`.
+- Contrato **OpenAPI 3.1.0** versionado em `backend/resources/openapi/openapi.yaml`
+  e servido em `/docs`, `/docs/json` e `/docs/yaml`.
+- `415 Unsupported Media Type` para corpo não-JSON.
+- Probes `/health`, `/health/live`, `/health/ready` e métricas Prometheus em
+  `/metrics`.
+- Testes unitários (`npm test`) e de integração com PostgreSQL real
+  (`npm run test:e2e`).

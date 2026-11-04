@@ -30,6 +30,7 @@ services:
       - constrsw-prometheus-data:/prometheus
       - ./infrastructure/dev.local/services/prometheus/prometheus.yml:/etc/prometheus/prometheus.yml
       - ./infrastructure/dev.local/services/prometheus/alerts.yml:/etc/prometheus/alerts.yml
+      - ./infrastructure/dev.local/services/prometheus/recording_rules.yml:/etc/prometheus/recording_rules.yml
     networks:
       - constrsw
     ports:
