@@ -119,7 +119,7 @@ scrape_configs:
         - http://auth:3001/health
         - http://keycloak:9001/health/ready
         - http://courses:8080/api/v1/health
-        - http://professors:3002/health
+        - http://professors:3002/api/v1/health
         - http://lessons:3000/api/v1/health
         - http://reservations:8080/api/v1/health
         - http://resources:3000/api/v1/health

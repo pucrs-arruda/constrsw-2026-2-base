@@ -1,23 +1,19 @@
 openapi: 3.1.0
-jsonSchemaDialect: https://json-schema.org/draft/2020-12/schema
 info:
-  title: Courses API — Disciplinas e Referências Bibliográficas
+  title: Courses API — Courses and Bibliographic References
   version: 1.0.0
-  description: |
-    Contrato proposto do Grupo 05 para a segunda entrega do T2 de Construção de Software. Banco previsto: PostgreSQL. Toda disciplina possui 1..* referências e um professor responsável externo. A existência do professor, a unicidade do código, a propriedade das referências e o mínimo de referências devem ser garantidos pelo backend; JSON Schema valida apenas a estrutura. A API ainda não foi implementada nesta entrega. Use Accept: application/json e, nas escritas, Content-Type: application/json. O token Bearer é obtido no serviço de autenticação do projeto.
-
-    ## Exclusão lógica
-
-    Todas as exclusões são lógicas e controladas pelo atributo `enabled` das classes. Um `DELETE` não remove o registro do banco: apenas define `enabled=false`. O atributo é somente leitura (`readOnly`): nasce `true` e não pode ser enviado pelo cliente.
-
-    Registros com `enabled=false` não aparecem nas listagens, a consulta por id responde `404` e não podem ser alterados nem excluídos novamente (`404`).
+  description: Group 05 courses service. Java/Spring Boot and PostgreSQL. Each active course owns one
+    or more active bibliographic references and references one responsible professor through an external
+    API. Bearer access is delegated to the professor-selected OAuth service. IDs and enabled are server-controlled.
+    Deletion is logical and transactional. Optional fields are omitted instead of null. Dependency failures
+    return 503 using the standard error envelope.
 servers:
 - url: '{baseUrl}/api/v1'
-  description: Origem configurável; localhost:8000 é somente um exemplo até o backend definir sua porta.
+  description: Configurable courses API origin; the local Compose stack uses port 8085.
   variables:
     baseUrl:
-      default: http://localhost:8000
-      description: Origem da API courses, sem /api/v1 no final.
+      default: http://localhost:8085
+      description: Courses API origin without /api/v1.
 tags:
 - name: Courses
   description: Recurso principal.
@@ -26,14 +22,48 @@ tags:
 security:
 - bearerAuth: []
 paths:
+  /health:
+    get:
+      tags:
+      - Courses
+      operationId: getHealth
+      summary: Saúde do serviço
+      description: |
+        Actuator em `/api/v1/health` (`show-details: never`). 200 com `{"status":"UP"}` e 503 com `{"status":"DOWN"}`.
+        `GET /actuator/health` encaminha para este caminho.
+      security: []
+      responses:
+        '200':
+          description: Serviço no ar
+          content:
+            application/json:
+              schema:
+                type: object
+                additionalProperties: false
+                required: [status]
+                properties:
+                  status:
+                    const: UP
+        '503':
+          description: Dependência indisponível
+          content:
+            application/json:
+              schema:
+                type: object
+                additionalProperties: false
+                required: [status]
+                properties:
+                  status:
+                    type: string
+                    description: Código agregado do actuator quando o HTTP é 503 (DOWN ou OUT_OF_SERVICE).
   /courses:
     post:
       tags:
       - Courses
       operationId: createCourse
       summary: Criar disciplina com referências
-      description: Valida o professor pela API externa; rejeita código duplicado com 409. A criação de disciplina e 
-        referências é atômica. A coleção deve conter ao menos um item.
+      description: Valida o professor pela API externa; rejeita código duplicado com 409. A criação de
+        disciplina e referências é atômica. A coleção deve conter ao menos um item.
       responses:
         '201':
           description: Disciplina e referências criadas na mesma transação.
@@ -76,6 +106,8 @@ paths:
           $ref: '#/components/responses/Error403'
         '409':
           $ref: '#/components/responses/Error409'
+        '503':
+          $ref: '#/components/responses/Error503'
       requestBody:
         required: true
         content:
@@ -102,9 +134,10 @@ paths:
       - Courses
       operationId: listCourses
       summary: Listar ou filtrar disciplinas
-      description: Combina filtros com AND; sem operador explícito aplica igualdade. Sem filtros, uma coleção vazia 
-        retorna 200 com []. Com filtros sem correspondência, retorna 404, seguindo o exemplo do Moodle. Filtros 
-        desconhecidos ou operadores inválidos retornam 400. Não há paginação nesta entrega.
+      description: Combina filtros com AND; sem operador explícito aplica igualdade. Sem filtros, uma
+        coleção vazia retorna 200 com []. Com filtros sem correspondência, retorna 404, seguindo o exemplo
+        do Moodle. Filtros desconhecidos ou operadores inválidos retornam 400. Não há paginação nesta
+        entrega.
       responses:
         '200':
           description: Lista de disciplinas com suas referências.
@@ -140,6 +173,8 @@ paths:
           $ref: '#/components/responses/Error403'
         '404':
           $ref: '#/components/responses/Error404'
+        '503':
+          $ref: '#/components/responses/Error503'
       parameters:
       - $ref: '#/components/parameters/CodeFilter'
       - $ref: '#/components/parameters/NameFilter'
@@ -189,14 +224,16 @@ paths:
           $ref: '#/components/responses/Error403'
         '404':
           $ref: '#/components/responses/Error404'
+        '503':
+          $ref: '#/components/responses/Error503'
     put:
       tags:
       - Courses
       operationId: replaceCourse
       summary: Substituir campos escalares da disciplina
-      description: Substitui os campos escalares; `syllabus` omitida é removida. Preserva IDs e a coleção de 
-        referências, gerenciada exclusivamente nas rotas secundárias. Valida professorId pela API externa; código 
-        duplicado retorna 409.
+      description: Substitui os campos escalares; `syllabus` omitida é removida. Preserva IDs e a coleção
+        de referências, gerenciada exclusivamente nas rotas secundárias. Valida professorId pela API externa;
+        código duplicado retorna 409.
       responses:
         '200':
           description: Disciplina completa após substituição.
@@ -234,6 +271,8 @@ paths:
           $ref: '#/components/responses/Error404'
         '409':
           $ref: '#/components/responses/Error409'
+        '503':
+          $ref: '#/components/responses/Error503'
       requestBody:
         required: true
         content:
@@ -253,9 +292,9 @@ paths:
       - Courses
       operationId: patchCourse
       summary: Alterar parcialmente a disciplina
-      description: Objeto JSON com ao menos um campo escalar editável. Campos omitidos permanecem inalterados. Não é 
-        JSON Patch nem JSON Merge Patch; null e alterações diretas na coleção não são aceitos. Valida professorId quando
-        informado.
+      description: Objeto JSON com ao menos um campo escalar editável. Campos omitidos permanecem inalterados.
+        Não é JSON Patch nem JSON Merge Patch; null e alterações diretas na coleção não são aceitos. Valida
+        professorId quando informado.
       responses:
         '200':
           description: Disciplina completa após alteração.
@@ -293,6 +332,8 @@ paths:
           $ref: '#/components/responses/Error404'
         '409':
           $ref: '#/components/responses/Error409'
+        '503':
+          $ref: '#/components/responses/Error503'
       requestBody:
         required: true
         content:
@@ -308,8 +349,9 @@ paths:
       - Courses
       operationId: deleteCourse
       summary: Excluir disciplina e suas referências (exclusão lógica)
-      description: 'Exclusão lógica: define `enabled=false` na disciplina e em todas as suas referências, na mesma transação;
-        nada é removido do banco. A obrigação de ter referências não impede excluir a própria disciplina.'
+      description: 'Exclusão lógica: define `enabled=false` na disciplina e em todas as suas referências,
+        na mesma transação; nada é removido do banco. A obrigação de ter referências não impede excluir
+        a própria disciplina.'
       responses:
         '204':
           description: Disciplina e suas referências excluídas logicamente (`enabled=false`); sem corpo.
@@ -321,6 +363,8 @@ paths:
           $ref: '#/components/responses/Error403'
         '404':
           $ref: '#/components/responses/Error404'
+        '503':
+          $ref: '#/components/responses/Error503'
   /courses/{courseId}/bibliographic-references:
     parameters:
     - $ref: '#/components/parameters/CourseId'
@@ -329,8 +373,8 @@ paths:
       - Bibliographic references
       operationId: createReference
       summary: Adicionar referência à disciplina
-      description: O servidor atribui o ID e o vínculo à disciplina do path. A mesma obra pode aparecer em outras 
-        disciplinas como outro registro; não há unicidade global por título ou ISBN.
+      description: O servidor atribui o ID e o vínculo à disciplina do path. A mesma obra pode aparecer
+        em outras disciplinas como outro registro; não há unicidade global por título ou ISBN.
       responses:
         '201':
           description: Referência criada.
@@ -356,8 +400,7 @@ paths:
               schema:
                 type: string
                 format: uri-reference
-              example: 
-                /api/v1/courses/42cedfbd-f998-4be7-a278-b74322fdf21a/bibliographic-references/079edc66-7c2d-49da-bd20-523ec4b99cf4
+              example: /api/v1/courses/42cedfbd-f998-4be7-a278-b74322fdf21a/bibliographic-references/079edc66-7c2d-49da-bd20-523ec4b99cf4
         '400':
           $ref: '#/components/responses/Error400'
         '401':
@@ -366,6 +409,8 @@ paths:
           $ref: '#/components/responses/Error403'
         '404':
           $ref: '#/components/responses/Error404'
+        '503':
+          $ref: '#/components/responses/Error503'
       requestBody:
         required: true
         content:
@@ -386,9 +431,9 @@ paths:
       - Bibliographic references
       operationId: listReferences
       summary: Listar ou filtrar referências da disciplina
-      description: Checa a existência da disciplina antes da busca. Combina filtros com AND e limita o resultado às 
-        referências dessa disciplina. Com filtros sem correspondência, retorna 404. Sem paginação; atributos ou 
-        operadores desconhecidos geram 400.
+      description: Checa a existência da disciplina antes da busca. Combina filtros com AND e limita o
+        resultado às referências dessa disciplina. Com filtros sem correspondência, retorna 404. Sem paginação;
+        atributos ou operadores desconhecidos geram 400.
       responses:
         '200':
           description: Referências da disciplina que atendem aos filtros.
@@ -416,6 +461,8 @@ paths:
           $ref: '#/components/responses/Error403'
         '404':
           $ref: '#/components/responses/Error404'
+        '503':
+          $ref: '#/components/responses/Error503'
       parameters:
       - $ref: '#/components/parameters/TitleFilter'
       - $ref: '#/components/parameters/AuthorsFilter'
@@ -430,8 +477,8 @@ paths:
       - Bibliographic references
       operationId: getReference
       summary: Consultar referência da disciplina
-      description: Retorna 404 se a disciplina não existir, se a referência não existir ou se pertencer a outra 
-        disciplina.
+      description: Retorna 404 se a disciplina não existir, se a referência não existir ou se pertencer
+        a outra disciplina.
       responses:
         '200':
           description: Referência completa.
@@ -459,13 +506,15 @@ paths:
           $ref: '#/components/responses/Error403'
         '404':
           $ref: '#/components/responses/Error404'
+        '503':
+          $ref: '#/components/responses/Error503'
     put:
       tags:
       - Bibliographic references
       operationId: replaceReference
       summary: Substituir referência da disciplina
-      description: Checa o vínculo com a disciplina do path. Substitui os dados editáveis e remove opcionais omitidos. 
-        Preserva id e courseId; referências de outra disciplina retornam 404.
+      description: Checa o vínculo com a disciplina do path. Substitui os dados editáveis e remove opcionais
+        omitidos. Preserva id e courseId; referências de outra disciplina retornam 404.
       responses:
         '200':
           description: Referência completa após substituição.
@@ -493,6 +542,8 @@ paths:
           $ref: '#/components/responses/Error403'
         '404':
           $ref: '#/components/responses/Error404'
+        '503':
+          $ref: '#/components/responses/Error503'
       requestBody:
         required: true
         content:
@@ -513,9 +564,9 @@ paths:
       - Bibliographic references
       operationId: patchReference
       summary: Alterar parcialmente a referência
-      description: Checa o vínculo com a disciplina do path. Objeto JSON com ao menos um atributo editável; omissões 
-        preservam valores. null e alterações de id ou courseId não são aceitos. Referências de outra disciplina retornam
-        404.
+      description: Checa o vínculo com a disciplina do path. Objeto JSON com ao menos um atributo editável;
+        omissões preservam valores. null e alterações de id ou courseId não são aceitos. Referências de
+        outra disciplina retornam 404.
       responses:
         '200':
           description: Referência completa após alteração.
@@ -543,6 +594,8 @@ paths:
           $ref: '#/components/responses/Error403'
         '404':
           $ref: '#/components/responses/Error404'
+        '503':
+          $ref: '#/components/responses/Error503'
       requestBody:
         required: true
         content:
@@ -558,9 +611,10 @@ paths:
       - Bibliographic references
       operationId: deleteReference
       summary: Excluir referência da disciplina (exclusão lógica)
-      description: 'Checa a propriedade da referência e, em transação com controle de concorrência, impede excluir a última
-        referência ativa (`enabled=true`) de uma disciplina existente (409). Exclusão lógica: define `enabled=false`; nada
-        é removido do banco. Referências de outra disciplina retornam 404.'
+      description: 'Checa a propriedade da referência e, em transação com controle de concorrência, impede
+        excluir a última referência ativa (`enabled=true`) de uma disciplina existente (409). Exclusão
+        lógica: define `enabled=false`; nada é removido do banco. Referências de outra disciplina retornam
+        404.'
       responses:
         '204':
           description: Referência excluída logicamente (`enabled=false`); sem corpo.
@@ -574,6 +628,8 @@ paths:
           $ref: '#/components/responses/Error404'
         '409':
           $ref: '#/components/responses/Error409'
+        '503':
+          $ref: '#/components/responses/Error503'
 components:
   securitySchemes:
     bearerAuth:
@@ -658,7 +714,8 @@ components:
       - title
       - authors
       - type
-      description: Substitui os campos da referência. Campos opcionais omitidos são removidos; IDs permanecem imutáveis.
+      description: Substitui os campos da referência. Campos opcionais omitidos são removidos; IDs permanecem
+        imutáveis.
       title: BibliographicReferenceUpdate
     BibliographicReferencePatch:
       type: object
@@ -693,7 +750,8 @@ components:
           enum:
           - BASIC
           - SUPPLEMENTARY
-      description: Altera somente os campos informados. Campos omitidos permanecem inalterados; null não é aceito.
+      description: Altera somente os campos informados. Campos omitidos permanecem inalterados; null não
+        é aceito.
       minProperties: 1
       title: BibliographicReferencePatch
     BibliographicReference:
@@ -708,8 +766,8 @@ components:
           type: boolean
           readOnly: true
           default: true
-          description: 'Exclusão lógica: true para registro ativo; false para registro excluído logicamente. Controlado pelo
-            servidor.'
+          description: 'Exclusão lógica: true para registro ativo; false para registro excluído logicamente.
+            Controlado pelo servidor.'
         courseId:
           type: string
           format: uuid
@@ -779,8 +837,8 @@ components:
           minLength: 1
           pattern: \S
           maxLength: 100
-          description: Identificador do professor responsável na API externa; alinhar o formato com o grupo de 
-            professores.
+          description: Identificador do professor responsável na API externa; alinhar o formato com o
+            grupo de professores.
         bibliographicReferences:
           type: array
           minItems: 1
@@ -822,15 +880,15 @@ components:
           minLength: 1
           pattern: \S
           maxLength: 100
-          description: Identificador do professor responsável na API externa; alinhar o formato com o grupo de 
-            professores.
+          description: Identificador do professor responsável na API externa; alinhar o formato com o
+            grupo de professores.
       required:
       - code
       - name
       - workloadHours
       - professorId
-      description: Substitui todos os campos escalares editáveis da disciplina. Ementa omitida é removida. A coleção de 
-        referências é preservada e tem rotas próprias.
+      description: Substitui todos os campos escalares editáveis da disciplina. Ementa omitida é removida.
+        A coleção de referências é preservada e tem rotas próprias.
       title: CourseUpdate
     CoursePatch:
       type: object
@@ -860,10 +918,10 @@ components:
           minLength: 1
           pattern: \S
           maxLength: 100
-          description: Identificador do professor responsável na API externa; alinhar o formato com o grupo de 
-            professores.
-      description: Altera somente campos escalares informados; referências são gerenciadas nas rotas secundárias. Campos
-        omitidos são preservados; null não é aceito.
+          description: Identificador do professor responsável na API externa; alinhar o formato com o
+            grupo de professores.
+      description: Altera somente campos escalares informados; referências são gerenciadas nas rotas secundárias.
+        Campos omitidos são preservados; null não é aceito.
       minProperties: 1
       title: CoursePatch
     Course:
@@ -878,8 +936,8 @@ components:
           type: boolean
           readOnly: true
           default: true
-          description: 'Exclusão lógica: true para registro ativo; false para registro excluído logicamente. Controlado pelo
-            servidor.'
+          description: 'Exclusão lógica: true para registro ativo; false para registro excluído logicamente.
+            Controlado pelo servidor.'
         code:
           type: string
           minLength: 1
@@ -904,8 +962,8 @@ components:
           minLength: 1
           pattern: \S
           maxLength: 100
-          description: Identificador do professor responsável na API externa; alinhar o formato com o grupo de 
-            professores.
+          description: Identificador do professor responsável na API externa; alinhar o formato com o
+            grupo de professores.
         bibliographicReferences:
           type: array
           minItems: 1
@@ -973,8 +1031,8 @@ components:
       - error_description
       - error_source
       - error_stack
-      description: Formato de erro do projeto; a pilha contém descrições de domínio sanitizadas, sem credenciais ou 
-        stack traces internos.
+      description: Formato de erro do projeto; a pilha contém descrições de domínio sanitizadas, sem credenciais
+        ou stack traces internos.
       title: ApiError
   parameters:
     CourseId:
@@ -1017,7 +1075,7 @@ components:
       name: name
       in: query
       required: false
-      description: Igualdade, {neq} ou {like}. Em {like}, % representa qualquer sequência e _ um caractere; 
+      description: Igualdade, {neq} ou {like}. Em {like}, % representa qualquer sequência e _ um caractere;
         percent-encode a URL.
       schema:
         oneOf:
@@ -1036,16 +1094,15 @@ components:
       name: workloadHours
       in: query
       required: false
-      description: Igualdade positiva ou comparações {neq}, {gt}, {gteq}, {lt}, {lteq}; operandos comparativos entre 0 e
-        2147483647, sem sinal nem zeros à esquerda.
+      description: Igualdade positiva ou comparações {neq}, {gt}, {gteq}, {lt}, {lteq}; operandos comparativos
+        entre 0 e 2147483647, sem sinal nem zeros à esquerda.
       schema:
         oneOf:
         - type: integer
           minimum: 1
           maximum: 2147483647
         - type: string
-          pattern: 
-            ^\{(?:neq|gt|gteq|lt|lteq)\}(?:0|[1-9][0-9]{0,8}|1[0-9]{9}|20[0-9]{8}|21[0-3][0-9]{7}|214[0-6][0-9]{6}|2147[0-3][0-9]{5}|21474[0-7][0-9]{4}|214748[0-2][0-9]{3}|2147483[0-5][0-9]{2}|21474836[0-3][0-9]|214748364[0-7])$
+          pattern: ^\{(?:neq|gt|gteq|lt|lteq)\}(?:0|[1-9][0-9]{0,8}|1[0-9]{9}|20[0-9]{8}|21[0-3][0-9]{7}|214[0-6][0-9]{6}|2147[0-3][0-9]{5}|21474[0-7][0-9]{4}|214748[0-2][0-9]{3}|2147483[0-5][0-9]{2}|21474836[0-3][0-9]|214748364[0-7])$
       examples:
         '1':
           value: 60
@@ -1110,8 +1167,8 @@ components:
       name: year
       in: query
       required: false
-      description: Igualdade de 1 a 9999 ou comparações com operandos entre 0 e 9999, sem sinal nem zeros à esquerda. 
-        Ausência de ano não corresponde a filtros sobre ano.
+      description: Igualdade de 1 a 9999 ou comparações com operandos entre 0 e 9999, sem sinal nem zeros
+        à esquerda. Ausência de ano não corresponde a filtros sobre ano.
       schema:
         oneOf:
         - type: integer
@@ -1143,8 +1200,8 @@ components:
           value: '{neq}SUPPLEMENTARY'
   responses:
     Error400:
-      description: 'Requisição inválida: JSON, UUID, filtros, atributos ou professorId inexistente. Propriedades desconhecidas
-        também geram 400.'
+      description: 'Requisição inválida: JSON, UUID, filtros, atributos ou professorId inexistente. Propriedades
+        desconhecidas também geram 400.'
       content:
         application/json:
           schema:
@@ -1153,8 +1210,8 @@ components:
             error:
               value:
                 error_code: CO-400
-                error_description: 'Requisição inválida: JSON, UUID, filtros, atributos ou professorId inexistente. Propriedades
-                  desconhecidas também geram 400.'
+                error_description: 'Requisição inválida: JSON, UUID, filtros, atributos ou professorId
+                  inexistente. Propriedades desconhecidas também geram 400.'
                 error_source: CoursesAPI
                 error_stack: []
     Error401:
@@ -1190,8 +1247,8 @@ components:
                 error_source: CoursesAPI
                 error_stack: []
     Error404:
-      description: Disciplina ou referência não encontrada; referência não pertence à disciplina indicada; ou nenhum 
-        resultado para os filtros informados.
+      description: Disciplina ou referência não encontrada; referência não pertence à disciplina indicada;
+        ou nenhum resultado para os filtros informados.
       content:
         application/json:
           schema:
@@ -1200,12 +1257,13 @@ components:
             error:
               value:
                 error_code: CO-404
-                error_description: Disciplina ou referência não encontrada; referência não pertence à disciplina 
-                  indicada; ou nenhum resultado para os filtros informados.
+                error_description: Disciplina ou referência não encontrada; referência não pertence à
+                  disciplina indicada; ou nenhum resultado para os filtros informados.
                 error_source: CoursesAPI
                 error_stack: []
     Error409:
-      description: 'Conflito com uma regra de domínio: código de disciplina duplicado ou tentativa de remover sua última referência.'
+      description: 'Conflito com uma regra de domínio: código de disciplina duplicado ou tentativa de
+        remover sua última referência.'
       content:
         application/json:
           schema:
@@ -1214,7 +1272,18 @@ components:
             error:
               value:
                 error_code: CO-409
-                error_description: 'Conflito com uma regra de domínio: código de disciplina duplicado ou tentativa de remover
-                  sua última referência.'
+                error_description: 'Conflito com uma regra de domínio: código de disciplina duplicado
+                  ou tentativa de remover sua última referência.'
                 error_source: CoursesAPI
                 error_stack: []
+    Error503:
+      description: The OAuth or professors dependency is unavailable or returned an invalid response.
+      content:
+        application/json:
+          schema:
+            $ref: '#/components/schemas/ApiError'
+          example:
+            error_code: CO-503
+            error_description: The OAuth service is unavailable.
+            error_source: CoursesAPI
+            error_stack: []

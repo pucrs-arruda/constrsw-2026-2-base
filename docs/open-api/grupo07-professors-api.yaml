@@ -13,7 +13,7 @@ info:
 servers:
   - url: http://localhost:8102
 paths:
-  /health:
+  /api/v1/health:
     get:
       operationId: health
       security: []
@@ -28,6 +28,12 @@ paths:
                 properties:
                   status:
                     const: ok
+        "500":
+          description: PostgreSQL is not answering
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/Error"
   /api/v1/professors:
     get:
       operationId: listProfessors

@@ -63,12 +63,6 @@ info:
     ## JSON Schemas
 
     Os corpos de requisição e de resposta estão definidos em JSON Schema 2020-12, na pasta `schemas/`.
-
-    ## Exclusão lógica
-
-    Todas as exclusões são lógicas e controladas pelo atributo `enabled` das classes. Um `DELETE` não remove o registro do banco: apenas define `enabled=false`. O atributo é somente leitura (`readOnly`): nasce `true` e não pode ser enviado pelo cliente.
-
-    Registros com `enabled=false` não aparecem nas listagens, a consulta por id responde `404` e não podem ser alterados nem excluídos novamente (`404`).
   contact:
     name: Grupo 08 - Construção de Software 2026/2 (PUCRS)
 servers:
@@ -252,15 +246,15 @@ paths:
     delete:
       tags: [rooms]
       operationId: deleteRoom
-      summary: Exclui uma sala (exclusão lógica)
+      summary: Exclui uma sala
       description: |
-        Exclusão lógica: define `enabled=false` na sala e em suas características de acessibilidade; nada é removido do banco. A lista de recursos instalados é mantida no registro excluído.
+        Exclusão lógica: grava enabled=false na sala e nas características de acessibilidade e solta os recursos instalados. A sala deixa de aparecer nos GET e não aceita PUT, PATCH nem outro DELETE.
         Os recursos continuam existindo na API resources.
 
         Permissão: `administrator`.
       responses:
         '204':
-          description: Sala excluída logicamente (`enabled=false`, sem corpo)
+          description: Sala excluída (sem corpo)
         '400':
           $ref: '#/components/responses/BadRequest'
         '401':
@@ -428,14 +422,11 @@ paths:
     delete:
       tags: [accessibility-features]
       operationId: deleteAccessibilityFeature
-      summary: Exclui uma característica de acessibilidade da sala (exclusão lógica)
-      description: |-
-        Exclusão lógica: define `enabled=false` na característica; nada é removido do banco.
-
-        Permissão: `administrator`.
+      summary: Exclui uma característica de acessibilidade da sala
+      description: 'Permissão: `administrator`.'
       responses:
         '204':
-          description: Característica excluída logicamente (`enabled=false`, sem corpo)
+          description: Característica excluída (sem corpo)
         '400':
           $ref: '#/components/responses/BadRequest'
         '401':
@@ -444,6 +435,39 @@ paths:
           $ref: '#/components/responses/Forbidden'
         '404':
           $ref: '#/components/responses/FeatureNotFound'
+
+  /api/v1/health:
+    get:
+      tags: [rooms]
+      operationId: getHealth
+      summary: Saúde compatível com o actuator
+      description: |
+        Anônimo. Delega ao health do actuator na porta da aplicação. 200 quando o status é UP e 503 nos demais.
+        O corpo traz só `status`.
+      security: []
+      responses:
+        '200':
+          description: Serviço no ar
+          content:
+            application/json:
+              schema:
+                type: object
+                additionalProperties: false
+                required: [status]
+                properties:
+                  status:
+                    const: UP
+        '503':
+          description: Serviço indisponível
+          content:
+            application/json:
+              schema:
+                type: object
+                additionalProperties: false
+                required: [status]
+                properties:
+                  status:
+                    type: string
 components:
   securitySchemes:
     bearerAuth:
@@ -478,7 +502,7 @@ components:
       schema:
         $ref: '#/components/schemas/TextFilter'
       examples:
-        equals:
+        igualdade:
           value: 32/405
         like:
           value: '{like}32/%'
@@ -500,22 +524,21 @@ components:
       schema:
         $ref: '#/components/schemas/TextFilter'
       examples:
-        equals:
+        igualdade:
           value: '32'
-        notEquals:
+        diferente:
           value: '{neq}32'
     RoomCapacityFilter:
       name: capacity
       in: query
       required: false
-      description: 'Filtro por capacidade: igualdade ou `{op}` (`neq`, `gt`, `gteq`, `lt`, `lteq`). Salas sem capacidade informada
-        não atendem a nenhum filtro de capacidade.'
+      description: 'Filtro por capacidade: igualdade ou `{op}` (`neq`, `gt`, `gteq`, `lt`, `lteq`). Salas sem capacidade informada não atendem a nenhum filtro de capacidade.'
       schema:
         $ref: '#/components/schemas/IntegerFilter'
       examples:
-        greaterThanOrEqual:
+        maiorOuIgual:
           value: '{gteq}40'
-        equals:
+        igualdade:
           value: '40'
     RoomActiveFilter:
       name: active
@@ -529,8 +552,7 @@ components:
       name: resourceIds
       in: query
       required: false
-      description: Id de um recurso da API resources; devolve a sala em que esse recurso está instalado (somente 
-        igualdade).
+      description: Id de um recurso da API resources; devolve a sala em que esse recurso está instalado (somente igualdade).
       schema:
         type: string
         format: uuid
@@ -543,7 +565,7 @@ components:
       schema:
         $ref: '#/components/schemas/TextFilter'
       examples:
-        equals:
+        igualdade:
           value: RAMP
         like:
           value: '{like}%FLOOR%'
@@ -567,8 +589,7 @@ components:
       name: sort
       in: query
       required: false
-      description: 'Ordenação: `<atributo>` ou `<atributo>,asc|desc` (padrão asc). Atributos: code, name, building, capacity,
-        active.'
+      description: 'Ordenação: `<atributo>` ou `<atributo>,asc|desc` (padrão asc). Atributos: code, name, building, capacity, active.'
       schema:
         type: string
         pattern: '^(code|name|building|capacity|active)(,(asc|desc))?$'
@@ -609,427 +630,26 @@ components:
         minimum: 0
   schemas:
     Room:
-      title: Room
-      description: Sala, a classe primária da API rooms, como devolvida pela API.
-      type: object
-      properties:
-        id:
-          type: string
-          format: uuid
-          readOnly: true
-          description: Identificador da sala (UUID v4), gerado pela API.
-        enabled:
-          type: boolean
-          readOnly: true
-          default: true
-          description: 'Exclusão lógica: true para registro ativo; false para registro excluído logicamente. Controlado pelo
-            servidor.'
-        code:
-          type: string
-          minLength: 1
-          maxLength: 20
-          pattern: \S
-          description: 'Código institucional da sala, único entre as salas (ex.: 32/405).'
-        name:
-          type: string
-          minLength: 1
-          maxLength: 100
-          pattern: \S
-          description: Nome descritivo da sala.
-        building:
-          type: string
-          minLength: 1
-          maxLength: 50
-          pattern: \S
-          description: 'Prédio em que a sala fica, em texto (ex.: 32).'
-        capacity:
-          type:
-            - integer
-            - 'null'
-          minimum: 1
-          description: Número máximo de pessoas acomodadas na sala. Opcional; quando informada, deve ser maior que zero.
-        active:
-          type: boolean
-          default: true
-          description: Indica se a sala está disponível para uso.
-        resourceIds:
-          type: array
-          uniqueItems: true
-          default: []
-          items:
-            type: string
-            format: uuid
-          description: 'Ids dos recursos (equipamentos) da API resources (Grupo 06) instalados na sala. Referência a outra
-            API: a API rooms guarda apenas os ids. Um recurso fica instalado em no máximo uma sala.'
-      required:
-        - id
-        - enabled
-        - code
-        - name
-        - building
-        - capacity
-        - active
-        - resourceIds
-      additionalProperties: false
-      examples:
-        - id: 6f1c2b9e-8d4a-4c3e-9b1a-2f5d7e8c9a01
-          enabled: true
-          code: 32/405
-          name: Laboratório de Engenharia de Software
-          building: '32'
-          capacity: 40
-          active: true
-          resourceIds:
-            - 0b7e4c3a-5d2f-4e8a-9c1b-7a6d5e4f3c21
+      $ref: './schemas/room.schema.json'
     RoomCreate:
-      title: RoomCreate
-      description: 'Corpo do POST /api/v1/rooms. Campos opcionais omitidos assumem: capacity = null, active = true, resourceIds
-        = [].'
-      type: object
-      properties:
-        code:
-          type: string
-          minLength: 1
-          maxLength: 20
-          pattern: \S
-          description: 'Código institucional da sala, único entre as salas (ex.: 32/405).'
-        name:
-          type: string
-          minLength: 1
-          maxLength: 100
-          pattern: \S
-          description: Nome descritivo da sala.
-        building:
-          type: string
-          minLength: 1
-          maxLength: 50
-          pattern: \S
-          description: 'Prédio em que a sala fica, em texto (ex.: 32).'
-        capacity:
-          type:
-            - integer
-            - 'null'
-          minimum: 1
-          description: Número máximo de pessoas acomodadas na sala. Opcional; quando informada, deve ser maior que zero.
-        active:
-          type: boolean
-          default: true
-          description: Indica se a sala está disponível para uso.
-        resourceIds:
-          type: array
-          uniqueItems: true
-          default: []
-          items:
-            type: string
-            format: uuid
-          description: 'Ids dos recursos (equipamentos) da API resources (Grupo 06) instalados na sala. Referência a outra
-            API: a API rooms guarda apenas os ids. Um recurso fica instalado em no máximo uma sala.'
-      required:
-        - code
-        - name
-        - building
-      additionalProperties: false
-      examples:
-        - code: 32/405
-          name: Laboratório de Engenharia de Software
-          building: '32'
-          capacity: 40
-          active: true
-          resourceIds:
-            - 0b7e4c3a-5d2f-4e8a-9c1b-7a6d5e4f3c21
+      $ref: './schemas/room-create.schema.json'
     RoomUpdate:
-      title: RoomUpdate
-      description: 'Corpo do PUT /api/v1/rooms/{id} (atualização total): todos os campos são obrigatórios; capacity aceita
-        null.'
-      type: object
-      properties:
-        code:
-          type: string
-          minLength: 1
-          maxLength: 20
-          pattern: \S
-          description: 'Código institucional da sala, único entre as salas (ex.: 32/405).'
-        name:
-          type: string
-          minLength: 1
-          maxLength: 100
-          pattern: \S
-          description: Nome descritivo da sala.
-        building:
-          type: string
-          minLength: 1
-          maxLength: 50
-          pattern: \S
-          description: 'Prédio em que a sala fica, em texto (ex.: 32).'
-        capacity:
-          type:
-            - integer
-            - 'null'
-          minimum: 1
-          description: Número máximo de pessoas acomodadas na sala. Opcional; quando informada, deve ser maior que zero.
-        active:
-          type: boolean
-          default: true
-          description: Indica se a sala está disponível para uso.
-        resourceIds:
-          type: array
-          uniqueItems: true
-          default: []
-          items:
-            type: string
-            format: uuid
-          description: 'Ids dos recursos (equipamentos) da API resources (Grupo 06) instalados na sala. Referência a outra
-            API: a API rooms guarda apenas os ids. Um recurso fica instalado em no máximo uma sala.'
-      required:
-        - code
-        - name
-        - building
-        - capacity
-        - active
-        - resourceIds
-      additionalProperties: false
-      examples:
-        - code: 32/405
-          name: Laboratório de Engenharia de Software
-          building: '32'
-          capacity: 40
-          active: true
-          resourceIds:
-            - 0b7e4c3a-5d2f-4e8a-9c1b-7a6d5e4f3c21
+      $ref: './schemas/room-update.schema.json'
     RoomPatch:
-      title: RoomPatch
-      description: 'Corpo do PATCH /api/v1/rooms/{id} (atualização parcial): só os campos informados são alterados.'
-      type: object
-      properties:
-        code:
-          type: string
-          minLength: 1
-          maxLength: 20
-          pattern: \S
-          description: 'Código institucional da sala, único entre as salas (ex.: 32/405).'
-        name:
-          type: string
-          minLength: 1
-          maxLength: 100
-          pattern: \S
-          description: Nome descritivo da sala.
-        building:
-          type: string
-          minLength: 1
-          maxLength: 50
-          pattern: \S
-          description: 'Prédio em que a sala fica, em texto (ex.: 32).'
-        capacity:
-          type:
-            - integer
-            - 'null'
-          minimum: 1
-          description: Número máximo de pessoas acomodadas na sala. Opcional; quando informada, deve ser maior que zero.
-        active:
-          type: boolean
-          default: true
-          description: Indica se a sala está disponível para uso.
-        resourceIds:
-          type: array
-          uniqueItems: true
-          default: []
-          items:
-            type: string
-            format: uuid
-          description: 'Ids dos recursos (equipamentos) da API resources (Grupo 06) instalados na sala. Referência a outra
-            API: a API rooms guarda apenas os ids. Um recurso fica instalado em no máximo uma sala.'
-      minProperties: 1
-      additionalProperties: false
-      examples:
-        - capacity: 45
-          active: false
+      $ref: './schemas/room-patch.schema.json'
     AccessibilityFeature:
-      title: AccessibilityFeature
-      description: Característica de acessibilidade de uma sala (classe secundária), como devolvida pela API.
-      type: object
-      properties:
-        id:
-          type: string
-          format: uuid
-          readOnly: true
-          description: Identificador da característica de acessibilidade (UUID v4), gerado pela API.
-        enabled:
-          type: boolean
-          readOnly: true
-          default: true
-          description: 'Exclusão lógica: true para registro ativo; false para registro excluído logicamente. Controlado pelo
-            servidor.'
-        roomId:
-          type: string
-          format: uuid
-          readOnly: true
-          description: Id da sala dona da característica.
-        code:
-          type: string
-          minLength: 1
-          maxLength: 30
-          pattern: ^[A-Z][A-Z0-9_]*$
-          description: 'Código do tipo de característica de acessibilidade, em maiúsculas (ex.: RAMP, ELEVATOR, TACTILE_FLOOR).'
-        description:
-          type:
-            - string
-            - 'null'
-          maxLength: 255
-          description: Descrição da característica de acessibilidade.
-        present:
-          type: boolean
-          default: true
-          description: Indica se a característica está presente na sala (true) ou registrada como ausente (false).
-      required:
-        - id
-        - enabled
-        - roomId
-        - code
-        - description
-        - present
-      additionalProperties: false
-      examples:
-        - id: 9a8b7c6d-5e4f-4a3b-8c2d-1e0f9a8b7c6d
-          enabled: true
-          roomId: 6f1c2b9e-8d4a-4c3e-9b1a-2f5d7e8c9a01
-          code: RAMP
-          description: Rampa de acesso na entrada da sala
-          present: true
+      $ref: './schemas/accessibility-feature.schema.json'
     AccessibilityFeatureCreate:
-      title: AccessibilityFeatureCreate
-      description: 'Corpo do POST /api/v1/rooms/{id}/accessibility-features. Campos opcionais omitidos assumem: description
-        = null, present = true.'
-      type: object
-      properties:
-        code:
-          type: string
-          minLength: 1
-          maxLength: 30
-          pattern: ^[A-Z][A-Z0-9_]*$
-          description: 'Código do tipo de característica de acessibilidade, em maiúsculas (ex.: RAMP, ELEVATOR, TACTILE_FLOOR).'
-        description:
-          type:
-            - string
-            - 'null'
-          maxLength: 255
-          description: Descrição da característica de acessibilidade.
-        present:
-          type: boolean
-          default: true
-          description: Indica se a característica está presente na sala (true) ou registrada como ausente (false).
-      required:
-        - code
-      additionalProperties: false
-      examples:
-        - code: RAMP
-          description: Rampa de acesso na entrada da sala
-          present: true
+      $ref: './schemas/accessibility-feature-create.schema.json'
     AccessibilityFeatureUpdate:
-      title: AccessibilityFeatureUpdate
-      description: 'Corpo do PUT /api/v1/rooms/{id}/accessibility-features/{featureId} (atualização total): todos os campos
-        são obrigatórios; description aceita null.'
-      type: object
-      properties:
-        code:
-          type: string
-          minLength: 1
-          maxLength: 30
-          pattern: ^[A-Z][A-Z0-9_]*$
-          description: 'Código do tipo de característica de acessibilidade, em maiúsculas (ex.: RAMP, ELEVATOR, TACTILE_FLOOR).'
-        description:
-          type:
-            - string
-            - 'null'
-          maxLength: 255
-          description: Descrição da característica de acessibilidade.
-        present:
-          type: boolean
-          default: true
-          description: Indica se a característica está presente na sala (true) ou registrada como ausente (false).
-      required:
-        - code
-        - description
-        - present
-      additionalProperties: false
-      examples:
-        - code: RAMP
-          description: Rampa de acesso na entrada da sala
-          present: true
+      $ref: './schemas/accessibility-feature-update.schema.json'
     AccessibilityFeaturePatch:
-      title: AccessibilityFeaturePatch
-      description: 'Corpo do PATCH /api/v1/rooms/{id}/accessibility-features/{featureId} (atualização parcial): só os campos
-        informados são alterados.'
-      type: object
-      properties:
-        code:
-          type: string
-          minLength: 1
-          maxLength: 30
-          pattern: ^[A-Z][A-Z0-9_]*$
-          description: 'Código do tipo de característica de acessibilidade, em maiúsculas (ex.: RAMP, ELEVATOR, TACTILE_FLOOR).'
-        description:
-          type:
-            - string
-            - 'null'
-          maxLength: 255
-          description: Descrição da característica de acessibilidade.
-        present:
-          type: boolean
-          default: true
-          description: Indica se a característica está presente na sala (true) ou registrada como ausente (false).
-      minProperties: 1
-      additionalProperties: false
-      examples:
-        - present: false
+      $ref: './schemas/accessibility-feature-patch.schema.json'
     Error:
-      title: Error
-      description: Envelope de erro do sistema (mesmo formato da API oauth do T1). error_code = RM-<status HTTP> nos 
-        erros da API rooms; error_stack traz os erros anteriores, do mais antigo ao mais recente.
-      type: object
-      required:
-        - error_code
-        - error_description
-        - error_source
-        - error_stack
-      properties:
-        error_code:
-          type: string
-          pattern: ^[A-Z]{2}-[0-9]{3}$
-          description: 'Código do erro final: sigla da API de origem + status HTTP (ex.: RM-404).'
-        error_description:
-          type: string
-          description: Descrição do erro, escrita pelo grupo.
-        error_source:
-          type: string
-          description: 'API de origem do erro final (ex.: RoomsAPI).'
-        error_stack:
-          type: array
-          items:
-            type: object
-            required:
-              - error_code
-              - error_description
-              - error_source
-            properties:
-              error_code:
-                type: string
-                pattern: ^[A-Z]{2}-[0-9]{3}$
-              error_description:
-                type: string
-              error_source:
-                type: string
-            additionalProperties: false
-          description: Pilha dos erros até o erro final (vazia quando o erro nasceu na própria API rooms).
-      additionalProperties: false
-      examples:
-        - error_code: RM-404
-          error_description: Sala 6f1c2b9e-8d4a-4c3e-9b1a-2f5d7e8c9a01 não encontrada.
-          error_source: RoomsAPI
-          error_stack: []
+      $ref: './schemas/error.schema.json'
     TextFilter:
       type: string
-      description: 'Valor do filtro, opcionalmente precedido de um operador: `{neq}`, `{gt}`, `{gteq}`, `{lt}`, `{lteq}` ou
-        `{like}` (use `%` como curinga; não diferencia maiúsculas de minúsculas).'
+      description: 'Valor do filtro, opcionalmente precedido de um operador: `{neq}`, `{gt}`, `{gteq}`, `{lt}`, `{lteq}` ou `{like}` (use `%` como curinga; não diferencia maiúsculas de minúsculas).'
       pattern: '^(\{(neq|gt|gteq|lt|lteq|like)\}.+|(?!\{[a-z]+\}).+)$'
     IntegerFilter:
       type: string
@@ -1052,9 +672,7 @@ components:
             error_source: RoomsAPI
             error_stack: []
     BadRequestBody:
-      description: Request, incluindo o JSON, com erro (JSON malformado, campo obrigatório ausente, campo desconhecido, 
-        tipo ou valor inválido, ou, com a validação de recursos ligada, id de resourceIds que não existe na API 
-        resources)
+      description: Request, incluindo o JSON, com erro (JSON malformado, campo obrigatório ausente, campo desconhecido, tipo ou valor inválido, ou, com a validação de recursos ligada, id de resourceIds que não existe na API resources)
       content:
         application/json:
           schema:
@@ -1065,8 +683,7 @@ components:
             error_source: RoomsAPI
             error_stack: []
     BadRequestQuery:
-      description: Request com erro (id inválido, ou query string com atributo desconhecido, operador inválido, valor 
-        incompatível com o tipo do atributo, ou sort, page ou size inválidos)
+      description: Request com erro (id inválido, ou query string com atributo desconhecido, operador inválido, valor incompatível com o tipo do atributo, ou sort, page ou size inválidos)
       content:
         application/json:
           schema:
@@ -1139,8 +756,7 @@ components:
             $ref: '#/components/schemas/Error'
           example:
             error_code: RM-404
-            error_description: Característica de acessibilidade 9a8b7c6d-5e4f-4a3b-8c2d-1e0f9a8b7c6d não encontrada na 
-              sala 6f1c2b9e-8d4a-4c3e-9b1a-2f5d7e8c9a01.
+            error_description: Característica de acessibilidade 9a8b7c6d-5e4f-4a3b-8c2d-1e0f9a8b7c6d não encontrada na sala 6f1c2b9e-8d4a-4c3e-9b1a-2f5d7e8c9a01.
             error_source: RoomsAPI
             error_stack: []
     ResourcesUnavailable:
@@ -1158,8 +774,7 @@ components:
                 error_description: Serviço indisponível.
                 error_source: ResourcesAPI
     RoomConflict:
-      description: Conflito - o code já é usado por outra sala, ou um recurso de resourceIds já está instalado em outra 
-        sala
+      description: Conflito - o code já é usado por outra sala, ou um recurso de resourceIds já está instalado em outra sala
       content:
         application/json:
           schema:

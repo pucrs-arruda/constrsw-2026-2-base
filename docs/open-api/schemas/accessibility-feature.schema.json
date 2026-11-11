@@ -1,0 +1,64 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "title": "AccessibilityFeature",
+  "description": "Característica de acessibilidade de uma sala (classe secundária), como devolvida pela API.",
+  "type": "object",
+  "properties": {
+    "id": {
+      "type": "string",
+      "format": "uuid",
+      "readOnly": true,
+      "description": "Identificador da característica de acessibilidade (UUID v4), gerado pela API."
+    },
+    "roomId": {
+      "type": "string",
+      "format": "uuid",
+      "readOnly": true,
+      "description": "Id da sala dona da característica."
+    },
+    "code": {
+      "type": "string",
+      "minLength": 1,
+      "maxLength": 30,
+      "pattern": "^[A-Z][A-Z0-9_]*$",
+      "description": "Código do tipo de característica de acessibilidade, em maiúsculas (ex.: RAMP, ELEVATOR, TACTILE_FLOOR)."
+    },
+    "description": {
+      "type": [
+        "string",
+        "null"
+      ],
+      "maxLength": 255,
+      "description": "Descrição da característica de acessibilidade."
+    },
+    "present": {
+      "type": "boolean",
+      "default": true,
+      "description": "Indica se a característica está presente na sala (true) ou registrada como ausente (false)."
+    },
+    "enabled": {
+      "type": "boolean",
+      "readOnly": true,
+      "description": "Exclusão lógica. DELETE grava false; a característica some das consultas e não aceita PUT, PATCH nem novo DELETE."
+    }
+  },
+  "required": [
+    "id",
+    "roomId",
+    "code",
+    "description",
+    "present",
+    "enabled"
+  ],
+  "additionalProperties": false,
+  "examples": [
+    {
+      "id": "9a8b7c6d-5e4f-4a3b-8c2d-1e0f9a8b7c6d",
+      "roomId": "6f1c2b9e-8d4a-4c3e-9b1a-2f5d7e8c9a01",
+      "code": "RAMP",
+      "description": "Rampa de acesso na entrada da sala",
+      "present": true,
+      "enabled": true
+    }
+  ]
+}

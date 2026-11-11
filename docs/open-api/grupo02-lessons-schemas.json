@@ -135,12 +135,6 @@
           "format": "uuid",
           "readOnly": true
         },
-        "enabled": {
-          "type": "boolean",
-          "readOnly": true,
-          "default": true,
-          "description": "Exclusão lógica: true para registro ativo; false para registro excluído logicamente. Controlado pelo servidor."
-        },
         "classId": {
           "type": "string",
           "format": "uuid",
@@ -184,6 +178,11 @@
           "type": "boolean",
           "description": "Indica que a aula possui avaliação."
         },
+        "enabled": {
+          "type": "boolean",
+          "readOnly": true,
+          "description": "Exclusão lógica. DELETE grava false na aula e nos tópicos; a aula some das consultas e não aceita PUT, PATCH nem outro DELETE."
+        },
         "effectiveRoomId": {
           "type": "string",
           "format": "uuid",
@@ -200,12 +199,12 @@
       },
       "required": [
         "id",
-        "enabled",
         "classId",
         "date",
         "timeSlotId",
         "modality",
         "hasAssessment",
+        "enabled",
         "topics"
       ],
       "if": {
@@ -415,12 +414,6 @@
           "format": "uuid",
           "readOnly": true
         },
-        "enabled": {
-          "type": "boolean",
-          "readOnly": true,
-          "default": true,
-          "description": "Exclusão lógica: true para registro ativo; false para registro excluído logicamente. Controlado pelo servidor."
-        },
         "lessonId": {
           "type": "string",
           "format": "uuid",
@@ -443,13 +436,18 @@
           "pattern": "\\S",
           "maxLength": 500,
           "description": "Enunciado extra do tópico."
+        },
+        "enabled": {
+          "type": "boolean",
+          "readOnly": true,
+          "description": "Exclusão lógica. DELETE grava false; o tópico some das consultas e não aceita PUT, PATCH nem outro DELETE."
         }
       },
       "required": [
         "id",
-        "enabled",
         "lessonId",
-        "order"
+        "order",
+        "enabled"
       ],
       "anyOf": [
         {

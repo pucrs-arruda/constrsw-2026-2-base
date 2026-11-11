@@ -32,7 +32,23 @@
         "good",
         "very_good"
       ],
-      "description": "Escala ordinal simétrica (5 tokens). Mapa interno 1..5 só para média."
+      "description": "Escala ordinal simétrica (5 tokens) persistida e devolvida pela API. Mapa interno 1..5 só para média."
+    },
+    "OrdinalRatingInput": {
+      "type": "string",
+      "enum": [
+        "very_bad",
+        "bad",
+        "fair",
+        "good",
+        "very_good",
+        "muito_ruim",
+        "ruim",
+        "regular",
+        "bom",
+        "muito_bom"
+      ],
+      "description": "Valor aceito na escrita. Aliases em português são normalizados para OrdinalRating antes de persistir."
     },
     "AverageRating": {
       "type": [
@@ -84,7 +100,8 @@
         },
         "instance": {
           "type": "string",
-          "format": "uri"
+          "format": "uri-reference",
+          "description": "Caminho da requisição (requestURI), não necessariamente URI absoluta."
         },
         "code": {
           "type": "string",
@@ -101,8 +118,7 @@
         "endDate",
         "seats",
         "roomId",
-        "professorIds",
-        "studentIds"
+        "professorIds"
       ],
       "properties": {
         "courseId": {
@@ -122,10 +138,16 @@
           "$ref": "#/$defs/Uuid"
         },
         "professorIds": {
-          "$ref": "#/$defs/UuidArray"
+          "allOf": [
+            {
+              "$ref": "#/$defs/UuidArray"
+            }
+          ],
+          "minItems": 1
         },
         "studentIds": {
-          "$ref": "#/$defs/UuidArray"
+          "$ref": "#/$defs/UuidArray",
+          "description": "Opcional. Omitido equivale a lista vazia."
         },
         "code": {
           "type": "string",
@@ -143,7 +165,7 @@
           "maxLength": 64
         }
       },
-      "description": "Criação de Class. status default `active` se omitido. startDate ≤ endDate."
+      "description": "Criação de Class. status default `active` e studentIds default [] se omitidos. professorIds não pode ser vazio. startDate ≤ endDate."
     },
     "ClassUpdate": {
       "type": "object",
@@ -155,7 +177,6 @@
         "seats",
         "roomId",
         "professorIds",
-        "studentIds",
         "status"
       ],
       "properties": {
@@ -176,10 +197,16 @@
           "$ref": "#/$defs/Uuid"
         },
         "professorIds": {
-          "$ref": "#/$defs/UuidArray"
+          "allOf": [
+            {
+              "$ref": "#/$defs/UuidArray"
+            }
+          ],
+          "minItems": 1
         },
         "studentIds": {
-          "$ref": "#/$defs/UuidArray"
+          "$ref": "#/$defs/UuidArray",
+          "description": "Opcional no PUT. Omitido equivale a lista vazia."
         },
         "code": {
           "type": [
@@ -206,7 +233,7 @@
           "maxLength": 64
         }
       },
-      "description": "Substituição total (PUT). Na prática startDate/endDate são imutáveis após create — alteração → 422."
+      "description": "Substituição total (PUT). studentIds omitido vira []. courseId, startDate e endDate são imutáveis após a criação — alteração → 422."
     },
     "ClassPatch": {
       "type": "object",
@@ -221,7 +248,12 @@
           "$ref": "#/$defs/Uuid"
         },
         "professorIds": {
-          "$ref": "#/$defs/UuidArray"
+          "allOf": [
+            {
+              "$ref": "#/$defs/UuidArray"
+            }
+          ],
+          "minItems": 1
         },
         "studentIds": {
           "$ref": "#/$defs/UuidArray"
@@ -251,7 +283,7 @@
           "maxLength": 64
         }
       },
-      "description": "Atualização parcial. Não inclui startDate/endDate (imutáveis)."
+      "description": "Atualização parcial. Não inclui courseId, startDate nem endDate (imutáveis). professorIds, se enviado, não pode ser vazio."
     },
     "Class": {
       "type": "object",
@@ -296,7 +328,12 @@
           "$ref": "#/$defs/Uuid"
         },
         "professorIds": {
-          "$ref": "#/$defs/UuidArray"
+          "allOf": [
+            {
+              "$ref": "#/$defs/UuidArray"
+            }
+          ],
+          "minItems": 1
         },
         "studentIds": {
           "$ref": "#/$defs/UuidArray"
@@ -332,47 +369,154 @@
       "description": "Leitura de Class. Não embute Avaliações. averageRating sempre presente (null se sem reviews)."
     },
     "ClassList": {
+      "type": "array",
+      "items": {
+        "$ref": "#/$defs/Class"
+      },
+      "description": "GET /v1/classes e POST /v1/classes/import devolvem um array JSON, sem envelope."
+    },
+    "ClassImportItem": {
       "type": "object",
       "additionalProperties": false,
       "required": [
-        "items"
+        "courseId",
+        "startDate",
+        "endDate",
+        "seats",
+        "roomId",
+        "professorIds"
       ],
       "properties": {
-        "items": {
-          "type": "array",
-          "items": {
-            "$ref": "#/$defs/Class"
-          }
+        "id": {
+          "$ref": "#/$defs/Uuid",
+          "description": "Opcional. Omitido faz o servidor gerar o UUID."
+        },
+        "courseId": {
+          "$ref": "#/$defs/Uuid"
+        },
+        "startDate": {
+          "$ref": "#/$defs/IsoDate"
+        },
+        "endDate": {
+          "$ref": "#/$defs/IsoDate"
+        },
+        "seats": {
+          "type": "integer",
+          "minimum": 1
+        },
+        "roomId": {
+          "$ref": "#/$defs/Uuid"
+        },
+        "professorIds": {
+          "allOf": [
+            {
+              "$ref": "#/$defs/UuidArray"
+            }
+          ],
+          "minItems": 1
+        },
+        "studentIds": {
+          "$ref": "#/$defs/UuidArray",
+          "description": "Opcional. Omitido equivale a lista vazia."
+        },
+        "code": {
+          "type": [
+            "string",
+            "null"
+          ],
+          "maxLength": 64
+        },
+        "label": {
+          "type": [
+            "string",
+            "null"
+          ],
+          "maxLength": 255
+        },
+        "status": {
+          "$ref": "#/$defs/ClassStatus"
+        },
+        "modality": {
+          "type": [
+            "string",
+            "null"
+          ],
+          "maxLength": 64
         }
-      }
+      },
+      "description": "Item de POST /v1/classes/import. status default `active` se omitido."
+    },
+    "ClassImport": {
+      "type": "array",
+      "items": {
+        "$ref": "#/$defs/ClassImportItem"
+      },
+      "description": "Corpo de POST /v1/classes/import. A resposta é ClassList."
     },
     "ReviewCreate": {
       "type": "object",
       "additionalProperties": false,
-      "required": [
-        "ordinalRating"
+      "anyOf": [
+        {
+          "required": [
+            "ordinalRating"
+          ]
+        },
+        {
+          "required": [
+            "notaOrdinal"
+          ]
+        }
       ],
       "properties": {
         "ordinalRating": {
-          "$ref": "#/$defs/OrdinalRating"
+          "$ref": "#/$defs/OrdinalRatingInput"
+        },
+        "notaOrdinal": {
+          "$ref": "#/$defs/OrdinalRatingInput",
+          "description": "Alias de ordinalRating. Se ambos vierem, ordinalRating prevalece."
         },
         "text": {
-          "type": "string",
+          "type": [
+            "string",
+            "null"
+          ],
           "maxLength": 2000,
-          "description": "Texto opcional. Ausente ou vazio é aceito."
+          "description": "Texto opcional. Ausente, vazio ou null é aceito."
+        },
+        "texto": {
+          "type": [
+            "string",
+            "null"
+          ],
+          "maxLength": 2000,
+          "description": "Alias de text. Se ambos vierem, text prevalece."
         }
       },
-      "description": "Criação de Avaliação. autorId vem do token + roster (nunca no body)."
+      "description": "Criação de Avaliação. autorId vem do token + roster (nunca no body). A resposta usa ordinalRating e text."
     },
     "ReviewUpdate": {
       "type": "object",
       "additionalProperties": false,
-      "required": [
-        "ordinalRating"
+      "anyOf": [
+        {
+          "required": [
+            "ordinalRating"
+          ]
+        },
+        {
+          "required": [
+            "notaOrdinal"
+          ]
+        }
       ],
       "properties": {
         "ordinalRating": {
-          "$ref": "#/$defs/OrdinalRating"
+          "$ref": "#/$defs/OrdinalRatingInput"
+        },
+        "notaOrdinal": {
+          "$ref": "#/$defs/OrdinalRatingInput",
+          "description": "Alias de ordinalRating. Se ambos vierem, ordinalRating prevalece."
         },
         "text": {
           "type": [
@@ -380,17 +524,29 @@
             "null"
           ],
           "maxLength": 2000
+        },
+        "texto": {
+          "type": [
+            "string",
+            "null"
+          ],
+          "maxLength": 2000,
+          "description": "Alias de text. Se ambos vierem, text prevalece."
         }
       },
       "description": "Substituição total (PUT) pelo próprio autor."
     },
     "ReviewPatch": {
       "type": "object",
-      "additionalProperties": false,
+      "additionalProperties": true,
       "minProperties": 1,
       "properties": {
         "ordinalRating": {
-          "$ref": "#/$defs/OrdinalRating"
+          "$ref": "#/$defs/OrdinalRatingInput"
+        },
+        "notaOrdinal": {
+          "$ref": "#/$defs/OrdinalRatingInput",
+          "description": "Alias de ordinalRating. Se ambos vierem, ordinalRating prevalece."
         },
         "text": {
           "type": [
@@ -398,9 +554,17 @@
             "null"
           ],
           "maxLength": 2000
+        },
+        "texto": {
+          "type": [
+            "string",
+            "null"
+          ],
+          "maxLength": 2000,
+          "description": "Alias de text. Null explícito em text ou texto apaga o texto."
         }
       },
-      "description": "Atualização parcial pelo próprio autor."
+      "description": "Atualização parcial pelo próprio autor. Campos desconhecidos são ignorados. Exige ao menos ordinalRating, notaOrdinal, text ou texto."
     },
     "Review": {
       "type": "object",
@@ -442,24 +606,11 @@
       "description": "Leitura pública de Avaliação. Sem autorId e sem papel do autor."
     },
     "ReviewList": {
-      "type": "object",
-      "additionalProperties": false,
-      "required": [
-        "items",
-        "averageRating"
-      ],
-      "properties": {
-        "items": {
-          "type": "array",
-          "items": {
-            "$ref": "#/$defs/Review"
-          },
-          "description": "Ordenação default: createdAt descendente."
-        },
-        "averageRating": {
-          "$ref": "#/$defs/AverageRating"
-        }
-      }
+      "type": "array",
+      "items": {
+        "$ref": "#/$defs/Review"
+      },
+      "description": "GET /v1/classes/{classId}/reviews devolve um array JSON. A média fica em Class.averageRating, não neste corpo."
     }
   }
 }

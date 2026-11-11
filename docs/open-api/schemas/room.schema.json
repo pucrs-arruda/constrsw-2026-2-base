@@ -1,0 +1,88 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "title": "Room",
+  "description": "Sala, a classe primária da API rooms, como devolvida pela API.",
+  "type": "object",
+  "properties": {
+    "id": {
+      "type": "string",
+      "format": "uuid",
+      "readOnly": true,
+      "description": "Identificador da sala (UUID v4), gerado pela API."
+    },
+    "code": {
+      "type": "string",
+      "minLength": 1,
+      "maxLength": 20,
+      "pattern": "\\S",
+      "description": "Código institucional da sala, único entre as salas (ex.: 32/405)."
+    },
+    "name": {
+      "type": "string",
+      "minLength": 1,
+      "maxLength": 100,
+      "pattern": "\\S",
+      "description": "Nome descritivo da sala."
+    },
+    "building": {
+      "type": "string",
+      "minLength": 1,
+      "maxLength": 50,
+      "pattern": "\\S",
+      "description": "Prédio em que a sala fica, em texto (ex.: 32)."
+    },
+    "capacity": {
+      "type": [
+        "integer",
+        "null"
+      ],
+      "minimum": 1,
+      "description": "Número máximo de pessoas acomodadas na sala. Opcional; quando informada, deve ser maior que zero."
+    },
+    "active": {
+      "type": "boolean",
+      "default": true,
+      "description": "Indica se a sala está disponível para uso."
+    },
+    "enabled": {
+      "type": "boolean",
+      "readOnly": true,
+      "description": "Exclusão lógica. DELETE grava false; a sala some das consultas e não aceita PUT, PATCH nem novo DELETE."
+    },
+    "resourceIds": {
+      "type": "array",
+      "uniqueItems": true,
+      "default": [],
+      "items": {
+        "type": "string",
+        "format": "uuid"
+      },
+      "description": "Ids dos recursos (equipamentos) da API resources (Grupo 06) instalados na sala. Referência a outra API: a API rooms guarda apenas os ids. Um recurso fica instalado em no máximo uma sala."
+    }
+  },
+  "required": [
+    "id",
+    "code",
+    "name",
+    "building",
+    "capacity",
+    "active",
+    "enabled",
+    "resourceIds"
+  ],
+  "additionalProperties": false,
+  "examples": [
+    {
+      "id": "6f1c2b9e-8d4a-4c3e-9b1a-2f5d7e8c9a01",
+      "code": "32/405",
+      "name": "Laboratório de Engenharia de Software",
+      "building": "32",
+      "capacity": 40,
+      "active": true,
+      "enabled": true,
+      "resourceIds": [
+        "0b7e4c3a-5d2f-4e8a-9c1b-7a6d5e4f3c21"
+      ]
+    }
+  ]
+}

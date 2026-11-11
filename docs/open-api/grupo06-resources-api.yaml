@@ -1,48 +1,44 @@
 openapi: 3.1.0
 info:
-  title: resources
+  title: ConstrSW Resources API
   version: 1.0.0
   description: |
-    Closed CRAS resources bounded context. Resource 1–N Occurrence.
+    Closed CRAS resources context. Resource 1-N Occurrence.
+
     A Resource is one physical reservable unit; active is the reservation gate.
+    enabled is the logical-deletion flag: DELETE sets it to false and the API
+    stops returning the row while its history remains stored.
     An Occurrence moves OPEN -> RESOLVED once. reportedBy and resolvedBy are the
-    audit actors, taken from the JWT employeeId claim; status and timestamps are
-    never client-supplied.
-    Writes require the `employee` realm role; reads require any authenticated realm role.
-    Browser clients use the BFF contract, never this service directly.
+    audit actors taken from the JWT (employeeId claim, with a lab fallback), and
+    status/timestamps are never client-supplied.
 
-    ## Soft delete
-
-    All deletions are logical and controlled by the `enabled` attribute of the classes. A `DELETE` never removes the record from the database: it only sets `enabled=false`. The attribute is read-only (`readOnly`): it starts as `true` and cannot be sent by clients.
-
-    Records with `enabled=false` are omitted from listings, a lookup by id returns `404`, and they cannot be updated or deleted again (`404`).
-
-    Deleting a resource cascades: it also sets `enabled=false` on all of its occurrences. An occurrence can be deleted on its own, whether OPEN or RESOLVED.
-
-    `enabled` is independent of `active`: `active` remains the reservation gate of a resource (deactivate without deleting), while `enabled=false` means the resource no longer exists for clients.
+    Simple filters are plain equality: ?type=PROJECTOR&active=true.
+    Complex filters prefix the value with an operator between braces:
+    ?status={neq}RESOLVED&createdAt={gteq}2026-11-01T00:00:00Z.
+    Supported operators: neq, gt, gteq, lt, lteq, like. The readable form puts
+    the operator as a parameter-name suffix (name.like, createdAt.gteq,
+    status.neq) and needs no braces. The required braces form is also accepted
+    ({like}, {gteq}); when using braces, encode them as %7B / %7D.
   contact:
     name: Closed CRAS — resources context
 servers:
-- url: http://localhost:8106
-  description: Local compose
+  - url: http://localhost:8106
+    description: Local compose
 tags:
-- name: Health
-  description: Anonymous operational probes.
-- name: Identity
-  description: JWT resource-server identity projection.
-- name: Resources
-  description: Resource master data.
-- name: Occurrences
-  description: Occurrence history for one resource.
+  - name: Health
+    description: Anonymous operational probes.
+  - name: Resources
+    description: Resource master data.
+  - name: Occurrences
+    description: Occurrence history for one resource.
 security:
-- bearerAuth: []
+  - bearerAuth: []
 paths:
-  /health:
+  /api/v1/health:
     get:
-      tags:
-      - Health
+      tags: [Health]
       operationId: getHealth
-      summary: Anonymous health probe
+      summary: Liveness probe with a database check
       security: []
       responses:
         '200':
@@ -69,73 +65,61 @@ paths:
                     status: degraded
                     service: resources
                     database: down
-  /v1/identity/me:
+
+  /api/v1/health/live:
     get:
-      tags:
-      - Identity
-      operationId: getIdentity
-      summary: Return the authenticated caller's identity projection
-      description: |
-        Same schema as the shared identity gateway fragment: sub, email, `roles`,
-        employeeId, professorId, studentId. The three IDs are null when the
-        caller does not have the corresponding role.
+      tags: [Health]
+      operationId: getLiveness
+      summary: Process liveness probe
+      security: []
       responses:
         '200':
-          description: Identity projection.
+          description: The process answers HTTP.
           content:
             application/json:
               schema:
-                $ref: '#/components/schemas/Identity'
-        '401':
-          $ref: '#/components/responses/Unauthorized'
-        '403':
-          $ref: '#/components/responses/Forbidden'
-        '503':
-          $ref: '#/components/responses/DependencyUnavailable'
-        '500':
-          $ref: '#/components/responses/InternalError'
-  /v1/resources:
+                $ref: '#/components/schemas/Live'
+
+  /api/v1/health/ready:
     get:
-      tags:
-      - Resources
+      tags: [Health]
+      operationId: getReadiness
+      summary: Readiness probe
+      description: Checks PostgreSQL and the Keycloak JWKS. With AUTH_DISABLED=true the identity check is skipped.
+      security: []
+      responses:
+        '200':
+          description: Critical dependencies are ready.
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Readiness'
+        '503':
+          description: At least one critical dependency is down.
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Readiness'
+
+  /api/v1/resources:
+    get:
+      tags: [Resources]
       operationId: listResources
       summary: List resources
       description: |
-        Returns every matching resource with `enabled=true` in one items envelope. Filters combine
-        with AND. Order is code ascending. There is no pagination.
+        Returns every matching resource as a JSON array. Filters combine
+        with AND and order is code ascending. There is no pagination. By default
+        only enabled=true rows are returned; pass enabled=false to list
+        logically deleted resources.
       parameters:
-      - name: code
-        in: query
-        required: false
-        description: Exact code match after trimming and uppercasing.
-        schema:
-          type: string
-          minLength: 3
-          maxLength: 32
-          pattern: ^[A-Za-z0-9]+(-[A-Za-z0-9]+)*$
-          example: PROJ-01
-      - name: type
-        in: query
-        required: false
-        description: Exact resource type.
-        schema:
-          $ref: '#/components/schemas/ResourceType'
-      - name: active
-        in: query
-        required: false
-        description: Exact active state.
-        schema:
-          type: boolean
-      - name: tag
-        in: query
-        required: false
-        description: Exact tag match after trimming and lowercasing.
-        schema:
-          type: string
-          minLength: 1
-          maxLength: 30
-          pattern: ^[A-Za-z0-9]+(-[A-Za-z0-9]+)*$
-          example: av
+        - $ref: '#/components/parameters/ResourceCodeFilter'
+        - $ref: '#/components/parameters/ResourceNameFilter'
+        - $ref: '#/components/parameters/ResourceTypeFilter'
+        - $ref: '#/components/parameters/ResourceActiveFilter'
+        - $ref: '#/components/parameters/ResourceEnabledFilter'
+        - $ref: '#/components/parameters/ResourceTagFilter'
+        - $ref: '#/components/parameters/CreatedAtFilter'
+        - $ref: '#/components/parameters/UpdatedAtFilter'
       responses:
         '200':
           description: Matching resources.
@@ -151,16 +135,13 @@ paths:
           $ref: '#/components/responses/Validation'
         '503':
           $ref: '#/components/responses/DependencyUnavailable'
-        '500':
-          $ref: '#/components/responses/InternalError'
     post:
-      tags:
-      - Resources
+      tags: [Resources]
       operationId: createResource
       summary: Create a resource
       description: |
-        Creates one physical reservable unit. code is required, unique, and
-        immutable after creation. active defaults to true; tags default to [].
+        Creates one physical reservable unit. code is required, unique and
+        immutable after creation. active defaults to true and tags default to [].
       requestBody:
         required: true
         content:
@@ -191,24 +172,22 @@ paths:
           $ref: '#/components/responses/Validation'
         '503':
           $ref: '#/components/responses/DependencyUnavailable'
-        '500':
-          $ref: '#/components/responses/InternalError'
-  /v1/resources/{resourceId}:
+
+  /api/v1/resources/{resourceId}:
     parameters:
-    - $ref: '#/components/parameters/ResourceId'
+      - $ref: '#/components/parameters/ResourceId'
     get:
-      tags:
-      - Resources
+      tags: [Resources]
       operationId: getResource
       summary: Read a resource aggregate
-      description: Returns the resource and its occurrences with `enabled=true`, newest first.
+      description: Returns the resource and all its occurrences, newest first.
       responses:
         '200':
           description: Resource aggregate.
           content:
             application/json:
               schema:
-                $ref: '#/components/schemas/Resource'
+                $ref: '#/components/schemas/ResourceAggregate'
         '401':
           $ref: '#/components/responses/Unauthorized'
         '403':
@@ -219,30 +198,26 @@ paths:
           $ref: '#/components/responses/Validation'
         '503':
           $ref: '#/components/responses/DependencyUnavailable'
-        '500':
-          $ref: '#/components/responses/InternalError'
-    patch:
-      tags:
-      - Resources
-      operationId: updateResource
-      summary: Update resource master data
+    put:
+      tags: [Resources]
+      operationId: replaceResource
+      summary: Replace a resource
       description: |
-        Partial update of name, type, active, and tags. code is immutable and is
-        rejected if present. At least one field is required. If tags is present,
-        it replaces the whole array.
+        Total update of name, type, active and tags. code is immutable and must
+        match the stored code.
       requestBody:
         required: true
         content:
           application/json:
             schema:
-              $ref: '#/components/schemas/ResourceUpdate'
+              $ref: '#/components/schemas/ResourcePut'
       responses:
         '200':
           description: Updated resource aggregate.
           content:
             application/json:
               schema:
-                $ref: '#/components/schemas/Resource'
+                $ref: '#/components/schemas/ResourceAggregate'
         '400':
           $ref: '#/components/responses/MalformedRequest'
         '401':
@@ -257,22 +232,51 @@ paths:
           $ref: '#/components/responses/Validation'
         '503':
           $ref: '#/components/responses/DependencyUnavailable'
-        '500':
-          $ref: '#/components/responses/InternalError'
-    delete:
-      tags:
-      - Resources
-      operationId: deleteResource
-      summary: Delete a resource (soft delete)
+    patch:
+      tags: [Resources]
+      operationId: updateResource
+      summary: Partially update a resource
       description: |
-        Soft delete: sets `enabled=false` on the resource and on all of its
-        occurrences. Nothing is removed from the database. Afterwards the
-        resource is omitted from listings and any read, update, occurrence
-        write, or second delete returns 404. To only block new reservations
-        while keeping the resource, use PATCH with `active=false` instead.
+        Partial update of name, type, active and tags. tags replaces the whole
+        set. code and unknown fields are refused with 422.
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/ResourcePatch'
+      responses:
+        '200':
+          description: Updated resource aggregate.
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ResourceAggregate'
+        '400':
+          $ref: '#/components/responses/MalformedRequest'
+        '401':
+          $ref: '#/components/responses/Unauthorized'
+        '403':
+          $ref: '#/components/responses/Forbidden'
+        '404':
+          $ref: '#/components/responses/NotFound'
+        '415':
+          $ref: '#/components/responses/UnsupportedMediaType'
+        '422':
+          $ref: '#/components/responses/Validation'
+        '503':
+          $ref: '#/components/responses/DependencyUnavailable'
+    delete:
+      tags: [Resources]
+      operationId: deleteResource
+      summary: Delete a resource
+      description: |
+        Logical delete: sets enabled=false on the resource and its occurrences in
+        one transaction. The rows and their history are retained and the API no
+        longer returns them. This is distinct from active, the reservation gate.
       responses:
         '204':
-          description: Resource and its occurrences soft-deleted (`enabled=false`).
+          description: Resource deleted.
         '401':
           $ref: '#/components/responses/Unauthorized'
         '403':
@@ -283,20 +287,18 @@ paths:
           $ref: '#/components/responses/Validation'
         '503':
           $ref: '#/components/responses/DependencyUnavailable'
-        '500':
-          $ref: '#/components/responses/InternalError'
-  /v1/resources/{resourceId}/occurrences:
+
+  /api/v1/resources/{resourceId}/occurrences:
     parameters:
-    - $ref: '#/components/parameters/ResourceId'
+      - $ref: '#/components/parameters/ResourceId'
     post:
-      tags:
-      - Occurrences
+      tags: [Occurrences]
       operationId: createOccurrence
       summary: Record an occurrence
       description: |
-        Creates an OPEN occurrence for the resource. status is always OPEN,
-        createdAt is server-set, priority defaults to MEDIUM. resolution and
-        resolvedAt are not accepted on create.
+        Creates an OPEN occurrence for the resource. reportedBy is server-set
+        from the token; status/timestamps are server-set; priority defaults to
+        MEDIUM; resolution is not accepted on create.
       requestBody:
         required: true
         content:
@@ -327,31 +329,86 @@ paths:
           $ref: '#/components/responses/Validation'
         '503':
           $ref: '#/components/responses/DependencyUnavailable'
-        '500':
-          $ref: '#/components/responses/InternalError'
-  /v1/resources/{resourceId}/occurrences/{occurrenceId}:
-    parameters:
-    - $ref: '#/components/parameters/ResourceId'
-    - $ref: '#/components/parameters/OccurrenceId'
-    patch:
-      tags:
-      - Occurrences
-      operationId: resolveOccurrence
-      summary: Resolve an occurrence
+    get:
+      tags: [Occurrences]
+      operationId: listOccurrences
+      summary: List occurrences of a resource
       description: |
-        OPEN -> RESOLVED, storing the resolution and setting status, resolvedBy,
-        and resolvedAt server-side. There is no intermediate state, no reopen,
-        and no field edit. A second resolve returns 409. A soft-deleted
-        occurrence (`enabled=false`) returns 404.
+        Newest first. Simple and complex filters combine with AND. By default
+        only enabled=true rows are returned; pass enabled=false to list
+        logically deleted occurrences.
+      parameters:
+        - $ref: '#/components/parameters/OccurrenceDescriptionFilter'
+        - $ref: '#/components/parameters/OccurrenceTypeFilter'
+        - $ref: '#/components/parameters/OccurrencePriorityFilter'
+        - $ref: '#/components/parameters/OccurrenceStatusFilter'
+        - $ref: '#/components/parameters/OccurrenceEnabledFilter'
+        - $ref: '#/components/parameters/OccurrenceResolutionFilter'
+        - $ref: '#/components/parameters/ReportedByFilter'
+        - $ref: '#/components/parameters/ResolvedByFilter'
+        - $ref: '#/components/parameters/CreatedAtFilter'
+        - $ref: '#/components/parameters/ResolvedAtFilter'
+        - $ref: '#/components/parameters/UpdatedAtFilter'
+      responses:
+        '200':
+          description: Matching occurrences.
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/OccurrenceList'
+        '401':
+          $ref: '#/components/responses/Unauthorized'
+        '403':
+          $ref: '#/components/responses/Forbidden'
+        '404':
+          $ref: '#/components/responses/NotFound'
+        '422':
+          $ref: '#/components/responses/Validation'
+        '503':
+          $ref: '#/components/responses/DependencyUnavailable'
+
+  /api/v1/resources/{resourceId}/occurrences/{occurrenceId}:
+    parameters:
+      - $ref: '#/components/parameters/ResourceId'
+      - $ref: '#/components/parameters/OccurrenceId'
+    get:
+      tags: [Occurrences]
+      operationId: getOccurrence
+      summary: Read one occurrence of a resource
+      responses:
+        '200':
+          description: Occurrence.
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Occurrence'
+        '401':
+          $ref: '#/components/responses/Unauthorized'
+        '403':
+          $ref: '#/components/responses/Forbidden'
+        '404':
+          $ref: '#/components/responses/NotFound'
+        '422':
+          $ref: '#/components/responses/Validation'
+        '503':
+          $ref: '#/components/responses/DependencyUnavailable'
+    put:
+      tags: [Occurrences]
+      operationId: replaceOccurrence
+      summary: Replace an OPEN occurrence
+      description: |
+        Total update of description, type and priority. Supplying resolution
+        performs the one-way OPEN -> RESOLVED transition. A RESOLVED occurrence
+        is terminal and returns 409.
       requestBody:
         required: true
         content:
           application/json:
             schema:
-              $ref: '#/components/schemas/OccurrenceResolve'
+              $ref: '#/components/schemas/OccurrencePut'
       responses:
         '200':
-          description: Occurrence resolved.
+          description: Updated occurrence.
           content:
             application/json:
               schema:
@@ -372,21 +429,53 @@ paths:
           $ref: '#/components/responses/Validation'
         '503':
           $ref: '#/components/responses/DependencyUnavailable'
-        '500':
-          $ref: '#/components/responses/InternalError'
-    delete:
-      tags:
-      - Occurrences
-      operationId: deleteOccurrence
-      summary: Delete an occurrence (soft delete)
+    patch:
+      tags: [Occurrences]
+      operationId: updateOccurrence
+      summary: Partially update or resolve an occurrence
       description: |
-        Soft delete: sets `enabled=false` on the occurrence, whether OPEN or
-        RESOLVED. Nothing is removed from the database. The resource remains.
-        Afterwards the occurrence is omitted from the resource aggregate, and a
-        resolve or second delete returns 404.
+        Partial update of description, type, priority and resolution. Supplying
+        resolution resolves the occurrence and sets resolvedBy/resolvedAt
+        server-side. A second resolve returns 409.
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/OccurrencePatch'
+      responses:
+        '200':
+          description: Updated occurrence.
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Occurrence'
+        '400':
+          $ref: '#/components/responses/MalformedRequest'
+        '401':
+          $ref: '#/components/responses/Unauthorized'
+        '403':
+          $ref: '#/components/responses/Forbidden'
+        '404':
+          $ref: '#/components/responses/NotFound'
+        '409':
+          $ref: '#/components/responses/Conflict'
+        '415':
+          $ref: '#/components/responses/UnsupportedMediaType'
+        '422':
+          $ref: '#/components/responses/Validation'
+        '503':
+          $ref: '#/components/responses/DependencyUnavailable'
+    delete:
+      tags: [Occurrences]
+      operationId: deleteOccurrence
+      summary: Delete an occurrence
+      description: |
+        Logical delete: sets enabled=false. The row and its history are retained
+        and the API no longer returns it.
       responses:
         '204':
-          description: Occurrence soft-deleted (`enabled=false`). The resource remains.
+          description: Occurrence deleted.
         '401':
           $ref: '#/components/responses/Unauthorized'
         '403':
@@ -397,21 +486,21 @@ paths:
           $ref: '#/components/responses/Validation'
         '503':
           $ref: '#/components/responses/DependencyUnavailable'
-        '500':
-          $ref: '#/components/responses/InternalError'
+
 components:
   securitySchemes:
     bearerAuth:
       type: http
       scheme: bearer
       bearerFormat: JWT
-      description: Keycloak access token for realm closed-cras.
+      description: Keycloak access token (RS256, aud=oauth).
+
   parameters:
     ResourceId:
       name: resourceId
       in: path
       required: true
-      description: Resource UUID v4.
+      description: Resource UUID.
       schema:
         type: string
         format: uuid
@@ -419,712 +508,587 @@ components:
       name: occurrenceId
       in: path
       required: true
-      description: Occurrence UUID v4.
+      description: Occurrence UUID.
       schema:
         type: string
         format: uuid
+    ResourceCodeFilter:
+      name: code
+      in: query
+      required: false
+      description: Code equality, or a complex operator prefix.
+      schema:
+        type: string
+      examples:
+        simple:
+          value: PROJ-01
+        complex:
+          value: '{like}PROJ-%'
+    ResourceNameFilter:
+      name: name
+      in: query
+      required: false
+      description: Name equality, LIKE, or an ordering operator.
+      schema:
+        type: string
+      examples:
+        like:
+          value: '{like}%Projetor%'
+    ResourceTypeFilter:
+      name: type
+      in: query
+      required: false
+      schema:
+        $ref: '#/components/schemas/ResourceType'
+      examples:
+        notEqual:
+          value: '{neq}HEALTH_KIT'
+    ResourceActiveFilter:
+      name: active
+      in: query
+      required: false
+      schema:
+        type: boolean
+    ResourceEnabledFilter:
+      name: enabled
+      in: query
+      required: false
+      description: |
+        Logical-deletion flag. Defaults to true when omitted, so deleted rows
+        are hidden. Use enabled=false to list soft-deleted resources.
+      schema:
+        type: boolean
+      examples:
+        deleted:
+          value: false
+    ResourceTagFilter:
+      name: tag
+      in: query
+      required: false
+      description: Exact tag match after trimming and lowercasing.
+      schema:
+        type: string
+      examples:
+        simple:
+          value: av
+    OccurrenceDescriptionFilter:
+      name: description
+      in: query
+      required: false
+      schema:
+        type: string
+      examples:
+        like:
+          value: '{like}%lampada%'
+    OccurrenceTypeFilter:
+      name: type
+      in: query
+      required: false
+      schema:
+        $ref: '#/components/schemas/OccurrenceType'
+    OccurrencePriorityFilter:
+      name: priority
+      in: query
+      required: false
+      schema:
+        $ref: '#/components/schemas/OccurrencePriority'
+      examples:
+        order:
+          value: '{gteq}MEDIUM'
+    OccurrenceStatusFilter:
+      name: status
+      in: query
+      required: false
+      schema:
+        $ref: '#/components/schemas/OccurrenceStatus'
+      examples:
+        notEqual:
+          value: '{neq}RESOLVED'
+    OccurrenceEnabledFilter:
+      name: enabled
+      in: query
+      required: false
+      description: |
+        Logical-deletion flag. Defaults to true when omitted, so deleted rows
+        are hidden. Use enabled=false to list soft-deleted occurrences.
+      schema:
+        type: boolean
+      examples:
+        deleted:
+          value: false
+    OccurrenceResolutionFilter:
+      name: resolution
+      in: query
+      required: false
+      schema:
+        type: string
+      examples:
+        like:
+          value: '{like}%trocado%'
+    ReportedByFilter:
+      name: reportedBy
+      in: query
+      required: false
+      schema:
+        type: string
+        format: uuid
+    ResolvedByFilter:
+      name: resolvedBy
+      in: query
+      required: false
+      schema:
+        type: string
+        format: uuid
+    CreatedAtFilter:
+      name: createdAt
+      in: query
+      required: false
+      description: RFC 3339 date-time with an optional operator prefix.
+      schema:
+        type: string
+        format: date-time
+      examples:
+        greaterOrEqual:
+          value: '{gteq}2026-11-01T00:00:00Z'
+    UpdatedAtFilter:
+      name: updatedAt
+      in: query
+      required: false
+      description: RFC 3339 date-time with an optional operator prefix.
+      schema:
+        type: string
+        format: date-time
+      examples:
+        lessThan:
+          value: '{lt}2027-01-01T00:00:00Z'
+    ResolvedAtFilter:
+      name: resolvedAt
+      in: query
+      required: false
+      description: RFC 3339 date-time with an optional operator prefix.
+      schema:
+        type: string
+        format: date-time
+
   headers:
     Location:
       description: Path-only location of the created resource or occurrence.
       schema:
         type: string
-        example: /v1/resources/6f1c2d3e-4a5b-4c6d-8e7f-901234567890
+      example: /api/v1/resources/6f1c2d3e-4a5b-4c6d-8e7f-901234567890
+
+  responses:
+    MalformedRequest:
+      description: The JSON body could not be parsed.
+      content:
+        application/problem+json:
+          schema:
+            $ref: '#/components/schemas/Problem'
+    Unauthorized:
+      description: Missing, invalid or expired bearer token.
+      content:
+        application/problem+json:
+          schema:
+            $ref: '#/components/schemas/Problem'
+    Forbidden:
+      description: The token lacks a configured read/write role.
+      content:
+        application/problem+json:
+          schema:
+            $ref: '#/components/schemas/Problem'
+    NotFound:
+      description: Resource or occurrence was not found.
+      content:
+        application/problem+json:
+          schema:
+            $ref: '#/components/schemas/Problem'
+    Conflict:
+      description: Duplicate code or a resolved occurrence that is terminal.
+      content:
+        application/problem+json:
+          schema:
+            $ref: '#/components/schemas/Problem'
+    UnsupportedMediaType:
+      description: A request body was sent with a non-JSON content type.
+      content:
+        application/problem+json:
+          schema:
+            $ref: '#/components/schemas/Problem'
+    Validation:
+      description: Invalid or unknown field, enum value or query operator.
+      content:
+        application/problem+json:
+          schema:
+            $ref: '#/components/schemas/Problem'
+    DependencyUnavailable:
+      description: PostgreSQL or the identity provider is unavailable.
+      content:
+        application/problem+json:
+          schema:
+            $ref: '#/components/schemas/Problem'
+
   schemas:
     ResourceType:
       type: string
       enum:
-      - PROJECTOR
-      - HEALTH_KIT
-      - COMPUTER
-      - NOTEBOOK
-      - CAMERA
-      - MICROPHONE
-      - DISPLAY
-      - CABLE
-      - ADAPTER
-      description: Resource kind. Descriptive only; active is the reservation gate. ROOM is not a resource type and 
-        there is no OTHER fallback.
+        - PROJECTOR
+        - HEALTH_KIT
+        - COMPUTER
+        - NOTEBOOK
+        - CAMERA
+        - MICROPHONE
+        - DISPLAY
+        - CABLE
+        - ADAPTER
+      description: >
+        Resource kind. Descriptive only; active is the reservation gate. ROOM is
+        not a resource type and there is no OTHER fallback.
+
     OccurrenceType:
       type: string
-      enum:
-      - MALFUNCTION
-      - DAMAGE
-      - MISSING
-      - OTHER
-      description: Kind of occurrence.
-    OccurrenceStatus:
-      type: string
-      enum:
-      - OPEN
-      - RESOLVED
-      description: |
-        Occurrence lifecycle state, set by the server. OPEN -> RESOLVED once.
-        RESOLVED is terminal.
-      x-enum-descriptions:
-        OPEN: Recorded and not resolved.
-        RESOLVED: Closed with resolution, resolvedBy, and resolvedAt.
+      enum: [MALFUNCTION, DAMAGE, MISSING, OTHER]
+
     OccurrencePriority:
       type: string
-      enum:
-      - LOW
-      - MEDIUM
-      - HIGH
-      description: Staff-assigned operational priority.
-    ResourceSummary:
-      type: object
-      additionalProperties: false
-      required:
-      - id
-      - enabled
-      - code
-      - name
-      - type
-      - active
-      - tags
-      - createdAt
-      - updatedAt
-      properties:
-        id:
-          type: string
-          format: uuid
-          readOnly: true
-        enabled:
-          type: boolean
-          readOnly: true
-          default: true
-          description: 'Soft delete flag: true for an active record; false for a logically deleted record. Server-managed.'
-        code:
-          type: string
-          minLength: 3
-          maxLength: 32
-          pattern: ^[A-Z0-9]+(-[A-Z0-9]+)*$
-          example: PROJ-01
-        name:
-          type: string
-          minLength: 1
-          maxLength: 120
-          example: Projector 1
-        type:
-          $ref: '#/components/schemas/ResourceType'
-        active:
-          type: boolean
-          example: true
-        tags:
-          type: array
-          maxItems: 10
-          uniqueItems: true
-          description: Lowercase, unique, sorted tags.
-          items:
-            type: string
-            minLength: 1
-            maxLength: 30
-            pattern: ^[a-z0-9]+(-[a-z0-9]+)*$
-          example:
-          - av
-          - portable
-        createdAt:
-          type: string
-          format: date-time
-          readOnly: true
-          example: '2026-10-26T23:34:19Z'
-        updatedAt:
-          type: string
-          format: date-time
-          readOnly: true
-          example: '2026-10-26T23:34:19Z'
+      enum: [LOW, MEDIUM, HIGH]
+
+    OccurrenceStatus:
+      type: string
+      enum: [OPEN, RESOLVED]
+
     Resource:
       type: object
       additionalProperties: false
-      required:
-      - id
-      - enabled
-      - code
-      - name
-      - type
-      - active
-      - tags
-      - createdAt
-      - updatedAt
-      - occurrences
+      required: [id, code, name, type, active, enabled, tags, createdAt, updatedAt]
       properties:
         id:
           type: string
           format: uuid
-          readOnly: true
-        enabled:
-          type: boolean
-          readOnly: true
-          default: true
-          description: 'Soft delete flag: true for an active record; false for a logically deleted record. Server-managed.'
         code:
           type: string
           minLength: 3
           maxLength: 32
-          pattern: ^[A-Z0-9]+(-[A-Z0-9]+)*$
-          example: PROJ-01
+          pattern: '^[A-Z0-9]+(-[A-Z0-9]+)*$'
         name:
           type: string
           minLength: 1
           maxLength: 120
-          example: Projector 1
         type:
           $ref: '#/components/schemas/ResourceType'
         active:
           type: boolean
-          example: true
+        enabled:
+          type: boolean
+          description: Logical-deletion flag; false means the row is hidden from the API.
         tags:
           type: array
           maxItems: 10
-          uniqueItems: true
-          description: Lowercase, unique, sorted tags.
           items:
             type: string
             minLength: 1
             maxLength: 30
-            pattern: ^[a-z0-9]+(-[a-z0-9]+)*$
-          example:
-          - av
-          - portable
+            pattern: '^[a-z0-9]+(-[a-z0-9]+)*$'
         createdAt:
           type: string
           format: date-time
-          readOnly: true
-          example: '2026-10-26T23:34:19Z'
         updatedAt:
           type: string
           format: date-time
-          readOnly: true
-          example: '2026-10-26T23:34:19Z'
-        occurrences:
-          $ref: '#/components/schemas/OccurrenceList'
-    ResourceList:
+
+    ResourceCreate:
       type: object
       additionalProperties: false
-      required:
-      - items
+      required: [code, name, type]
       properties:
-        items:
+        code:
+          type: string
+          minLength: 3
+          maxLength: 32
+          pattern: '^[A-Za-z0-9]+(-[A-Za-z0-9]+)*$'
+          description: Trimmed and uppercased before storage.
+        name:
+          type: string
+          minLength: 1
+          maxLength: 120
+        type:
+          $ref: '#/components/schemas/ResourceType'
+        active:
+          type: boolean
+          default: true
+        tags:
           type: array
+          maxItems: 10
           items:
-            $ref: '#/components/schemas/ResourceSummary'
+            type: string
+            maxLength: 30
+
+    ResourcePut:
+      type: object
+      additionalProperties: false
+      required: [code, name, type]
+      properties:
+        code:
+          type: string
+          minLength: 3
+          maxLength: 32
+          pattern: '^[A-Za-z0-9]+(-[A-Za-z0-9]+)*$'
+          description: Must equal the stored code; code is immutable.
+        name:
+          type: string
+          minLength: 1
+          maxLength: 120
+        type:
+          $ref: '#/components/schemas/ResourceType'
+        active:
+          type: boolean
+          default: true
+        tags:
+          type: array
+          maxItems: 10
+          default: []
+          items:
+            type: string
+            maxLength: 30
+
+    ResourcePatch:
+      type: object
+      additionalProperties: false
+      minProperties: 1
+      properties:
+        name:
+          type: string
+          minLength: 1
+          maxLength: 120
+        type:
+          $ref: '#/components/schemas/ResourceType'
+        active:
+          type: boolean
+        tags:
+          type: array
+          maxItems: 10
+          items:
+            type: string
+            maxLength: 30
+
     Occurrence:
       type: object
       additionalProperties: false
       required:
-      - id
-      - enabled
-      - resourceId
-      - description
-      - type
-      - priority
-      - status
-      - resolution
-      - reportedBy
-      - resolvedBy
-      - createdAt
-      - resolvedAt
-      - updatedAt
+        [id, resourceId, description, type, priority, status, enabled, resolution,
+         reportedBy, resolvedBy, createdAt, resolvedAt, updatedAt]
       properties:
         id:
           type: string
           format: uuid
-          readOnly: true
-        enabled:
-          type: boolean
-          readOnly: true
-          default: true
-          description: 'Soft delete flag: true for an active record; false for a logically deleted record. Server-managed.'
         resourceId:
           type: string
           format: uuid
-          readOnly: true
         description:
           type: string
-          minLength: 1
-          example: Lamp does not turn on
         type:
           $ref: '#/components/schemas/OccurrenceType'
         priority:
           $ref: '#/components/schemas/OccurrencePriority'
         status:
           $ref: '#/components/schemas/OccurrenceStatus'
+        enabled:
+          type: boolean
+          description: Logical-deletion flag; false means the row is hidden from the API.
         resolution:
-          type:
-          - string
-          - 'null'
-          description: Required and non-blank when RESOLVED; null otherwise.
-          example: Lamp replaced
+          type: [string, 'null']
         reportedBy:
           type: string
           format: uuid
-          readOnly: true
-          description: Employee id of the reporter, from the JWT employeeId claim.
         resolvedBy:
-          type:
-          - string
-          - 'null'
+          type: [string, 'null']
           format: uuid
-          readOnly: true
-          description: Employee id that resolved the occurrence, from the JWT employeeId claim.
         createdAt:
           type: string
           format: date-time
-          readOnly: true
-          example: '2026-10-26T23:40:00Z'
         resolvedAt:
-          type:
-          - string
-          - 'null'
+          type: [string, 'null']
           format: date-time
-          description: Server-set when RESOLVED; null otherwise.
-          example: '2026-10-27T00:05:00Z'
         updatedAt:
           type: string
           format: date-time
-          readOnly: true
-          example: '2026-10-27T00:05:00Z'
-    OccurrenceList:
-      type: object
-      additionalProperties: false
-      required:
-      - items
-      properties:
-        items:
-          type: array
-          description: Ordered by createdAt descending, then id descending.
-          items:
-            $ref: '#/components/schemas/Occurrence'
-    ResourceCreate:
-      type: object
-      additionalProperties: false
-      required:
-      - code
-      - name
-      - type
-      properties:
-        code:
-          type: string
-          minLength: 3
-          maxLength: 32
-          pattern: ^[A-Za-z0-9]+(-[A-Za-z0-9]+)*$
-          description: Trimmed and uppercased before validation; final form must match ^[A-Z0-9]+(-[A-Z0-9]+)*$.
-          example: PROJ-01
-        name:
-          type: string
-          minLength: 1
-          maxLength: 120
-          description: Trimmed; must be non-blank after trimming.
-          example: Projector 1
-        type:
-          $ref: '#/components/schemas/ResourceType'
-        active:
-          type: boolean
-          default: true
-        tags:
-          type: array
-          maxItems: 10
-          uniqueItems: true
-          default: []
-          description: Trimmed, lowercased, deduplicated, and sorted before storage.
-          items:
-            type: string
-            minLength: 1
-            maxLength: 30
-            pattern: ^[A-Za-z0-9]+(-[A-Za-z0-9]+)*$
-          example:
-          - AV
-          - portable
-    ResourceUpdate:
-      type: object
-      additionalProperties: false
-      minProperties: 1
-      description: At least one of name, type, active, or tags. code is not accepted.
-      properties:
-        name:
-          type: string
-          minLength: 1
-          maxLength: 120
-          description: Trimmed; must be non-blank after trimming.
-          example: Projector 1
-        type:
-          $ref: '#/components/schemas/ResourceType'
-        active:
-          type: boolean
-        tags:
-          type: array
-          maxItems: 10
-          uniqueItems: true
-          description: Replaces the whole tag array; normalized as on create.
-          items:
-            type: string
-            minLength: 1
-            maxLength: 30
-            pattern: ^[A-Za-z0-9]+(-[A-Za-z0-9]+)*$
-          example:
-          - av
-          - portable
+
     OccurrenceCreate:
       type: object
       additionalProperties: false
-      required:
-      - description
-      - type
+      required: [description, type]
       properties:
         description:
           type: string
           minLength: 1
-          description: Trimmed; must be non-blank after trimming.
-          example: Lamp does not turn on
         type:
           $ref: '#/components/schemas/OccurrenceType'
         priority:
           $ref: '#/components/schemas/OccurrencePriority'
           default: MEDIUM
-    OccurrenceResolve:
+
+    OccurrencePut:
       type: object
       additionalProperties: false
-      required:
-      - resolution
-      description: |
-        Moves OPEN -> RESOLVED. Illegal on RESOLVED (409). status, resolvedBy,
-        and resolvedAt are server-set.
+      required: [description, type]
       properties:
+        description:
+          type: string
+          minLength: 1
+        type:
+          $ref: '#/components/schemas/OccurrenceType'
+        priority:
+          $ref: '#/components/schemas/OccurrencePriority'
+          default: MEDIUM
         resolution:
           type: string
           minLength: 1
-          pattern: .*\S.*
-          description: Trimmed; must be non-blank after trimming.
-          example: Lamp replaced
-    Identity:
+          description: Supplying resolution resolves the occurrence.
+
+    OccurrencePatch:
+      type: object
+      additionalProperties: false
+      minProperties: 1
+      properties:
+        description:
+          type: string
+          minLength: 1
+        type:
+          $ref: '#/components/schemas/OccurrenceType'
+        priority:
+          $ref: '#/components/schemas/OccurrencePriority'
+        resolution:
+          type: string
+          minLength: 1
+          description: Supplying resolution resolves the occurrence.
+
+    ResourceList:
+      type: array
+      items:
+        $ref: '#/components/schemas/Resource'
+
+    OccurrenceList:
+      type: array
+      items:
+        $ref: '#/components/schemas/Occurrence'
+
+    ResourceAggregate:
       type: object
       additionalProperties: false
       required:
-      - sub
-      - email
-      - roles
-      - employeeId
-      - professorId
-      - studentId
+        [id, code, name, type, active, enabled, tags, createdAt, updatedAt,
+         occurrences]
       properties:
-        sub:
+        id:
           type: string
-        email:
+          format: uuid
+        code:
           type: string
-          format: email
-        roles:
+          minLength: 3
+          maxLength: 32
+          pattern: '^[A-Z0-9]+(-[A-Z0-9]+)*$'
+        name:
+          type: string
+          minLength: 1
+          maxLength: 120
+        type:
+          $ref: '#/components/schemas/ResourceType'
+        active:
+          type: boolean
+        enabled:
+          type: boolean
+          description: Logical-deletion flag; false means the row is hidden from the API.
+        tags:
           type: array
+          maxItems: 10
           items:
             type: string
-            enum:
-            - employee
-            - coordinator
-            - professor
-            - student
-        employeeId:
-          type:
-          - string
-          - 'null'
-          description: Null when the caller has no Employee identity.
-        professorId:
-          type:
-          - string
-          - 'null'
-          description: Null when the caller has no Professor identity.
-        studentId:
-          type:
-          - string
-          - 'null'
-          description: Null when the caller has no Student identity.
+            minLength: 1
+            maxLength: 30
+            pattern: '^[a-z0-9]+(-[a-z0-9]+)*$'
+        createdAt:
+          type: string
+          format: date-time
+        updatedAt:
+          type: string
+          format: date-time
+        occurrences:
+          $ref: '#/components/schemas/OccurrenceList'
+
+    FieldError:
+      type: object
+      additionalProperties: false
+      required: [field, message]
+      properties:
+        field:
+          type: string
+        message:
+          type: string
+
+    Problem:
+      type: object
+      additionalProperties: false
+      required: [type, title, status, detail, code, instance]
+      properties:
+        type:
+          type: string
+        title:
+          type: string
+        status:
+          type: integer
+        detail:
+          type: string
+        code:
+          type: string
+        instance:
+          type: string
+        reason:
+          type: string
+        errors:
+          type: array
+          items:
+            $ref: '#/components/schemas/FieldError'
+
     Health:
       type: object
       additionalProperties: false
-      required:
-      - status
-      - service
+      required: [status, service, database]
       properties:
         status:
           type: string
-          enum:
-          - ok
-          - degraded
+          enum: [ok, degraded]
         service:
           type: string
           const: resources
         database:
           type: string
-          enum:
-          - up
-          - down
-    FieldError:
+          enum: [up, down]
+
+    Live:
       type: object
       additionalProperties: false
-      required:
-      - field
-      - message
+      required: [status, service]
       properties:
-        field:
-          type: string
-          example: code
-        message:
-          type: string
-          example: must be 3-32 characters and match ^[A-Z0-9]+(-[A-Z0-9]+)*$
-    Problem:
-      type: object
-      additionalProperties: false
-      required:
-      - type
-      - title
-      - status
-      - detail
-      - code
-      properties:
-        type:
-          type: string
-          format: uri
-          example: urn:closed-cras:recusa:FR-22
-        title:
-          type: string
-          example: Resource code already in use
         status:
-          type: integer
-          minimum: 400
-          maximum: 599
-          example: 409
-        detail:
           type: string
-          example: Resource code 'PROJ-01' is already in use.
-        instance:
+          const: ok
+        service:
           type: string
-          format: uri-reference
-          example: /v1/resources
-        code:
+          const: resources
+
+    Readiness:
+      type: object
+      additionalProperties: false
+      required: [status, service, database, identity]
+      properties:
+        status:
           type: string
-          description: FR id for invariant refusals; otherwise a stable error code.
-          example: FR-22
-        reason:
+          enum: [ok, degraded]
+        service:
           type: string
-          description: Machine-readable discriminator within the code.
-          example: RESOURCE_CODE_TAKEN
-        errors:
-          type: array
-          items:
-            $ref: '#/components/schemas/FieldError'
-  responses:
-    MalformedRequest:
-      description: The request body is not parseable JSON.
-      content:
-        application/problem+json:
-          schema:
-            $ref: '#/components/schemas/Problem'
-          examples:
-            malformed:
-              value:
-                type: urn:closed-cras:malformed-request
-                title: Malformed request
-                status: 400
-                detail: The request body is not valid JSON.
-                instance: /v1/resources
-                code: MALFORMED_REQUEST
-    Unauthorized:
-      description: Missing, expired, or invalid access token.
-      content:
-        application/problem+json:
-          schema:
-            $ref: '#/components/schemas/Problem'
-          examples:
-            missing:
-              value:
-                type: urn:closed-cras:auth:unauthenticated
-                title: Authentication required
-                status: 401
-                detail: A valid Keycloak access token is required.
-                instance: /v1/resources
-                code: AUTH_UNAUTHENTICATED
-                reason: MISSING_TOKEN
-    Forbidden:
-      description: Authenticated but not allowed, or a browser Origin reached the context.
-      content:
-        application/problem+json:
-          schema:
-            $ref: '#/components/schemas/Problem'
-          examples:
-            role:
-              value:
-                type: urn:closed-cras:auth:forbidden
-                title: Role not allowed
-                status: 403
-                detail: This operation requires the `employee` role.
-                instance: /v1/resources
-                code: AUTH_FORBIDDEN
-                reason: ROLE_NOT_ALLOWED
-            origin:
-              value:
-                type: urn:closed-cras:auth:forbidden
-                title: Browser origin refused
-                status: 403
-                detail: This context is not called by browsers; use the BFF.
-                instance: /v1/resources
-                code: AUTH_FORBIDDEN
-                reason: BROWSER_ORIGIN_FORBIDDEN
-            employeeIdentity:
-              value:
-                type: urn:closed-cras:auth:forbidden
-                title: Employee identity required
-                status: 403
-                detail: This write records an audit actor; the token has no employeeId claim.
-                instance: /v1/resources/6f1c2d3e-4a5b-4c6d-8e7f-901234567890/occurrences
-                code: AUTH_FORBIDDEN
-                reason: EMPLOYEE_IDENTITY_REQUIRED
-    NotFound:
-      description: The resource or occurrence does not exist or was soft-deleted (`enabled=false`).
-      content:
-        application/problem+json:
-          schema:
-            $ref: '#/components/schemas/Problem'
-          examples:
-            resource:
-              value:
-                type: urn:closed-cras:not-found
-                title: Resource not found
-                status: 404
-                detail: No resource exists with the supplied id.
-                instance: /v1/resources/6f1c2d3e-4a5b-4c6d-8e7f-901234567890
-                code: NOT_FOUND
-                reason: RESOURCE_NOT_FOUND
-            occurrence:
-              value:
-                type: urn:closed-cras:not-found
-                title: Occurrence not found
-                status: 404
-                detail: No occurrence exists for this resource with the supplied id.
-                instance: 
-                  /v1/resources/6f1c2d3e-4a5b-4c6d-8e7f-901234567890/occurrences/7a2d3e4f-5b6c-4d7e-9f80-1234567890ab
-                code: NOT_FOUND
-                reason: OCCURRENCE_NOT_FOUND
-    MethodNotAllowed:
-      description: The method is not defined for an existing path.
-      content:
-        application/problem+json:
-          schema:
-            $ref: '#/components/schemas/Problem'
-          examples:
-            put:
-              value:
-                type: urn:closed-cras:method-not-allowed
-                title: Method not allowed
-                status: 405
-                detail: PUT is not defined for this route.
-                instance: /v1/resources/6f1c2d3e-4a5b-4c6d-8e7f-901234567890
-                code: METHOD_NOT_ALLOWED
-    Conflict:
-      description: A resource or occurrence invariant refused the request.
-      content:
-        application/problem+json:
-          schema:
-            $ref: '#/components/schemas/Problem'
-          examples:
-            duplicateCode:
-              summary: Duplicate resource code
-              value:
-                type: urn:closed-cras:recusa:FR-22
-                title: Resource code already in use
-                status: 409
-                detail: Resource code 'PROJ-01' is already in use.
-                instance: /v1/resources
-                code: FR-22
-                reason: RESOURCE_CODE_TAKEN
-            alreadyResolved:
-              summary: Occurrence already resolved
-              value:
-                type: urn:closed-cras:recusa:FR-22
-                title: Occurrence already resolved
-                status: 409
-                detail: The occurrence is already RESOLVED and cannot change again.
-                instance: 
-                  /v1/resources/6f1c2d3e-4a5b-4c6d-8e7f-901234567890/occurrences/7a2d3e4f-5b6c-4d7e-9f80-1234567890ab
-                code: FR-22
-                reason: OCCURRENCE_ALREADY_RESOLVED
-    UnsupportedMediaType:
-      description: The request body is not application/json.
-      content:
-        application/problem+json:
-          schema:
-            $ref: '#/components/schemas/Problem'
-          examples:
-            mediaType:
-              value:
-                type: urn:closed-cras:unsupported-media-type
-                title: Unsupported media type
-                status: 415
-                detail: Content-Type must be application/json.
-                instance: /v1/resources
-                code: UNSUPPORTED_MEDIA_TYPE
-    Validation:
-      description: Shape, type, enum, format, unknown-field, or empty-patch validation failed.
-      content:
-        application/problem+json:
-          schema:
-            $ref: '#/components/schemas/Problem'
-          examples:
-            code:
-              value:
-                type: urn:closed-cras:validation
-                title: Request validation failed
-                status: 422
-                detail: The request body has invalid fields.
-                instance: /v1/resources
-                code: VALIDATION
-                errors:
-                - field: code
-                  message: must be 3-32 characters and match ^[A-Z0-9]+(-[A-Z0-9]+)*$
-            immutableCode:
-              value:
-                type: urn:closed-cras:validation
-                title: Request validation failed
-                status: 422
-                detail: code is immutable and must not be sent on PATCH.
-                instance: /v1/resources/6f1c2d3e-4a5b-4c6d-8e7f-901234567890
-                code: VALIDATION
-                errors:
-                - field: code
-                  message: code is immutable; omit it
-    DependencyUnavailable:
-      description: A required dependency is unavailable.
-      content:
-        application/problem+json:
-          schema:
-            $ref: '#/components/schemas/Problem'
-          examples:
-            identity:
-              value:
-                type: urn:closed-cras:dependency:unavailable
-                title: Identity provider unavailable
-                status: 503
-                detail: The JWKS endpoint cannot be reached.
-                instance: /v1/resources
-                code: DEPENDENCY_UNAVAILABLE
-                reason: IDENTITY_UNAVAILABLE
-            database:
-              value:
-                type: urn:closed-cras:dependency:unavailable
-                title: Database unavailable
-                status: 503
-                detail: The resources database cannot be reached.
-                instance: /v1/resources
-                code: DEPENDENCY_UNAVAILABLE
-                reason: DATABASE_UNAVAILABLE
-    InternalError:
-      description: Unexpected server failure.
-      content:
-        application/problem+json:
-          schema:
-            $ref: '#/components/schemas/Problem'
-          examples:
-            unexpected:
-              value:
-                type: urn:closed-cras:internal
-                title: Internal error
-                status: 500
-                detail: An unexpected error occurred.
-                instance: /v1/resources
-                code: INTERNAL_ERROR
+          const: resources
+        database:
+          type: string
+          enum: [up, down]
+        identity:
+          type: string
+          enum: [up, down, skipped]

@@ -1,0 +1,61 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "title": "Error",
+  "description": "Envelope de erro do sistema (mesmo formato da API oauth do T1). error_code = RM-<status HTTP> nos erros da API rooms; error_stack traz os erros anteriores, do mais antigo ao mais recente.",
+  "type": "object",
+  "required": [
+    "error_code",
+    "error_description",
+    "error_source",
+    "error_stack"
+  ],
+  "properties": {
+    "error_code": {
+      "type": "string",
+      "pattern": "^[A-Z]{2}-[0-9]{3}$",
+      "description": "Código do erro final: sigla da API de origem + status HTTP (ex.: RM-404)."
+    },
+    "error_description": {
+      "type": "string",
+      "description": "Descrição do erro, escrita pelo grupo."
+    },
+    "error_source": {
+      "type": "string",
+      "description": "API de origem do erro final (ex.: RoomsAPI)."
+    },
+    "error_stack": {
+      "type": "array",
+      "items": {
+        "type": "object",
+        "required": [
+          "error_code",
+          "error_description",
+          "error_source"
+        ],
+        "properties": {
+          "error_code": {
+            "type": "string",
+            "pattern": "^[A-Z]{2}-[0-9]{3}$"
+          },
+          "error_description": {
+            "type": "string"
+          },
+          "error_source": {
+            "type": "string"
+          }
+        },
+        "additionalProperties": false
+      },
+      "description": "Pilha dos erros até o erro final (vazia quando o erro nasceu na própria API rooms)."
+    }
+  },
+  "additionalProperties": false,
+  "examples": [
+    {
+      "error_code": "RM-404",
+      "error_description": "Sala 6f1c2b9e-8d4a-4c3e-9b1a-2f5d7e8c9a01 não encontrada.",
+      "error_source": "RoomsAPI",
+      "error_stack": []
+    }
+  ]
+}

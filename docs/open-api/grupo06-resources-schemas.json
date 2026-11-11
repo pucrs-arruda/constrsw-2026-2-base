@@ -16,7 +16,7 @@
         "CABLE",
         "ADAPTER"
       ],
-      "description": "Resource kind. Descriptive only; active is the reservation gate. ROOM is not a resource type and there is no OTHER fallback."
+      "description": "Resource kind. Descriptive only; active is the reservation gate. ROOM is not a resource type and there is no OTHER fallback.\n"
     },
     "OccurrenceType": {
       "type": "string",
@@ -25,20 +25,7 @@
         "DAMAGE",
         "MISSING",
         "OTHER"
-      ],
-      "description": "Kind of occurrence."
-    },
-    "OccurrenceStatus": {
-      "type": "string",
-      "enum": [
-        "OPEN",
-        "RESOLVED"
-      ],
-      "description": "Occurrence lifecycle state, set by the server. OPEN -> RESOLVED once.\nRESOLVED is terminal.\n",
-      "x-enum-descriptions": {
-        "OPEN": "Recorded and not resolved.",
-        "RESOLVED": "Closed with resolution, resolvedBy, and resolvedAt."
-      }
+      ]
     },
     "OccurrencePriority": {
       "type": "string",
@@ -46,288 +33,72 @@
         "LOW",
         "MEDIUM",
         "HIGH"
-      ],
-      "description": "Staff-assigned operational priority."
+      ]
     },
-    "ResourceSummary": {
-      "type": "object",
-      "additionalProperties": false,
-      "required": [
-        "id",
-        "enabled",
-        "code",
-        "name",
-        "type",
-        "active",
-        "tags",
-        "createdAt",
-        "updatedAt"
-      ],
-      "properties": {
-        "id": {
-          "type": "string",
-          "format": "uuid",
-          "readOnly": true
-        },
-        "enabled": {
-          "type": "boolean",
-          "readOnly": true,
-          "default": true,
-          "description": "Soft delete flag: true for an active record; false for a logically deleted record. Server-managed."
-        },
-        "code": {
-          "type": "string",
-          "minLength": 3,
-          "maxLength": 32,
-          "pattern": "^[A-Z0-9]+(-[A-Z0-9]+)*$",
-          "example": "PROJ-01"
-        },
-        "name": {
-          "type": "string",
-          "minLength": 1,
-          "maxLength": 120,
-          "example": "Projector 1"
-        },
-        "type": {
-          "$ref": "#/$defs/ResourceType"
-        },
-        "active": {
-          "type": "boolean",
-          "example": true
-        },
-        "tags": {
-          "type": "array",
-          "maxItems": 10,
-          "uniqueItems": true,
-          "description": "Lowercase, unique, sorted tags.",
-          "items": {
-            "type": "string",
-            "minLength": 1,
-            "maxLength": 30,
-            "pattern": "^[a-z0-9]+(-[a-z0-9]+)*$"
-          },
-          "example": [
-            "av",
-            "portable"
-          ]
-        },
-        "createdAt": {
-          "type": "string",
-          "format": "date-time",
-          "readOnly": true,
-          "example": "2026-10-26T23:34:19Z"
-        },
-        "updatedAt": {
-          "type": "string",
-          "format": "date-time",
-          "readOnly": true,
-          "example": "2026-10-26T23:34:19Z"
-        }
-      }
+    "OccurrenceStatus": {
+      "type": "string",
+      "enum": [
+        "OPEN",
+        "RESOLVED"
+      ]
     },
     "Resource": {
       "type": "object",
       "additionalProperties": false,
       "required": [
         "id",
-        "enabled",
         "code",
         "name",
         "type",
         "active",
+        "enabled",
         "tags",
         "createdAt",
-        "updatedAt",
-        "occurrences"
-      ],
-      "properties": {
-        "id": {
-          "type": "string",
-          "format": "uuid",
-          "readOnly": true
-        },
-        "enabled": {
-          "type": "boolean",
-          "readOnly": true,
-          "default": true,
-          "description": "Soft delete flag: true for an active record; false for a logically deleted record. Server-managed."
-        },
-        "code": {
-          "type": "string",
-          "minLength": 3,
-          "maxLength": 32,
-          "pattern": "^[A-Z0-9]+(-[A-Z0-9]+)*$",
-          "example": "PROJ-01"
-        },
-        "name": {
-          "type": "string",
-          "minLength": 1,
-          "maxLength": 120,
-          "example": "Projector 1"
-        },
-        "type": {
-          "$ref": "#/$defs/ResourceType"
-        },
-        "active": {
-          "type": "boolean",
-          "example": true
-        },
-        "tags": {
-          "type": "array",
-          "maxItems": 10,
-          "uniqueItems": true,
-          "description": "Lowercase, unique, sorted tags.",
-          "items": {
-            "type": "string",
-            "minLength": 1,
-            "maxLength": 30,
-            "pattern": "^[a-z0-9]+(-[a-z0-9]+)*$"
-          },
-          "example": [
-            "av",
-            "portable"
-          ]
-        },
-        "createdAt": {
-          "type": "string",
-          "format": "date-time",
-          "readOnly": true,
-          "example": "2026-10-26T23:34:19Z"
-        },
-        "updatedAt": {
-          "type": "string",
-          "format": "date-time",
-          "readOnly": true,
-          "example": "2026-10-26T23:34:19Z"
-        },
-        "occurrences": {
-          "$ref": "#/$defs/OccurrenceList"
-        }
-      }
-    },
-    "ResourceList": {
-      "type": "object",
-      "additionalProperties": false,
-      "required": [
-        "items"
-      ],
-      "properties": {
-        "items": {
-          "type": "array",
-          "items": {
-            "$ref": "#/$defs/ResourceSummary"
-          }
-        }
-      }
-    },
-    "Occurrence": {
-      "type": "object",
-      "additionalProperties": false,
-      "required": [
-        "id",
-        "enabled",
-        "resourceId",
-        "description",
-        "type",
-        "priority",
-        "status",
-        "resolution",
-        "reportedBy",
-        "resolvedBy",
-        "createdAt",
-        "resolvedAt",
         "updatedAt"
       ],
       "properties": {
         "id": {
           "type": "string",
-          "format": "uuid",
-          "readOnly": true
+          "format": "uuid"
+        },
+        "code": {
+          "type": "string",
+          "minLength": 3,
+          "maxLength": 32,
+          "pattern": "^[A-Z0-9]+(-[A-Z0-9]+)*$"
+        },
+        "name": {
+          "type": "string",
+          "minLength": 1,
+          "maxLength": 120
+        },
+        "type": {
+          "$ref": "#/$defs/ResourceType"
+        },
+        "active": {
+          "type": "boolean"
         },
         "enabled": {
           "type": "boolean",
-          "readOnly": true,
-          "default": true,
-          "description": "Soft delete flag: true for an active record; false for a logically deleted record. Server-managed."
+          "description": "Logical-deletion flag; false means the row is hidden from the API."
         },
-        "resourceId": {
-          "type": "string",
-          "format": "uuid",
-          "readOnly": true
-        },
-        "description": {
-          "type": "string",
-          "minLength": 1,
-          "example": "Lamp does not turn on"
-        },
-        "type": {
-          "$ref": "#/$defs/OccurrenceType"
-        },
-        "priority": {
-          "$ref": "#/$defs/OccurrencePriority"
-        },
-        "status": {
-          "$ref": "#/$defs/OccurrenceStatus"
-        },
-        "resolution": {
-          "type": [
-            "string",
-            "null"
-          ],
-          "description": "Required and non-blank when RESOLVED; null otherwise.",
-          "example": "Lamp replaced"
-        },
-        "reportedBy": {
-          "type": "string",
-          "format": "uuid",
-          "readOnly": true,
-          "description": "Employee id of the reporter, from the JWT employeeId claim."
-        },
-        "resolvedBy": {
-          "type": [
-            "string",
-            "null"
-          ],
-          "format": "uuid",
-          "readOnly": true,
-          "description": "Employee id that resolved the occurrence, from the JWT employeeId claim."
+        "tags": {
+          "type": "array",
+          "maxItems": 10,
+          "items": {
+            "type": "string",
+            "minLength": 1,
+            "maxLength": 30,
+            "pattern": "^[a-z0-9]+(-[a-z0-9]+)*$"
+          }
         },
         "createdAt": {
           "type": "string",
-          "format": "date-time",
-          "readOnly": true,
-          "example": "2026-10-26T23:40:00Z"
-        },
-        "resolvedAt": {
-          "type": [
-            "string",
-            "null"
-          ],
-          "format": "date-time",
-          "description": "Server-set when RESOLVED; null otherwise.",
-          "example": "2026-10-27T00:05:00Z"
+          "format": "date-time"
         },
         "updatedAt": {
           "type": "string",
-          "format": "date-time",
-          "readOnly": true,
-          "example": "2026-10-27T00:05:00Z"
-        }
-      }
-    },
-    "OccurrenceList": {
-      "type": "object",
-      "additionalProperties": false,
-      "required": [
-        "items"
-      ],
-      "properties": {
-        "items": {
-          "type": "array",
-          "description": "Ordered by createdAt descending, then id descending.",
-          "items": {
-            "$ref": "#/$defs/Occurrence"
-          }
+          "format": "date-time"
         }
       }
     },
@@ -345,15 +116,12 @@
           "minLength": 3,
           "maxLength": 32,
           "pattern": "^[A-Za-z0-9]+(-[A-Za-z0-9]+)*$",
-          "description": "Trimmed and uppercased before validation; final form must match ^[A-Z0-9]+(-[A-Z0-9]+)*$.",
-          "example": "PROJ-01"
+          "description": "Trimmed and uppercased before storage."
         },
         "name": {
           "type": "string",
           "minLength": 1,
-          "maxLength": 120,
-          "description": "Trimmed; must be non-blank after trimming.",
-          "example": "Projector 1"
+          "maxLength": 120
         },
         "type": {
           "$ref": "#/$defs/ResourceType"
@@ -365,34 +133,61 @@
         "tags": {
           "type": "array",
           "maxItems": 10,
-          "uniqueItems": true,
-          "default": [],
-          "description": "Trimmed, lowercased, deduplicated, and sorted before storage.",
           "items": {
             "type": "string",
-            "minLength": 1,
-            "maxLength": 30,
-            "pattern": "^[A-Za-z0-9]+(-[A-Za-z0-9]+)*$"
-          },
-          "example": [
-            "AV",
-            "portable"
-          ]
+            "maxLength": 30
+          }
         }
       }
     },
-    "ResourceUpdate": {
+    "ResourcePut": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": [
+        "code",
+        "name",
+        "type"
+      ],
+      "properties": {
+        "code": {
+          "type": "string",
+          "minLength": 3,
+          "maxLength": 32,
+          "pattern": "^[A-Za-z0-9]+(-[A-Za-z0-9]+)*$",
+          "description": "Must equal the stored code; code is immutable."
+        },
+        "name": {
+          "type": "string",
+          "minLength": 1,
+          "maxLength": 120
+        },
+        "type": {
+          "$ref": "#/$defs/ResourceType"
+        },
+        "active": {
+          "type": "boolean",
+          "default": true
+        },
+        "tags": {
+          "type": "array",
+          "maxItems": 10,
+          "default": [],
+          "items": {
+            "type": "string",
+            "maxLength": 30
+          }
+        }
+      }
+    },
+    "ResourcePatch": {
       "type": "object",
       "additionalProperties": false,
       "minProperties": 1,
-      "description": "At least one of name, type, active, or tags. code is not accepted.",
       "properties": {
         "name": {
           "type": "string",
           "minLength": 1,
-          "maxLength": 120,
-          "description": "Trimmed; must be non-blank after trimming.",
-          "example": "Projector 1"
+          "maxLength": 120
         },
         "type": {
           "$ref": "#/$defs/ResourceType"
@@ -403,18 +198,87 @@
         "tags": {
           "type": "array",
           "maxItems": 10,
-          "uniqueItems": true,
-          "description": "Replaces the whole tag array; normalized as on create.",
           "items": {
             "type": "string",
-            "minLength": 1,
-            "maxLength": 30,
-            "pattern": "^[A-Za-z0-9]+(-[A-Za-z0-9]+)*$"
-          },
-          "example": [
-            "av",
-            "portable"
+            "maxLength": 30
+          }
+        }
+      }
+    },
+    "Occurrence": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": [
+        "id",
+        "resourceId",
+        "description",
+        "type",
+        "priority",
+        "status",
+        "enabled",
+        "resolution",
+        "reportedBy",
+        "resolvedBy",
+        "createdAt",
+        "resolvedAt",
+        "updatedAt"
+      ],
+      "properties": {
+        "id": {
+          "type": "string",
+          "format": "uuid"
+        },
+        "resourceId": {
+          "type": "string",
+          "format": "uuid"
+        },
+        "description": {
+          "type": "string"
+        },
+        "type": {
+          "$ref": "#/$defs/OccurrenceType"
+        },
+        "priority": {
+          "$ref": "#/$defs/OccurrencePriority"
+        },
+        "status": {
+          "$ref": "#/$defs/OccurrenceStatus"
+        },
+        "enabled": {
+          "type": "boolean",
+          "description": "Logical-deletion flag; false means the row is hidden from the API."
+        },
+        "resolution": {
+          "type": [
+            "string",
+            "null"
           ]
+        },
+        "reportedBy": {
+          "type": "string",
+          "format": "uuid"
+        },
+        "resolvedBy": {
+          "type": [
+            "string",
+            "null"
+          ],
+          "format": "uuid"
+        },
+        "createdAt": {
+          "type": "string",
+          "format": "date-time"
+        },
+        "resolvedAt": {
+          "type": [
+            "string",
+            "null"
+          ],
+          "format": "date-time"
+        },
+        "updatedAt": {
+          "type": "string",
+          "format": "date-time"
         }
       }
     },
@@ -428,9 +292,7 @@
       "properties": {
         "description": {
           "type": "string",
-          "minLength": 1,
-          "description": "Trimmed; must be non-blank after trimming.",
-          "example": "Lamp does not turn on"
+          "minLength": 1
         },
         "type": {
           "$ref": "#/$defs/OccurrenceType"
@@ -441,74 +303,184 @@
         }
       }
     },
-    "OccurrenceResolve": {
+    "OccurrencePut": {
       "type": "object",
       "additionalProperties": false,
       "required": [
-        "resolution"
+        "description",
+        "type"
       ],
-      "description": "Moves OPEN -> RESOLVED. Illegal on RESOLVED (409). status, resolvedBy,\nand resolvedAt are server-set.\n",
       "properties": {
+        "description": {
+          "type": "string",
+          "minLength": 1
+        },
+        "type": {
+          "$ref": "#/$defs/OccurrenceType"
+        },
+        "priority": {
+          "$ref": "#/$defs/OccurrencePriority",
+          "default": "MEDIUM"
+        },
         "resolution": {
           "type": "string",
           "minLength": 1,
-          "pattern": ".*\\S.*",
-          "description": "Trimmed; must be non-blank after trimming.",
-          "example": "Lamp replaced"
+          "description": "Supplying resolution resolves the occurrence."
         }
       }
     },
-    "Identity": {
+    "OccurrencePatch": {
+      "type": "object",
+      "additionalProperties": false,
+      "minProperties": 1,
+      "properties": {
+        "description": {
+          "type": "string",
+          "minLength": 1
+        },
+        "type": {
+          "$ref": "#/$defs/OccurrenceType"
+        },
+        "priority": {
+          "$ref": "#/$defs/OccurrencePriority"
+        },
+        "resolution": {
+          "type": "string",
+          "minLength": 1,
+          "description": "Supplying resolution resolves the occurrence."
+        }
+      }
+    },
+    "ResourceList": {
+      "type": "array",
+      "items": {
+        "$ref": "#/$defs/Resource"
+      }
+    },
+    "OccurrenceList": {
+      "type": "array",
+      "items": {
+        "$ref": "#/$defs/Occurrence"
+      }
+    },
+    "ResourceAggregate": {
       "type": "object",
       "additionalProperties": false,
       "required": [
-        "sub",
-        "email",
-        "roles",
-        "employeeId",
-        "professorId",
-        "studentId"
+        "id",
+        "code",
+        "name",
+        "type",
+        "active",
+        "enabled",
+        "tags",
+        "createdAt",
+        "updatedAt",
+        "occurrences"
       ],
       "properties": {
-        "sub": {
-          "type": "string"
-        },
-        "email": {
+        "id": {
           "type": "string",
-          "format": "email"
+          "format": "uuid"
         },
-        "roles": {
+        "code": {
+          "type": "string",
+          "minLength": 3,
+          "maxLength": 32,
+          "pattern": "^[A-Z0-9]+(-[A-Z0-9]+)*$"
+        },
+        "name": {
+          "type": "string",
+          "minLength": 1,
+          "maxLength": 120
+        },
+        "type": {
+          "$ref": "#/$defs/ResourceType"
+        },
+        "active": {
+          "type": "boolean"
+        },
+        "enabled": {
+          "type": "boolean",
+          "description": "Logical-deletion flag; false means the row is hidden from the API."
+        },
+        "tags": {
           "type": "array",
+          "maxItems": 10,
           "items": {
             "type": "string",
-            "enum": [
-              "employee",
-              "coordinator",
-              "professor",
-              "student"
-            ]
+            "minLength": 1,
+            "maxLength": 30,
+            "pattern": "^[a-z0-9]+(-[a-z0-9]+)*$"
           }
         },
-        "employeeId": {
-          "type": [
-            "string",
-            "null"
-          ],
-          "description": "Null when the caller has no Employee identity."
+        "createdAt": {
+          "type": "string",
+          "format": "date-time"
         },
-        "professorId": {
-          "type": [
-            "string",
-            "null"
-          ],
-          "description": "Null when the caller has no Professor identity."
+        "updatedAt": {
+          "type": "string",
+          "format": "date-time"
         },
-        "studentId": {
-          "type": [
-            "string",
-            "null"
-          ],
-          "description": "Null when the caller has no Student identity."
+        "occurrences": {
+          "$ref": "#/$defs/OccurrenceList"
+        }
+      }
+    },
+    "FieldError": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": [
+        "field",
+        "message"
+      ],
+      "properties": {
+        "field": {
+          "type": "string"
+        },
+        "message": {
+          "type": "string"
+        }
+      }
+    },
+    "Problem": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": [
+        "type",
+        "title",
+        "status",
+        "detail",
+        "code",
+        "instance"
+      ],
+      "properties": {
+        "type": {
+          "type": "string"
+        },
+        "title": {
+          "type": "string"
+        },
+        "status": {
+          "type": "integer"
+        },
+        "detail": {
+          "type": "string"
+        },
+        "code": {
+          "type": "string"
+        },
+        "instance": {
+          "type": "string"
+        },
+        "reason": {
+          "type": "string"
+        },
+        "errors": {
+          "type": "array",
+          "items": {
+            "$ref": "#/$defs/FieldError"
+          }
         }
       }
     },
@@ -517,7 +489,8 @@
       "additionalProperties": false,
       "required": [
         "status",
-        "service"
+        "service",
+        "database"
       ],
       "properties": {
         "status": {
@@ -540,74 +513,59 @@
         }
       }
     },
-    "FieldError": {
+    "Live": {
       "type": "object",
       "additionalProperties": false,
       "required": [
-        "field",
-        "message"
+        "status",
+        "service"
       ],
       "properties": {
-        "field": {
+        "status": {
           "type": "string",
-          "example": "code"
+          "const": "ok"
         },
-        "message": {
+        "service": {
           "type": "string",
-          "example": "must be 3-32 characters and match ^[A-Z0-9]+(-[A-Z0-9]+)*$"
+          "const": "resources"
         }
       }
     },
-    "Problem": {
+    "Readiness": {
       "type": "object",
       "additionalProperties": false,
       "required": [
-        "type",
-        "title",
         "status",
-        "detail",
-        "code"
+        "service",
+        "database",
+        "identity"
       ],
       "properties": {
-        "type": {
-          "type": "string",
-          "format": "uri",
-          "example": "urn:closed-cras:recusa:FR-22"
-        },
-        "title": {
-          "type": "string",
-          "example": "Resource code already in use"
-        },
         "status": {
-          "type": "integer",
-          "minimum": 400,
-          "maximum": 599,
-          "example": 409
-        },
-        "detail": {
           "type": "string",
-          "example": "Resource code 'PROJ-01' is already in use."
+          "enum": [
+            "ok",
+            "degraded"
+          ]
         },
-        "instance": {
+        "service": {
           "type": "string",
-          "format": "uri-reference",
-          "example": "/v1/resources"
+          "const": "resources"
         },
-        "code": {
+        "database": {
           "type": "string",
-          "description": "FR id for invariant refusals; otherwise a stable error code.",
-          "example": "FR-22"
+          "enum": [
+            "up",
+            "down"
+          ]
         },
-        "reason": {
+        "identity": {
           "type": "string",
-          "description": "Machine-readable discriminator within the code.",
-          "example": "RESOURCE_CODE_TAKEN"
-        },
-        "errors": {
-          "type": "array",
-          "items": {
-            "$ref": "#/$defs/FieldError"
-          }
+          "enum": [
+            "up",
+            "down",
+            "skipped"
+          ]
         }
       }
     }

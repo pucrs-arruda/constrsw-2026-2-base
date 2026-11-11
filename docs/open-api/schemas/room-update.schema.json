@@ -1,0 +1,73 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "title": "RoomUpdate",
+  "description": "Corpo do PUT /api/v1/rooms/{id} (atualização total): todos os campos são obrigatórios; capacity aceita null.",
+  "type": "object",
+  "properties": {
+    "code": {
+      "type": "string",
+      "minLength": 1,
+      "maxLength": 20,
+      "pattern": "\\S",
+      "description": "Código institucional da sala, único entre as salas (ex.: 32/405)."
+    },
+    "name": {
+      "type": "string",
+      "minLength": 1,
+      "maxLength": 100,
+      "pattern": "\\S",
+      "description": "Nome descritivo da sala."
+    },
+    "building": {
+      "type": "string",
+      "minLength": 1,
+      "maxLength": 50,
+      "pattern": "\\S",
+      "description": "Prédio em que a sala fica, em texto (ex.: 32)."
+    },
+    "capacity": {
+      "type": [
+        "integer",
+        "null"
+      ],
+      "minimum": 1,
+      "description": "Número máximo de pessoas acomodadas na sala. Opcional; quando informada, deve ser maior que zero."
+    },
+    "active": {
+      "type": "boolean",
+      "default": true,
+      "description": "Indica se a sala está disponível para uso."
+    },
+    "resourceIds": {
+      "type": "array",
+      "uniqueItems": true,
+      "default": [],
+      "items": {
+        "type": "string",
+        "format": "uuid"
+      },
+      "description": "Ids dos recursos (equipamentos) da API resources (Grupo 06) instalados na sala. Referência a outra API: a API rooms guarda apenas os ids. Um recurso fica instalado em no máximo uma sala."
+    }
+  },
+  "required": [
+    "code",
+    "name",
+    "building",
+    "capacity",
+    "active",
+    "resourceIds"
+  ],
+  "additionalProperties": false,
+  "examples": [
+    {
+      "code": "32/405",
+      "name": "Laboratório de Engenharia de Software",
+      "building": "32",
+      "capacity": 40,
+      "active": true,
+      "resourceIds": [
+        "0b7e4c3a-5d2f-4e8a-9c1b-7a6d5e4f3c21"
+      ]
+    }
+  ]
+}

@@ -40,6 +40,14 @@
         "P"
       ]
     },
+    "Status": {
+      "description": "Situação da reserva. CANCELLED só é atingido por PATCH {\"status\": \"CANCELLED\"} (RN-07).",
+      "type": "string",
+      "enum": [
+        "ACTIVE",
+        "CANCELLED"
+      ]
+    },
     "Purpose": {
       "description": "Finalidade em texto livre (opcional, Q4).",
       "type": "string",
@@ -59,11 +67,11 @@
       }
     },
     "DetailStatus": {
-      "description": "Situação da ocorrência. Nasce OPEN.",
+      "description": "Situação da ocorrência. Nasce ABERTA.",
       "type": "string",
       "enum": [
-        "OPEN",
-        "RESOLVED"
+        "ABERTA",
+        "RESOLVIDA"
       ]
     },
     "Description": {
@@ -86,24 +94,19 @@
       "type": "object",
       "required": [
         "id",
-        "enabled",
         "professorId",
         "lessonId",
-        "date",
-        "timeSlotId",
+        "data",
+        "faixaId",
         "resourceIds",
+        "status",
+        "enabled",
         "createdAt",
         "updatedAt"
       ],
       "properties": {
         "id": {
           "$ref": "#/$defs/Uuid"
-        },
-        "enabled": {
-          "type": "boolean",
-          "readOnly": true,
-          "default": true,
-          "description": "Exclusão lógica: true para registro ativo; false para registro excluído logicamente. Controlado pelo servidor."
         },
         "professorId": {
           "$ref": "#/$defs/Uuid",
@@ -113,10 +116,10 @@
           "$ref": "#/$defs/Uuid",
           "description": "Lesson atendida pela reserva (obrigatória; a Lesson já tem a sala)."
         },
-        "date": {
+        "data": {
           "$ref": "#/$defs/Date"
         },
-        "timeSlotId": {
+        "faixaId": {
           "$ref": "#/$defs/TimeSlotId"
         },
         "purpose": {
@@ -124,6 +127,14 @@
         },
         "resourceIds": {
           "$ref": "#/$defs/ResourceIds"
+        },
+        "status": {
+          "$ref": "#/$defs/Status"
+        },
+        "enabled": {
+          "type": "boolean",
+          "readOnly": true,
+          "description": "Exclusão lógica. DELETE grava false e a reserva deixa de ser devolvida."
         },
         "createdAt": {
           "type": "string",
@@ -138,12 +149,13 @@
       "examples": [
         {
           "id": "3f2b8c1e-6a4d-4f7b-9c2e-1a5d7e9b0c41",
-          "enabled": true,
           "professorId": "b2d1c002-0000-4000-b000-000000000003",
           "lessonId": "30000000-0000-4000-8000-000000000001",
-          "date": "2026-11-03",
-          "timeSlotId": "C",
+          "data": "2026-11-03",
+          "faixaId": "C",
           "purpose": "Aula prática de redes",
+          "status": "ACTIVE",
+          "enabled": true,
           "resourceIds": [
             "50000000-0000-4000-8000-000000000001",
             "50000000-0000-4000-8000-000000000002"
@@ -155,22 +167,22 @@
     },
     "ReservationCreate": {
       "title": "ReservationCreate",
-      "description": "Corpo do POST. professorId, enabled, id e datas são do servidor (enviar → 422).",
+      "description": "Corpo do POST. professorId, status, id e datas de auditoria são do servidor (enviar → 422).",
       "type": "object",
       "required": [
         "lessonId",
-        "date",
-        "timeSlotId",
+        "data",
+        "faixaId",
         "resourceIds"
       ],
       "properties": {
         "lessonId": {
           "$ref": "#/$defs/Uuid"
         },
-        "date": {
+        "data": {
           "$ref": "#/$defs/Date"
         },
-        "timeSlotId": {
+        "faixaId": {
           "$ref": "#/$defs/TimeSlotId"
         },
         "purpose": {
@@ -184,8 +196,8 @@
       "examples": [
         {
           "lessonId": "30000000-0000-4000-8000-000000000001",
-          "date": "2026-11-03",
-          "timeSlotId": "C",
+          "data": "2026-11-03",
+          "faixaId": "C",
           "purpose": "Aula prática de redes",
           "resourceIds": [
             "50000000-0000-4000-8000-000000000001",
@@ -200,18 +212,18 @@
       "type": "object",
       "required": [
         "lessonId",
-        "date",
-        "timeSlotId",
+        "data",
+        "faixaId",
         "resourceIds"
       ],
       "properties": {
         "lessonId": {
           "$ref": "#/$defs/Uuid"
         },
-        "date": {
+        "data": {
           "$ref": "#/$defs/Date"
         },
-        "timeSlotId": {
+        "faixaId": {
           "$ref": "#/$defs/TimeSlotId"
         },
         "purpose": {
@@ -225,8 +237,8 @@
       "examples": [
         {
           "lessonId": "30000000-0000-4000-8000-000000000001",
-          "date": "2026-11-03",
-          "timeSlotId": "C",
+          "data": "2026-11-03",
+          "faixaId": "C",
           "resourceIds": [
             "50000000-0000-4000-8000-000000000002"
           ]
@@ -242,10 +254,10 @@
         "lessonId": {
           "$ref": "#/$defs/Uuid"
         },
-        "date": {
+        "data": {
           "$ref": "#/$defs/Date"
         },
-        "timeSlotId": {
+        "faixaId": {
           "$ref": "#/$defs/TimeSlotId"
         },
         "purpose": {
@@ -275,19 +287,10 @@
       ]
     },
     "ReservationList": {
-      "type": "object",
-      "required": [
-        "items"
-      ],
-      "properties": {
-        "items": {
-          "type": "array",
-          "items": {
-            "$ref": "#/$defs/Reservation"
-          }
-        }
-      },
-      "additionalProperties": false
+      "type": "array",
+      "items": {
+        "$ref": "#/$defs/Reservation"
+      }
     },
     "Detail": {
       "title": "Detail",
@@ -295,21 +298,15 @@
       "type": "object",
       "required": [
         "id",
-        "enabled",
         "reservationId",
         "description",
         "status",
+        "enabled",
         "createdAt"
       ],
       "properties": {
         "id": {
           "$ref": "#/$defs/Uuid"
-        },
-        "enabled": {
-          "type": "boolean",
-          "readOnly": true,
-          "default": true,
-          "description": "Exclusão lógica: true para registro ativo; false para registro excluído logicamente. Controlado pelo servidor."
         },
         "reservationId": {
           "$ref": "#/$defs/Uuid"
@@ -319,6 +316,11 @@
         },
         "status": {
           "$ref": "#/$defs/DetailStatus"
+        },
+        "enabled": {
+          "type": "boolean",
+          "readOnly": true,
+          "description": "Exclusão lógica. DELETE grava false e a ocorrência deixa de ser devolvida."
         },
         "resourceId": {
           "$ref": "#/$defs/Uuid",
@@ -333,10 +335,10 @@
       "examples": [
         {
           "id": "8d0e6b52-2f1c-4c3a-9b7e-5a4f3d2c1b10",
-          "enabled": true,
           "reservationId": "3f2b8c1e-6a4d-4f7b-9c2e-1a5d7e9b0c41",
           "description": "Projetor não liga",
-          "status": "OPEN",
+          "status": "ABERTA",
+          "enabled": true,
           "resourceId": "50000000-0000-4000-8000-000000000001",
           "createdAt": "2026-11-03T10:20:00Z"
         }
@@ -344,7 +346,7 @@
     },
     "DetailCreate": {
       "title": "DetailCreate",
-      "description": "Corpo do POST de ocorrência. status opcional (default OPEN).",
+      "description": "Corpo do POST de ocorrência. status opcional (default ABERTA).",
       "type": "object",
       "required": [
         "description"
@@ -391,7 +393,7 @@
       "examples": [
         {
           "description": "Projetor não liga (cabo HDMI trocado)",
-          "status": "RESOLVED",
+          "status": "RESOLVIDA",
           "resourceId": "50000000-0000-4000-8000-000000000001"
         }
       ]
@@ -422,7 +424,7 @@
       "additionalProperties": false,
       "examples": [
         {
-          "status": "RESOLVED"
+          "status": "RESOLVIDA"
         },
         {
           "resourceId": null
@@ -430,19 +432,10 @@
       ]
     },
     "DetailList": {
-      "type": "object",
-      "required": [
-        "items"
-      ],
-      "properties": {
-        "items": {
-          "type": "array",
-          "items": {
-            "$ref": "#/$defs/Detail"
-          }
-        }
-      },
-      "additionalProperties": false
+      "type": "array",
+      "items": {
+        "$ref": "#/$defs/Detail"
+      }
     },
     "OccupancyItem": {
       "title": "OccupancyItem",
@@ -470,19 +463,10 @@
       "additionalProperties": false
     },
     "OccupancyList": {
-      "type": "object",
-      "required": [
-        "items"
-      ],
-      "properties": {
-        "items": {
-          "type": "array",
-          "items": {
-            "$ref": "#/$defs/OccupancyItem"
-          }
-        }
-      },
-      "additionalProperties": false
+      "type": "array",
+      "items": {
+        "$ref": "#/$defs/OccupancyItem"
+      }
     },
     "Problem": {
       "title": "Problem",
@@ -545,7 +529,7 @@
       "required": [
         "sub",
         "email",
-        "roles",
+        "papeis",
         "employeeId",
         "professorId",
         "studentId"
@@ -558,11 +542,12 @@
           "type": "string",
           "format": "email"
         },
-        "roles": {
+        "papeis": {
           "type": "array",
           "items": {
             "type": "string"
-          }
+          },
+          "description": "Papéis de realm_access.roles."
         },
         "employeeId": {
           "type": [
@@ -584,6 +569,24 @@
         }
       },
       "additionalProperties": false
+    },
+    "Health": {
+      "title": "Health",
+      "description": "GET /api/v1/health. 200 com UP quando o banco responde; 503 com DOWN quando não.",
+      "type": "object",
+      "additionalProperties": false,
+      "required": [
+        "status"
+      ],
+      "properties": {
+        "status": {
+          "type": "string",
+          "enum": [
+            "UP",
+            "DOWN"
+          ]
+        }
+      }
     }
   }
 }

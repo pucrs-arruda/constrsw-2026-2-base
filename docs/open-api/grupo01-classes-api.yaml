@@ -7,7 +7,7 @@ info:
     Contrato OpenAPI 3.1 do contexto `classes` (ConstrSW 2026/2).
 
     - IDs de contrato = UUID string
-    - JSON camelCase; listas em `items`
+    - JSON camelCase; listagens são arrays JSON, sem envelope `items`
     - Recusas `application/problem+json` com `code` estável (FR)
     - `autorId` nunca no contrato público de leitura
     - `averageRating` calculado (não persistido)
@@ -41,7 +41,7 @@ security:
   - bearerAuth: []
 
 paths:
-  /v1/classes:
+  /api/v1/classes:
     post:
       tags: [classes]
       operationId: createClass
@@ -99,7 +99,37 @@ paths:
         "403":
           $ref: "#/components/responses/Forbidden"
 
-  /v1/classes/{classId}:
+  /api/v1/classes/import:
+    post:
+      tags: [classes]
+      operationId: importClasses
+      summary: Importar Classes
+      description: |
+        Coordenador envia um array de turmas. `id` é opcional (o servidor gera se faltar).
+        `status` default `active` e `studentIds` default `[]`.
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: "#/components/schemas/ClassImport"
+      responses:
+        "200":
+          description: Turmas importadas
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/ClassList"
+        "400":
+          $ref: "#/components/responses/BadRequest"
+        "401":
+          $ref: "#/components/responses/Unauthorized"
+        "403":
+          $ref: "#/components/responses/Forbidden"
+        "422":
+          $ref: "#/components/responses/UnprocessableEntity"
+
+  /api/v1/classes/{classId}:
     parameters:
       - $ref: "#/components/parameters/classId"
     get:
@@ -192,7 +222,10 @@ paths:
         "404":
           $ref: "#/components/responses/NotFound"
 
-  /v1/classes/{classId}/reviews:
+  /api/v1/classes/{classId}/reviews:
+    description: |
+      O mesmo controlador também atende `/api/v1/classes/{classId}/avaliacoes`
+      e `/api/v1/classes/{classId}/avaliacoes/{reviewId}`.
     parameters:
       - $ref: "#/components/parameters/classId"
     post:
@@ -235,9 +268,17 @@ paths:
       tags: [reviews]
       operationId: listReviews
       summary: Listar Avaliações da Class
-      description: FR-7 / FR-8. Sem autorId. Inclui averageRating.
+      description: |
+        FR-7 / FR-8. Sem autorId. A resposta é um array.
+        A média fica em `Class.averageRating`, não neste corpo.
+        O filtro de nota também aceita o parâmetro `notaOrdinal`.
       parameters:
         - name: ordinalRating
+          in: query
+          required: false
+          schema:
+            $ref: "#/components/schemas/FilterOperatorValue"
+        - name: notaOrdinal
           in: query
           required: false
           schema:
@@ -249,7 +290,7 @@ paths:
             $ref: "#/components/schemas/FilterOperatorValue"
       responses:
         "200":
-          description: Lista + média
+          description: Array de avaliações
           content:
             application/json:
               schema:
@@ -261,7 +302,7 @@ paths:
         "404":
           $ref: "#/components/responses/NotFound"
 
-  /v1/classes/{classId}/reviews/{reviewId}:
+  /api/v1/classes/{classId}/reviews/{reviewId}:
     parameters:
       - $ref: "#/components/parameters/classId"
       - $ref: "#/components/parameters/reviewId"
@@ -508,7 +549,8 @@ components:
           type: string
         instance:
           type: string
-          format: uri
+          format: uri-reference
+          description: Caminho da requisição (requestURI).
         code:
           type: string
           description: Código estável do FR (ex. FR-6).
@@ -516,7 +558,8 @@ components:
     ClassCreate:
       type: object
       additionalProperties: false
-      required: [courseId, startDate, endDate, seats, roomId, professorIds, studentIds]
+      required: [courseId, startDate, endDate, seats, roomId, professorIds]
+      description: status default `active` e studentIds default [] se omitidos. professorIds não pode ser vazio. startDate ≤ endDate.
       properties:
         courseId:
           $ref: "#/components/schemas/Uuid"
@@ -530,9 +573,12 @@ components:
         roomId:
           $ref: "#/components/schemas/Uuid"
         professorIds:
-          $ref: "#/components/schemas/UuidArray"
+          allOf:
+            - $ref: "#/components/schemas/UuidArray"
+          minItems: 1
         studentIds:
           $ref: "#/components/schemas/UuidArray"
+          description: Opcional. Omitido equivale a lista vazia.
         code:
           type: string
           maxLength: 64
@@ -548,7 +594,8 @@ components:
     ClassUpdate:
       type: object
       additionalProperties: false
-      required: [courseId, startDate, endDate, seats, roomId, professorIds, studentIds, status]
+      required: [courseId, startDate, endDate, seats, roomId, professorIds, status]
+      description: Substituição total (PUT). studentIds omitido vira []. courseId, startDate e endDate são imutáveis após a criação — alteração → 422.
       properties:
         courseId:
           $ref: "#/components/schemas/Uuid"
@@ -562,9 +609,12 @@ components:
         roomId:
           $ref: "#/components/schemas/Uuid"
         professorIds:
-          $ref: "#/components/schemas/UuidArray"
+          allOf:
+            - $ref: "#/components/schemas/UuidArray"
+          minItems: 1
         studentIds:
           $ref: "#/components/schemas/UuidArray"
+          description: Opcional no PUT. Omitido equivale a lista vazia.
         code:
           type: [string, "null"]
           maxLength: 64
@@ -588,7 +638,9 @@ components:
         roomId:
           $ref: "#/components/schemas/Uuid"
         professorIds:
-          $ref: "#/components/schemas/UuidArray"
+          allOf:
+            - $ref: "#/components/schemas/UuidArray"
+          minItems: 1
         studentIds:
           $ref: "#/components/schemas/UuidArray"
         code:
@@ -629,7 +681,9 @@ components:
         roomId:
           $ref: "#/components/schemas/Uuid"
         professorIds:
-          $ref: "#/components/schemas/UuidArray"
+          allOf:
+            - $ref: "#/components/schemas/UuidArray"
+          minItems: 1
         studentIds:
           $ref: "#/components/schemas/UuidArray"
         code:
@@ -647,47 +701,112 @@ components:
           $ref: "#/components/schemas/AverageRating"
 
     ClassList:
+      type: array
+      items:
+        $ref: "#/components/schemas/Class"
+      description: GET /api/v1/classes e POST /api/v1/classes/import devolvem um array JSON.
+
+    ClassImportItem:
       type: object
       additionalProperties: false
-      required: [items]
+      required: [courseId, startDate, endDate, seats, roomId, professorIds]
       properties:
-        items:
-          type: array
-          items:
-            $ref: "#/components/schemas/Class"
+        id:
+          $ref: "#/components/schemas/Uuid"
+        courseId:
+          $ref: "#/components/schemas/Uuid"
+        startDate:
+          $ref: "#/components/schemas/IsoDate"
+        endDate:
+          $ref: "#/components/schemas/IsoDate"
+        seats:
+          type: integer
+          minimum: 1
+        roomId:
+          $ref: "#/components/schemas/Uuid"
+        professorIds:
+          allOf:
+            - $ref: "#/components/schemas/UuidArray"
+          minItems: 1
+        studentIds:
+          $ref: "#/components/schemas/UuidArray"
+        code:
+          type: [string, "null"]
+          maxLength: 64
+        label:
+          type: [string, "null"]
+          maxLength: 255
+        status:
+          $ref: "#/components/schemas/ClassStatus"
+        modality:
+          type: [string, "null"]
+          maxLength: 64
+
+    ClassImport:
+      type: array
+      items:
+        $ref: "#/components/schemas/ClassImportItem"
+
+    OrdinalRatingInput:
+      type: string
+      enum: [very_bad, bad, fair, good, very_good, muito_ruim, ruim, regular, bom, muito_bom]
+      description: Valor aceito na escrita. Aliases em português são normalizados antes de persistir.
 
     ReviewCreate:
       type: object
       additionalProperties: false
-      required: [ordinalRating]
+      anyOf:
+        - required: [ordinalRating]
+        - required: [notaOrdinal]
       properties:
         ordinalRating:
-          $ref: "#/components/schemas/OrdinalRating"
+          $ref: "#/components/schemas/OrdinalRatingInput"
+        notaOrdinal:
+          $ref: "#/components/schemas/OrdinalRatingInput"
+          description: Alias de ordinalRating. Se ambos vierem, ordinalRating prevalece.
         text:
-          type: string
+          type: [string, "null"]
           maxLength: 2000
+        texto:
+          type: [string, "null"]
+          maxLength: 2000
+          description: Alias de text. Se ambos vierem, text prevalece.
 
     ReviewUpdate:
       type: object
       additionalProperties: false
-      required: [ordinalRating]
+      anyOf:
+        - required: [ordinalRating]
+        - required: [notaOrdinal]
       properties:
         ordinalRating:
-          $ref: "#/components/schemas/OrdinalRating"
+          $ref: "#/components/schemas/OrdinalRatingInput"
+        notaOrdinal:
+          $ref: "#/components/schemas/OrdinalRatingInput"
         text:
           type: [string, "null"]
           maxLength: 2000
+        texto:
+          type: [string, "null"]
+          maxLength: 2000
+          description: Alias de text. Se ambos vierem, text prevalece.
 
     ReviewPatch:
       type: object
-      additionalProperties: false
+      additionalProperties: true
       minProperties: 1
       properties:
         ordinalRating:
-          $ref: "#/components/schemas/OrdinalRating"
+          $ref: "#/components/schemas/OrdinalRatingInput"
+        notaOrdinal:
+          $ref: "#/components/schemas/OrdinalRatingInput"
         text:
           type: [string, "null"]
           maxLength: 2000
+        texto:
+          type: [string, "null"]
+          maxLength: 2000
+          description: Null explícito em text ou texto apaga o texto.
 
     Review:
       type: object
@@ -714,16 +833,10 @@ components:
       description: Sem autorId no contrato público.
 
     ReviewList:
-      type: object
-      additionalProperties: false
-      required: [items, averageRating]
-      properties:
-        items:
-          type: array
-          items:
-            $ref: "#/components/schemas/Review"
-        averageRating:
-          $ref: "#/components/schemas/AverageRating"
+      type: array
+      items:
+        $ref: "#/components/schemas/Review"
+      description: GET de avaliações devolve um array. A média fica em Class.averageRating.
 
   responses:
     BadRequest:

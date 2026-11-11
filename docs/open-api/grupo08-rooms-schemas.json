@@ -14,12 +14,6 @@
           "readOnly": true,
           "description": "Identificador da sala (UUID v4), gerado pela API."
         },
-        "enabled": {
-          "type": "boolean",
-          "readOnly": true,
-          "default": true,
-          "description": "Exclusão lógica: true para registro ativo; false para registro excluído logicamente. Controlado pelo servidor."
-        },
         "code": {
           "type": "string",
           "minLength": 1,
@@ -54,6 +48,11 @@
           "default": true,
           "description": "Indica se a sala está disponível para uso."
         },
+        "enabled": {
+          "type": "boolean",
+          "readOnly": true,
+          "description": "Exclusão lógica. DELETE grava false; a sala some das consultas e não aceita PUT, PATCH nem novo DELETE."
+        },
         "resourceIds": {
           "type": "array",
           "uniqueItems": true,
@@ -67,24 +66,24 @@
       },
       "required": [
         "id",
-        "enabled",
         "code",
         "name",
         "building",
         "capacity",
         "active",
+        "enabled",
         "resourceIds"
       ],
       "additionalProperties": false,
       "examples": [
         {
           "id": "6f1c2b9e-8d4a-4c3e-9b1a-2f5d7e8c9a01",
-          "enabled": true,
           "code": "32/405",
           "name": "Laboratório de Engenharia de Software",
           "building": "32",
           "capacity": 40,
           "active": true,
+          "enabled": true,
           "resourceIds": [
             "0b7e4c3a-5d2f-4e8a-9c1b-7a6d5e4f3c21"
           ]
@@ -302,12 +301,6 @@
           "readOnly": true,
           "description": "Identificador da característica de acessibilidade (UUID v4), gerado pela API."
         },
-        "enabled": {
-          "type": "boolean",
-          "readOnly": true,
-          "default": true,
-          "description": "Exclusão lógica: true para registro ativo; false para registro excluído logicamente. Controlado pelo servidor."
-        },
         "roomId": {
           "type": "string",
           "format": "uuid",
@@ -333,25 +326,30 @@
           "type": "boolean",
           "default": true,
           "description": "Indica se a característica está presente na sala (true) ou registrada como ausente (false)."
+        },
+        "enabled": {
+          "type": "boolean",
+          "readOnly": true,
+          "description": "Exclusão lógica. DELETE grava false; a característica some das consultas e não aceita PUT, PATCH nem novo DELETE."
         }
       },
       "required": [
         "id",
-        "enabled",
         "roomId",
         "code",
         "description",
-        "present"
+        "present",
+        "enabled"
       ],
       "additionalProperties": false,
       "examples": [
         {
           "id": "9a8b7c6d-5e4f-4a3b-8c2d-1e0f9a8b7c6d",
-          "enabled": true,
           "roomId": "6f1c2b9e-8d4a-4c3e-9b1a-2f5d7e8c9a01",
           "code": "RAMP",
           "description": "Rampa de acesso na entrada da sala",
-          "present": true
+          "present": true,
+          "enabled": true
         }
       ]
     },

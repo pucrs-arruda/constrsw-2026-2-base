@@ -1,0 +1,41 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "title": "AccessibilityFeatureUpdate",
+  "description": "Corpo do PUT /api/v1/rooms/{id}/accessibility-features/{featureId} (atualização total): todos os campos são obrigatórios; description aceita null.",
+  "type": "object",
+  "properties": {
+    "code": {
+      "type": "string",
+      "minLength": 1,
+      "maxLength": 30,
+      "pattern": "^[A-Z][A-Z0-9_]*$",
+      "description": "Código do tipo de característica de acessibilidade, em maiúsculas (ex.: RAMP, ELEVATOR, TACTILE_FLOOR)."
+    },
+    "description": {
+      "type": [
+        "string",
+        "null"
+      ],
+      "maxLength": 255,
+      "description": "Descrição da característica de acessibilidade."
+    },
+    "present": {
+      "type": "boolean",
+      "default": true,
+      "description": "Indica se a característica está presente na sala (true) ou registrada como ausente (false)."
+    }
+  },
+  "required": [
+    "code",
+    "description",
+    "present"
+  ],
+  "additionalProperties": false,
+  "examples": [
+    {
+      "code": "RAMP",
+      "description": "Rampa de acesso na entrada da sala",
+      "present": true
+    }
+  ]
+}
