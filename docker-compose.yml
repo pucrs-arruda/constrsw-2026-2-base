@@ -547,7 +547,11 @@ services:
       - DB_USER=${STUDENTS_USERNAME}
       - DB_PASSWORD=${STUDENTS_PASSWORD}
       - DB_NAME=${STUDENTS_DB}
-      # COMPLETAR
+      - STUDENTS_INTERNAL_API_PORT=${STUDENTS_INTERNAL_API_PORT}
+      # Valida o JWT localmente pelo JWKS do realm (nao chama a API oauth)
+      - KEYCLOAK_SERVER_URL=${KEYCLOAK_SERVER_URL}
+      - KEYCLOAK_REALM=${KEYCLOAK_REALM}
+      - JAVA_TOOL_OPTIONS=-agentlib:jdwp=transport=dt_socket,server=y,suspend=n,address=*:${STUDENTS_INTERNAL_DEBUG_PORT}
     ports:
       - "${STUDENTS_EXTERNAL_API_PORT}:${STUDENTS_INTERNAL_API_PORT}"
       - "${STUDENTS_EXTERNAL_DEBUG_PORT}:${STUDENTS_INTERNAL_DEBUG_PORT}"
@@ -557,7 +561,8 @@ services:
     depends_on:
       postgresql:
         condition: service_healthy
-      oauth:
+      # Depende do Keycloak (JWKS para validar o token), nao da API oauth
+      keycloak:
         condition: service_healthy
     healthcheck:
       test: ["CMD-SHELL", "curl -f http://localhost:${STUDENTS_INTERNAL_API_PORT}/health || exit 1"]
