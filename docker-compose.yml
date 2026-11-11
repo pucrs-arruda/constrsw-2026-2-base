@@ -138,6 +138,8 @@ services:
     depends_on:
       keycloak:
         condition: service_healthy
+      otel-collector:
+        condition: service_started
     healthcheck:
       test:
         [
@@ -285,12 +287,10 @@ services:
     networks:
       - constrsw
     depends_on:
-      postgresql:
+      mongodb:
         condition: service_healthy
       auth:
         condition: service_healthy
-      otel-collector:
-        condition: service_started
     healthcheck:
       test:
         [
@@ -301,4 +301,371 @@ services:
       timeout: 5s
       retries: 5
       start_period: 20s
+    restart: always
+
+  # Classes Services
+  classes:
+    container_name: classes
+    build:
+      context: ./backend/classes
+      dockerfile: Dockerfile
+    image: constrsw/classes
+    environment:
+      - DB_HOST=${POSTGRESQL_INTERNAL_HOST}
+      - DB_PORT=${POSTGRESQL_INTERNAL_PORT}
+      - DB_USER=${CLASSES_USERNAME}
+      - DB_PASSWORD=${CLASSES_PASSWORD}
+      - DB_NAME=${CLASSES_DB}
+      # COMPLETAR
+    ports:
+      - "${CLASSES_EXTERNAL_API_PORT}:${CLASSES_INTERNAL_API_PORT}"
+      - "${CLASSES_EXTERNAL_DEBUG_PORT}:${CLASSES_INTERNAL_DEBUG_PORT}"
+      - "${CLASSES_EXTERNAL_METRICS_PORT}:${CLASSES_INTERNAL_API_PORT}"
+    networks:
+      - constrsw
+    depends_on:
+      postgresql:
+        condition: service_healthy
+      auth:
+        condition: service_healthy
+    healthcheck:
+      test: ["CMD-SHELL", "curl -f http://localhost:${CLASSES_INTERNAL_API_PORT}/health || exit 1"]
+      interval: 15s
+      timeout: 5s
+      retries: 5
+      start_period: 20s
+    restart: always
+
+  # Courses Services
+  courses:
+    container_name: courses
+    build:
+      context: ./backend/courses
+      dockerfile: Dockerfile
+    image: constrsw/courses
+    environment:
+      - DB_HOST=${POSTGRESQL_INTERNAL_HOST}
+      - DB_PORT=${POSTGRESQL_INTERNAL_PORT}
+      - DB_USER=${COURSES_USERNAME}
+      - DB_PASSWORD=${COURSES_PASSWORD}
+      - DB_NAME=${COURSES_DB}
+      # COMPLETAR
+    ports:
+      - "${COURSES_EXTERNAL_API_PORT}:${COURSES_INTERNAL_API_PORT}"
+      - "${COURSES_EXTERNAL_DEBUG_PORT}:${COURSES_INTERNAL_DEBUG_PORT}"
+      - "${COURSES_EXTERNAL_METRICS_PORT}:${COURSES_INTERNAL_API_PORT}"
+    networks:
+      - constrsw
+    depends_on:
+      postgresql:
+        condition: service_healthy
+      auth:
+        condition: service_healthy
+    healthcheck:
+      test: ["CMD-SHELL", "curl -f http://localhost:${COURSES_INTERNAL_API_PORT}/health || exit 1"]
+      interval: 15s
+      timeout: 5s
+      retries: 5
+      start_period: 20s
+    restart: always
+
+  # Lessons Services
+  lessons:
+    container_name: lessons
+    build:
+      context: ./backend/lessons
+      dockerfile: Dockerfile
+    image: constrsw/lessons
+    environment:
+      - DB_HOST=${POSTGRESQL_INTERNAL_HOST}
+      - DB_PORT=${POSTGRESQL_INTERNAL_PORT}
+      - DB_USER=${LESSONS_USERNAME}
+      - DB_PASSWORD=${LESSONS_PASSWORD}
+      - DB_NAME=${LESSONS_DB}
+      # COMPLETAR
+    ports:
+      - "${LESSONS_EXTERNAL_API_PORT}:${LESSONS_INTERNAL_API_PORT}"
+      - "${LESSONS_EXTERNAL_DEBUG_PORT}:${LESSONS_INTERNAL_DEBUG_PORT}"
+      - "${LESSONS_EXTERNAL_METRICS_PORT}:${LESSONS_INTERNAL_API_PORT}"
+    networks:
+      - constrsw
+    depends_on:
+      postgresql:
+        condition: service_healthy
+      auth:
+        condition: service_healthy
+    healthcheck:
+      test: ["CMD-SHELL", "curl -f http://localhost:${LESSONS_INTERNAL_API_PORT}/health || exit 1"]
+      interval: 15s
+      timeout: 5s
+      retries: 5
+      start_period: 20s
+    restart: always
+
+  # Professors Services
+  professors:
+    container_name: professors
+    build:
+      context: ./backend/professors
+      dockerfile: Dockerfile
+    image: constrsw/professors
+    environment:
+      - DB_HOST=${POSTGRESQL_INTERNAL_HOST}
+      - DB_PORT=${POSTGRESQL_INTERNAL_PORT}
+      - DB_USER=${PROFESSORS_USERNAME}
+      - DB_PASSWORD=${PROFESSORS_PASSWORD}
+      - DB_NAME=${PROFESSORS_DB}
+      # COMPLETAR
+    ports:
+      - "${PROFESSORS_EXTERNAL_API_PORT}:${PROFESSORS_INTERNAL_API_PORT}"
+      - "${PROFESSORS_EXTERNAL_DEBUG_PORT}:${PROFESSORS_INTERNAL_DEBUG_PORT}"
+      - "${PROFESSORS_EXTERNAL_METRICS_PORT}:${PROFESSORS_INTERNAL_API_PORT}"
+    networks:
+      - constrsw
+    depends_on:
+      postgresql:
+        condition: service_healthy
+      auth:
+        condition: service_healthy
+    healthcheck:
+      test: ["CMD-SHELL", "curl -f http://localhost:${PROFESSORS_INTERNAL_API_PORT}/health || exit 1"]
+      interval: 15s
+      timeout: 5s
+      retries: 5
+      start_period: 20s
+    restart: always
+
+  # Reservations Services
+  reservations:
+    container_name: reservations
+    build:
+      context: ./backend/reservations
+      dockerfile: Dockerfile
+    image: constrsw/reservations
+    environment:
+      - DB_HOST=${POSTGRESQL_INTERNAL_HOST}
+      - DB_PORT=${POSTGRESQL_INTERNAL_PORT}
+      - DB_USER=${RESERVATIONS_USERNAME}
+      - DB_PASSWORD=${RESERVATIONS_PASSWORD}
+      - DB_NAME=${RESERVATIONS_DB}
+      # COMPLETAR
+    ports:
+      - "${RESERVATIONS_EXTERNAL_API_PORT}:${RESERVATIONS_INTERNAL_API_PORT}"
+      - "${RESERVATIONS_EXTERNAL_DEBUG_PORT}:${RESERVATIONS_INTERNAL_DEBUG_PORT}"
+      - "${RESERVATIONS_EXTERNAL_METRICS_PORT}:${RESERVATIONS_INTERNAL_API_PORT}"
+    networks:
+      - constrsw
+    depends_on:
+      postgresql:
+        condition: service_healthy
+      auth:
+        condition: service_healthy
+    healthcheck:
+      test: ["CMD-SHELL", "curl -f http://localhost:${RESERVATIONS_INTERNAL_API_PORT}/health || exit 1"]
+      interval: 15s
+      timeout: 5s
+      retries: 5
+      start_period: 20s
+    restart: always
+
+  # Resources Services
+  resources:
+    container_name: resources
+    build:
+      context: ./backend/resources
+      dockerfile: Dockerfile
+    image: constrsw/resources
+    environment:
+      - DB_HOST=${POSTGRESQL_INTERNAL_HOST}
+      - DB_PORT=${POSTGRESQL_INTERNAL_PORT}
+      - DB_USER=${RESOURCES_USERNAME}
+      - DB_PASSWORD=${RESOURCES_PASSWORD}
+      - DB_NAME=${RESOURCES_DB}
+      # COMPLETAR
+    ports:
+      - "${RESOURCES_EXTERNAL_API_PORT}:${RESOURCES_INTERNAL_API_PORT}"
+      - "${RESOURCES_EXTERNAL_DEBUG_PORT}:${RESOURCES_INTERNAL_DEBUG_PORT}"
+      - "${RESOURCES_EXTERNAL_METRICS_PORT}:${RESOURCES_INTERNAL_API_PORT}"
+    networks:
+      - constrsw
+    depends_on:
+      postgresql:
+        condition: service_healthy
+      auth:
+        condition: service_healthy
+    healthcheck:
+      test: ["CMD-SHELL", "curl -f http://localhost:${RESOURCES_INTERNAL_API_PORT}/health || exit 1"]
+      interval: 15s
+      timeout: 5s
+      retries: 5
+      start_period: 20s
+    restart: always
+
+  # Rooms Services
+  rooms:
+    container_name: rooms
+    build:
+      context: ./backend/rooms
+      dockerfile: Dockerfile
+    image: constrsw/rooms
+    environment:
+      - DB_HOST=${POSTGRESQL_INTERNAL_HOST}
+      - DB_PORT=${POSTGRESQL_INTERNAL_PORT}
+      - DB_USER=${ROOMS_USERNAME}
+      - DB_PASSWORD=${ROOMS_PASSWORD}
+      - DB_NAME=${ROOMS_DB}
+      # COMPLETAR
+    ports:
+      - "${ROOMS_EXTERNAL_API_PORT}:${ROOMS_INTERNAL_API_PORT}"
+      - "${ROOMS_EXTERNAL_DEBUG_PORT}:${ROOMS_INTERNAL_DEBUG_PORT}"
+      - "${ROOMS_EXTERNAL_METRICS_PORT}:${ROOMS_INTERNAL_API_PORT}"
+    networks:
+      - constrsw
+    depends_on:
+      postgresql:
+        condition: service_healthy
+      auth:
+        condition: service_healthy
+    healthcheck:
+      test: ["CMD-SHELL", "curl -f http://localhost:${ROOMS_INTERNAL_API_PORT}/health || exit 1"]
+      interval: 15s
+      timeout: 5s
+      retries: 5
+      start_period: 20s
+    restart: always
+
+  # Students Services
+  students:
+    container_name: students
+    build:
+      context: ./backend/students
+      dockerfile: Dockerfile
+    image: constrsw/students
+    environment:
+      - DB_HOST=${POSTGRESQL_INTERNAL_HOST}
+      - DB_PORT=${POSTGRESQL_INTERNAL_PORT}
+      - DB_USER=${STUDENTS_USERNAME}
+      - DB_PASSWORD=${STUDENTS_PASSWORD}
+      - DB_NAME=${STUDENTS_DB}
+      # COMPLETAR
+    ports:
+      - "${STUDENTS_EXTERNAL_API_PORT}:${STUDENTS_INTERNAL_API_PORT}"
+      - "${STUDENTS_EXTERNAL_DEBUG_PORT}:${STUDENTS_INTERNAL_DEBUG_PORT}"
+      - "${STUDENTS_EXTERNAL_METRICS_PORT}:${STUDENTS_INTERNAL_API_PORT}"
+    networks:
+      - constrsw
+    depends_on:
+      postgresql:
+        condition: service_healthy
+      auth:
+        condition: service_healthy
+    healthcheck:
+      test: ["CMD-SHELL", "curl -f http://localhost:${STUDENTS_INTERNAL_API_PORT}/health || exit 1"]
+      interval: 15s
+      timeout: 5s
+      retries: 5
+      start_period: 20s
+    restart: always
+
+  # BFF (Backend for Frontend) Service
+  bff:
+    container_name: api
+    build:
+      context: ./backend/bff
+      dockerfile: Dockerfile
+    image: constrsw/bff
+    environment:
+      - PORT=${BFF_INTERNAL_API_PORT}
+      - APP_ENV=local
+      - APP_VERSION=1.0.0
+      # Autenticacao (auth permanece isolado; BFF valida JWT localmente via JWKS)
+      - AUTH_BASE_URL=${AUTH_INTERNAL_PROTOCOL}://${AUTH_INTERNAL_HOST}:${AUTH_INTERNAL_API_PORT}
+      - AUTH_JWKS_PATH=/auth/jwks
+      - AUTH_VALIDATE_PATH=/auth/validate
+      - JWT_ISSUER=${KEYCLOAK_INTERNAL_PROTOCOL}://${KEYCLOAK_INTERNAL_HOST}:${KEYCLOAK_INTERNAL_API_PORT}/realms/${KEYCLOAK_REALM}
+      - JWT_AUDIENCE=oauth
+      - JWT_CLIENT_AUDIENCE=${KEYCLOAK_CLIENT_ID}
+      # Base URLs dos servicos agregados (alguns ainda nao definidos no compose)
+      - CLASSES_BASE_URL=${CLASSES_INTERNAL_PROTOCOL}://${CLASSES_INTERNAL_HOST}:${CLASSES_INTERNAL_API_PORT}
+      - COURSES_BASE_URL=${COURSES_INTERNAL_PROTOCOL}://${COURSES_INTERNAL_HOST}:${COURSES_INTERNAL_API_PORT}
+      - EMPLOYEES_BASE_URL=${EMPLOYEES_INTERNAL_PROTOCOL}://${EMPLOYEES_INTERNAL_HOST}:${EMPLOYEES_INTERNAL_API_PORT}/api/v1
+      - LESSONS_BASE_URL=${LESSONS_INTERNAL_PROTOCOL}://${LESSONS_INTERNAL_HOST}:${LESSONS_INTERNAL_API_PORT}
+      - PROFESSORS_BASE_URL=${PROFESSORS_INTERNAL_PROTOCOL}://${PROFESSORS_INTERNAL_HOST}:${PROFESSORS_INTERNAL_API_PORT}
+      - RESERVATIONS_BASE_URL=${RESERVATIONS_INTERNAL_PROTOCOL}://${RESERVATIONS_INTERNAL_HOST}:${RESERVATIONS_INTERNAL_API_PORT}
+      - RESOURCES_BASE_URL=${RESOURCES_INTERNAL_PROTOCOL}://${RESOURCES_INTERNAL_HOST}:${RESOURCES_INTERNAL_API_PORT}
+      - ROOMS_BASE_URL=${ROOMS_INTERNAL_PROTOCOL}://${ROOMS_INTERNAL_HOST}:${ROOMS_INTERNAL_API_PORT}
+      # Resiliencia (HTTP e circuit breaker por downstream)
+      - BFF_HTTP_TIMEOUT_MS=${BFF_HTTP_TIMEOUT_MS}
+      - BFF_HTTP_RETRIES=${BFF_HTTP_RETRIES}
+      - BFF_CIRCUIT_BREAKER_TIMEOUT_MS=${BFF_CIRCUIT_BREAKER_TIMEOUT_MS}
+      - BFF_CIRCUIT_BREAKER_ERROR_THRESHOLD_PERCENTAGE=${BFF_CIRCUIT_BREAKER_ERROR_THRESHOLD_PERCENTAGE}
+      - BFF_CIRCUIT_BREAKER_RESET_TIMEOUT_MS=${BFF_CIRCUIT_BREAKER_RESET_TIMEOUT_MS}
+      - BFF_CIRCUIT_BREAKER_VOLUME_THRESHOLD=${BFF_CIRCUIT_BREAKER_VOLUME_THRESHOLD}
+      - BFF_CIRCUIT_BREAKER_ROLLING_WINDOW_MS=${BFF_CIRCUIT_BREAKER_ROLLING_WINDOW_MS}
+      # Observabilidade
+      - OTEL_SERVICE_NAME=bff-service
+      - BFF_INTERNAL_METRICS_PORT=${BFF_INTERNAL_METRICS_PORT}
+      - OTEL_EXPORTER_OTLP_METRICS_ENDPOINT=http://otel-collector:4318/v1/metrics
+      - OTEL_EXPORTER_OTLP_TRACES_ENDPOINT=http://otel-collector:4318/v1/traces
+      - NODE_OPTIONS=--inspect=0.0.0.0:${BFF_INTERNAL_DEBUG_PORT}
+    ports:
+      - "${BFF_EXTERNAL_API_PORT}:${BFF_INTERNAL_API_PORT}"
+      - "${BFF_EXTERNAL_DEBUG_PORT}:${BFF_INTERNAL_DEBUG_PORT}"
+      - "${BFF_EXTERNAL_METRICS_PORT}:${BFF_INTERNAL_METRICS_PORT}"
+    networks:
+      - constrsw
+    depends_on:
+      auth:
+        condition: service_healthy
+      employees:
+        condition: service_healthy
+      professors:
+        condition: service_healthy
+      resources:
+        condition: service_started
+      otel-collector:
+        condition: service_started
+    healthcheck:
+      test:
+        [
+          "CMD",
+          "node",
+          "-e",
+          "require('http').get('http://127.0.0.1:'+(process.env.PORT)+'/health',(r)=>process.exit(r.statusCode===200?0:1)).on('error',()=>process.exit(1))",
+        ]
+      interval: 15s
+      timeout: 5s
+      retries: 5
+      start_period: 25s
+    restart: always
+
+  # Frontend — Closed CRAS SPA
+  frontend:
+    container_name: frontend
+    build:
+      context: ./frontend
+      dockerfile: Dockerfile
+      args:
+        VITE_AUTH_BASE_URL: ${VITE_AUTH_BASE_URL}
+        VITE_BFF_BASE_URL: ${VITE_BFF_BASE_URL}
+    image: constrsw/frontend
+    ports:
+      - "${FRONTEND_EXTERNAL_PORT}:${FRONTEND_INTERNAL_PORT}"
+    networks:
+      - constrsw
+    depends_on:
+      auth:
+        condition: service_healthy
+      bff:
+        condition: service_healthy
+    healthcheck:
+      test:
+        [
+          "CMD-SHELL",
+          "curl -f http://127.0.0.1/health || exit 1",
+        ]
+      interval: 15s
+      timeout: 5s
+      retries: 5
+      start_period: 10s
     restart: always
