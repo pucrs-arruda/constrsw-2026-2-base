@@ -9,6 +9,12 @@ volumes:
   # No terminal, criar o volume externo: docker volume create constrsw-keycloak-data
   constrsw-keycloak-data:
     external: true
+  # No terminal, criar o volume externo: docker volume create constrsw-postgresql-data
+  constrsw-postgresql-data:
+    external: true
+  # No terminal, criar o volume externo: docker volume create constrsw-mongodb-data
+  constrsw-mongodb-data:
+    external: true
 
 services:
 
@@ -139,6 +145,157 @@ services:
           "node",
           "-e",
           "require('http').get('http://127.0.0.1:'+(process.env.OAUTH_INTERNAL_API_PORT)+'/health',(r)=>process.exit(r.statusCode===200?0:1)).on('error',()=>process.exit(1))",
+        ]
+      interval: 15s
+      timeout: 5s
+      retries: 5
+      start_period: 20s
+    restart: always
+
+  # PostgreSQL
+  postgresql:
+    container_name: postgresql
+    build:
+      context: ./infrastructure/dev.local/services/postgresql
+      dockerfile: Dockerfile
+      args:
+        POSTGRESQL_HOST_AUTH_METHOD: ${POSTGRESQL_HOST_AUTH_METHOD}
+        POSTGRESQL_DATA: ${POSTGRESQL_DATA}
+        POSTGRESQL_USERNAME: ${POSTGRESQL_USERNAME}
+        POSTGRESQL_PASSWORD: ${POSTGRESQL_PASSWORD}
+    image: constrsw/postgresql
+    environment:
+      - POSTGRESQL_INTERNAL_HOST=${POSTGRESQL_INTERNAL_HOST}
+      - POSTGRESQL_INTERNAL_PORT=${POSTGRESQL_INTERNAL_PORT}
+      - POSTGRES_USER=${POSTGRESQL_USERNAME}
+      - POSTGRES_PASSWORD=${POSTGRESQL_PASSWORD}
+      - POSTGRESQL_DB=${POSTGRESQL_DB}
+    volumes:
+      # No terminal, criar o volume externo: docker volume create constrsw-postgresql-data
+      - constrsw-postgresql-data:${POSTGRESQL_DATA}
+    networks:
+      - constrsw
+    ports:
+      - ${POSTGRESQL_EXTERNAL_PORT}:${POSTGRESQL_INTERNAL_PORT}
+    healthcheck:
+      test: ["CMD-SHELL", "pg_isready -U ${POSTGRESQL_USERNAME}"]
+      start_period: 0s
+      interval: 10s
+      timeout: 10s
+      retries: 10
+    restart: always
+
+  # PostgreSQL Exporter para o Prometheus
+  postgresql-exporter:
+    image: prometheuscommunity/postgres-exporter:latest
+    container_name: postgresql-exporter
+    environment:
+      - DATA_SOURCE_NAME=postgresql://${POSTGRESQL_USERNAME}:${POSTGRESQL_PASSWORD}@${POSTGRESQL_INTERNAL_HOST}:${POSTGRESQL_INTERNAL_PORT}/${POSTGRESQL_DB}?sslmode=disable
+    ports:
+      - "9187:9187"
+    networks:
+      - constrsw
+    depends_on:
+      postgresql:
+        condition: service_healthy
+    restart: always
+
+  # MongoDB
+  mongodb:
+    container_name: mongodb
+    build:
+      context: ./infrastructure/dev.local/services/mongodb
+      dockerfile: Dockerfile
+      args:
+        - MONGO_INITDB_ROOT_USERNAME=${MONGODB_USERNAME}
+        - MONGO_INITDB_ROOT_PASSWORD=${MONGODB_PASSWORD}
+    image: constrsw/mongodb
+    environment:
+      - MONGODB_USERNAME=${MONGODB_USERNAME}
+      - MONGODB_PASSWORD=${MONGODB_PASSWORD}
+      - MONGODB_INTERNAL_HOST=${MONGODB_INTERNAL_HOST}
+      - MONGODB_INTERNAL_PORT=${MONGODB_INTERNAL_PORT}
+    volumes:
+      # No terminal, criar o volume externo: docker volume create constrsw-mongodb-data
+      - constrsw-mongodb-data:/data/mongodb
+    networks:
+      - constrsw
+    ports:
+      - ${MONGODB_EXTERNAL_PORT}:${MONGODB_INTERNAL_PORT}
+    healthcheck:
+      test:
+        [
+          "CMD-SHELL",
+          "mongosh --quiet mongodb://${MONGODB_USERNAME}:${MONGODB_PASSWORD}@${MONGODB_INTERNAL_HOST}:${MONGODB_INTERNAL_PORT}/constrsw --eval 'quit(db.runCommand({ ping: 1 }).ok ? 0 : 2)'",
+        ]
+      start_period: 0s
+      interval: 20s
+      timeout: 10s
+      retries: 20
+    restart: always
+
+  # MongoDB Exporter para o Prometheus
+  mongodb-exporter:
+    image: percona/mongodb_exporter:0.40.0
+    container_name: mongodb-exporter
+    command:
+      - '--mongodb.uri=mongodb://${MONGODB_USERNAME}:${MONGODB_PASSWORD}@${MONGODB_INTERNAL_HOST}:${MONGODB_INTERNAL_PORT}/?authSource=${MONGODB_DB}'
+      - '--web.listen-address=:9216'
+      - '--collect-all'
+      - '--compatible-mode'
+    ports:
+      - "9216:9216"
+    networks:
+      - constrsw
+    depends_on:
+      mongodb:
+        condition: service_healthy
+    restart: always
+
+  # Employees Service
+  employees:
+    container_name: employees
+    build:
+      context: ./backend/employees
+      dockerfile: Dockerfile
+    image: constrsw/employees
+    environment:
+      - PORT=${EMPLOYEES_INTERNAL_API_PORT}
+      - DB_HOST=${POSTGRESQL_INTERNAL_HOST}
+      - DB_PORT=${POSTGRESQL_INTERNAL_PORT}
+      - DB_USER=${EMPLOYEES_USERNAME}
+      - DB_PASSWORD=${EMPLOYEES_PASSWORD}
+      - DB_NAME=${EMPLOYEES_DB}
+      - APP_ENV=local
+      - APP_VERSION=1.0.0
+      - AUTH_BASE_URL=${AUTH_INTERNAL_PROTOCOL}://${AUTH_INTERNAL_HOST}:${AUTH_INTERNAL_API_PORT}
+      - AUTH_VALIDATE_PATH=/auth/validate
+      - AUTH_JWKS_PATH=/auth/jwks
+      - JWT_ISSUER=${KEYCLOAK_INTERNAL_PROTOCOL}://${KEYCLOAK_INTERNAL_HOST}:${KEYCLOAK_INTERNAL_API_PORT}/realms/${KEYCLOAK_REALM}
+      - JWT_AUDIENCE=oauth
+      - JWT_CLIENT_AUDIENCE=${KEYCLOAK_CLIENT_ID}
+      - OTEL_SERVICE_NAME=employees-service
+      - OTEL_EXPORTER_OTLP_METRICS_ENDPOINT=http://otel-collector:4318/v1/metrics
+      - OTEL_EXPORTER_OTLP_TRACES_ENDPOINT=http://otel-collector:4318/v1/traces
+      - JAVA_TOOL_OPTIONS=-agentlib:jdwp=transport=dt_socket,server=y,suspend=n,address=*:${EMPLOYEES_INTERNAL_DEBUG_PORT}
+    ports:
+      - "${EMPLOYEES_EXTERNAL_API_PORT}:${EMPLOYEES_INTERNAL_API_PORT}"
+      - "${EMPLOYEES_EXTERNAL_DEBUG_PORT}:${EMPLOYEES_INTERNAL_DEBUG_PORT}"
+      - "${EMPLOYEES_EXTERNAL_METRICS_PORT}:${EMPLOYEES_INTERNAL_API_PORT}"
+    networks:
+      - constrsw
+    depends_on:
+      postgresql:
+        condition: service_healthy
+      auth:
+        condition: service_healthy
+      otel-collector:
+        condition: service_started
+    healthcheck:
+      test:
+        [
+          "CMD-SHELL",
+          "curl -f http://127.0.0.1:${EMPLOYEES_INTERNAL_API_PORT}/health || exit 1",
         ]
       interval: 15s
       timeout: 5s
