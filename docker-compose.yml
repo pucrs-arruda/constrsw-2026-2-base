@@ -110,7 +110,7 @@ services:
       timeout: 10s
       retries: 20
 
-  # Auth - Keycloak Gateway API
+  # OAuth - Keycloak Gateway API
   oauth:
     container_name: oauth
     build:
@@ -270,9 +270,9 @@ services:
       - DB_NAME=${EMPLOYEES_DB}
       - APP_ENV=local
       - APP_VERSION=1.0.0
-      - AUTH_BASE_URL=${AUTH_INTERNAL_PROTOCOL}://${AUTH_INTERNAL_HOST}:${AUTH_INTERNAL_API_PORT}
-      - AUTH_VALIDATE_PATH=/auth/validate
-      - AUTH_JWKS_PATH=/auth/jwks
+      - OAUTH_BASE_URL=${OAUTH_INTERNAL_PROTOCOL}://${OAUTH_INTERNAL_HOST}:${OAUTH_INTERNAL_API_PORT}
+      - OAUTH_VALIDATE_PATH=/auth/validate
+      - OAUTH_JWKS_PATH=/auth/jwks
       - JWT_ISSUER=${KEYCLOAK_INTERNAL_PROTOCOL}://${KEYCLOAK_INTERNAL_HOST}:${KEYCLOAK_INTERNAL_API_PORT}/realms/${KEYCLOAK_REALM}
       - JWT_AUDIENCE=oauth
       - JWT_CLIENT_AUDIENCE=${KEYCLOAK_CLIENT_ID}
@@ -289,7 +289,7 @@ services:
     depends_on:
       mongodb:
         condition: service_healthy
-      auth:
+      oauth:
         condition: service_healthy
     healthcheck:
       test:
@@ -326,7 +326,7 @@ services:
     depends_on:
       postgresql:
         condition: service_healthy
-      auth:
+      oauth:
         condition: service_healthy
     healthcheck:
       test: ["CMD-SHELL", "curl -f http://localhost:${CLASSES_INTERNAL_API_PORT}/health || exit 1"]
@@ -359,7 +359,7 @@ services:
     depends_on:
       postgresql:
         condition: service_healthy
-      auth:
+      oauth:
         condition: service_healthy
     healthcheck:
       test: ["CMD-SHELL", "curl -f http://localhost:${COURSES_INTERNAL_API_PORT}/health || exit 1"]
@@ -392,7 +392,7 @@ services:
     depends_on:
       postgresql:
         condition: service_healthy
-      auth:
+      oauth:
         condition: service_healthy
     healthcheck:
       test: ["CMD-SHELL", "curl -f http://localhost:${LESSONS_INTERNAL_API_PORT}/health || exit 1"]
@@ -425,7 +425,7 @@ services:
     depends_on:
       postgresql:
         condition: service_healthy
-      auth:
+      oauth:
         condition: service_healthy
     healthcheck:
       test: ["CMD-SHELL", "curl -f http://localhost:${PROFESSORS_INTERNAL_API_PORT}/health || exit 1"]
@@ -458,7 +458,7 @@ services:
     depends_on:
       postgresql:
         condition: service_healthy
-      auth:
+      oauth:
         condition: service_healthy
     healthcheck:
       test: ["CMD-SHELL", "curl -f http://localhost:${RESERVATIONS_INTERNAL_API_PORT}/health || exit 1"]
@@ -491,7 +491,7 @@ services:
     depends_on:
       postgresql:
         condition: service_healthy
-      auth:
+      oauth:
         condition: service_healthy
     healthcheck:
       test: ["CMD-SHELL", "curl -f http://localhost:${RESOURCES_INTERNAL_API_PORT}/health || exit 1"]
@@ -524,7 +524,7 @@ services:
     depends_on:
       postgresql:
         condition: service_healthy
-      auth:
+      oauth:
         condition: service_healthy
     healthcheck:
       test: ["CMD-SHELL", "curl -f http://localhost:${ROOMS_INTERNAL_API_PORT}/health || exit 1"]
@@ -557,7 +557,7 @@ services:
     depends_on:
       postgresql:
         condition: service_healthy
-      auth:
+      oauth:
         condition: service_healthy
     healthcheck:
       test: ["CMD-SHELL", "curl -f http://localhost:${STUDENTS_INTERNAL_API_PORT}/health || exit 1"]
@@ -579,9 +579,9 @@ services:
       - APP_ENV=local
       - APP_VERSION=1.0.0
       # Autenticacao (auth permanece isolado; BFF valida JWT localmente via JWKS)
-      - AUTH_BASE_URL=${AUTH_INTERNAL_PROTOCOL}://${AUTH_INTERNAL_HOST}:${AUTH_INTERNAL_API_PORT}
-      - AUTH_JWKS_PATH=/auth/jwks
-      - AUTH_VALIDATE_PATH=/auth/validate
+      - OAUTH_BASE_URL=${OAUTH_INTERNAL_PROTOCOL}://${OAUTH_INTERNAL_HOST}:${OAUTH_INTERNAL_API_PORT}
+      - OAUTH_JWKS_PATH=/auth/jwks
+      - OAUTH_VALIDATE_PATH=/auth/validate
       - JWT_ISSUER=${KEYCLOAK_INTERNAL_PROTOCOL}://${KEYCLOAK_INTERNAL_HOST}:${KEYCLOAK_INTERNAL_API_PORT}/realms/${KEYCLOAK_REALM}
       - JWT_AUDIENCE=oauth
       - JWT_CLIENT_AUDIENCE=${KEYCLOAK_CLIENT_ID}
@@ -615,7 +615,7 @@ services:
     networks:
       - constrsw
     depends_on:
-      auth:
+      oauth:
         condition: service_healthy
       employees:
         condition: service_healthy
@@ -646,7 +646,7 @@ services:
       context: ./frontend
       dockerfile: Dockerfile
       args:
-        VITE_AUTH_BASE_URL: ${VITE_AUTH_BASE_URL}
+        VITE_OAUTH_BASE_URL: ${VITE_OAUTH_BASE_URL}
         VITE_BFF_BASE_URL: ${VITE_BFF_BASE_URL}
     image: constrsw/frontend
     ports:
@@ -654,7 +654,7 @@ services:
     networks:
       - constrsw
     depends_on:
-      auth:
+      oauth:
         condition: service_healthy
       bff:
         condition: service_healthy
