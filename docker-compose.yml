@@ -118,6 +118,15 @@ services:
       dockerfile: Dockerfile
     image: constrsw/oauth
     environment:
+      - PORT=${OAUTH_INTERNAL_API_PORT}
+      - NODE_ENV=development
+      - KEYCLOAK_URL=${KEYCLOAK_SERVER_URL}
+      - KEYCLOAK_TIMEOUT_MS=5000
+      - KEYCLOAK_ADMIN_CLIENT_ID=${KEYCLOAK_ADMIN_CLIENT_ID:-oauth-admin}
+      - KEYCLOAK_ADMIN_CLIENT_SECRET=${KEYCLOAK_ADMIN_CLIENT_SECRET:-local-development-admin-secret}
+      - SESSION_COOKIE_NAME=closed_cras_session
+      - COOKIE_SECURE=false
+      - COOKIE_SAME_SITE=lax
       - KEYCLOAK_SERVER_URL=${KEYCLOAK_SERVER_URL}
       - KEYCLOAK_REALM=${KEYCLOAK_REALM}
       - KEYCLOAK_CLIENT_ID=${KEYCLOAK_CLIENT_ID}
@@ -160,18 +169,17 @@ services:
     build:
       context: ./infrastructure/dev.local/services/postgresql
       dockerfile: Dockerfile
-      args:
-        POSTGRESQL_HOST_AUTH_METHOD: ${POSTGRESQL_HOST_AUTH_METHOD}
-        POSTGRESQL_DATA: ${POSTGRESQL_DATA}
-        POSTGRESQL_USERNAME: ${POSTGRESQL_USERNAME}
-        POSTGRESQL_PASSWORD: ${POSTGRESQL_PASSWORD}
     image: constrsw/postgresql
     environment:
-      - POSTGRESQL_INTERNAL_HOST=${POSTGRESQL_INTERNAL_HOST}
-      - POSTGRESQL_INTERNAL_PORT=${POSTGRESQL_INTERNAL_PORT}
       - POSTGRES_USER=${POSTGRESQL_USERNAME}
       - POSTGRES_PASSWORD=${POSTGRESQL_PASSWORD}
-      - POSTGRESQL_DB=${POSTGRESQL_DB}
+      - POSTGRES_DB=${POSTGRESQL_DB}
+      - PGDATA=${POSTGRESQL_DATA}
+      - PGPORT=${POSTGRESQL_INTERNAL_PORT}
+      - LESSONS_DB=${LESSONS_DB}
+      - LESSONS_USERNAME=${LESSONS_USERNAME}
+      - LESSONS_PASSWORD=${LESSONS_PASSWORD}
+    command: ["postgres", "-p", "${POSTGRESQL_INTERNAL_PORT}"]
     volumes:
       # No terminal, criar o volume externo: docker volume create constrsw-postgresql-data
       - constrsw-postgresql-data:${POSTGRESQL_DATA}
@@ -180,7 +188,7 @@ services:
     ports:
       - ${POSTGRESQL_EXTERNAL_PORT}:${POSTGRESQL_INTERNAL_PORT}
     healthcheck:
-      test: ["CMD-SHELL", "pg_isready -U ${POSTGRESQL_USERNAME}"]
+      test: ["CMD-SHELL", "pg_isready -h 127.0.0.1 -p ${POSTGRESQL_INTERNAL_PORT} -U ${POSTGRESQL_USERNAME} -d ${POSTGRESQL_DB}"]
       start_period: 0s
       interval: 10s
       timeout: 10s
@@ -382,11 +390,16 @@ services:
       - DB_USER=${LESSONS_USERNAME}
       - DB_PASSWORD=${LESSONS_PASSWORD}
       - DB_NAME=${LESSONS_DB}
-      # COMPLETAR
+      - SERVER_PORT=${LESSONS_INTERNAL_API_PORT}
+      - MANAGEMENT_SERVER_PORT=${LESSONS_INTERNAL_METRICS_PORT}
+      - LESSONS_JWT_ISSUER=${KEYCLOAK_SERVER_URL}/realms/${KEYCLOAK_REALM}
+      - LESSONS_JWKS_URI=${KEYCLOAK_SERVER_URL}/realms/${KEYCLOAK_REALM}/protocol/openid-connect/certs
+      - LESSONS_CLASSES_URL=${CLASSES_INTERNAL_PROTOCOL}://${CLASSES_INTERNAL_HOST}:${CLASSES_INTERNAL_API_PORT}/api/v1/classes
+      - LESSONS_SYLLABUS_ITEMS_URL=${COURSES_INTERNAL_PROTOCOL}://${COURSES_INTERNAL_HOST}:${COURSES_INTERNAL_API_PORT}/api/v1/syllabus-items
+      - LESSONS_RESERVATIONS_URL=${RESERVATIONS_INTERNAL_PROTOCOL}://${RESERVATIONS_INTERNAL_HOST}:${RESERVATIONS_INTERNAL_API_PORT}/api/v1/reservations
     ports:
       - "${LESSONS_EXTERNAL_API_PORT}:${LESSONS_INTERNAL_API_PORT}"
-      - "${LESSONS_EXTERNAL_DEBUG_PORT}:${LESSONS_INTERNAL_DEBUG_PORT}"
-      - "${LESSONS_EXTERNAL_METRICS_PORT}:${LESSONS_INTERNAL_API_PORT}"
+      - "${LESSONS_EXTERNAL_METRICS_PORT}:${LESSONS_INTERNAL_METRICS_PORT}"
     networks:
       - constrsw
     depends_on:
@@ -395,7 +408,7 @@ services:
       oauth:
         condition: service_healthy
     healthcheck:
-      test: ["CMD-SHELL", "curl -f http://localhost:${LESSONS_INTERNAL_API_PORT}/health || exit 1"]
+      test: ["CMD-SHELL", "curl -fsS http://127.0.0.1:${LESSONS_INTERNAL_METRICS_PORT}/health"]
       interval: 15s
       timeout: 5s
       retries: 5
