@@ -124,6 +124,15 @@ services:
       - KEYCLOAK_CLIENT_SECRET=${KEYCLOAK_CLIENT_SECRET}
       - KEYCLOAK_ADMIN=${KEYCLOAK_ADMIN}
       - KEYCLOAK_ADMIN_PASSWORD=${KEYCLOAK_ADMIN_PASSWORD}
+      - KEYCLOAK_URL=${KEYCLOAK_SERVER_URL}
+      - KEYCLOAK_TIMEOUT_MS=5000
+      - KEYCLOAK_ADMIN_CLIENT_ID=${KEYCLOAK_ADMIN_CLIENT_ID}
+      - KEYCLOAK_ADMIN_CLIENT_SECRET=${KEYCLOAK_ADMIN_CLIENT_SECRET}
+      - PORT=${OAUTH_INTERNAL_API_PORT}
+      - NODE_ENV=development
+      - SESSION_COOKIE_NAME=closed_cras_session
+      - COOKIE_SECURE=false
+      - COOKIE_SAME_SITE=lax
       - OAUTH_INTERNAL_PROTOCOL=${OAUTH_INTERNAL_PROTOCOL}
       - OAUTH_INTERNAL_HOST=${OAUTH_INTERNAL_HOST}
       - OAUTH_INTERNAL_API_PORT=${OAUTH_INTERNAL_API_PORT}
@@ -172,9 +181,13 @@ services:
       - POSTGRES_USER=${POSTGRESQL_USERNAME}
       - POSTGRES_PASSWORD=${POSTGRESQL_PASSWORD}
       - POSTGRESQL_DB=${POSTGRESQL_DB}
+      - RESOURCES_DB=${RESOURCES_DB}
+      - RESOURCES_USERNAME=${RESOURCES_USERNAME}
+      - RESOURCES_PASSWORD=${RESOURCES_PASSWORD}
     volumes:
       # No terminal, criar o volume externo: docker volume create constrsw-postgresql-data
       - constrsw-postgresql-data:${POSTGRESQL_DATA}
+      - ./backend/resources/db/init:/resources-init:ro
     networks:
       - constrsw
     ports:
@@ -481,7 +494,10 @@ services:
       - DB_USER=${RESOURCES_USERNAME}
       - DB_PASSWORD=${RESOURCES_PASSWORD}
       - DB_NAME=${RESOURCES_DB}
-      # COMPLETAR
+      - PORT=${RESOURCES_INTERNAL_API_PORT}
+      - DATABASE_URL=postgresql://${RESOURCES_USERNAME}:${RESOURCES_PASSWORD}@${POSTGRESQL_INTERNAL_HOST}:${POSTGRESQL_INTERNAL_PORT}/${RESOURCES_DB}
+      - KEYCLOAK_JWKS_URL=${KEYCLOAK_SERVER_URL}/realms/${KEYCLOAK_REALM}/protocol/openid-connect/certs
+      - KEYCLOAK_ISSUER=${KEYCLOAK_SERVER_URL}/realms/${KEYCLOAK_REALM}
     ports:
       - "${RESOURCES_EXTERNAL_API_PORT}:${RESOURCES_INTERNAL_API_PORT}"
       - "${RESOURCES_EXTERNAL_DEBUG_PORT}:${RESOURCES_INTERNAL_DEBUG_PORT}"
@@ -494,7 +510,13 @@ services:
       oauth:
         condition: service_healthy
     healthcheck:
-      test: ["CMD-SHELL", "curl -f http://localhost:${RESOURCES_INTERNAL_API_PORT}/health || exit 1"]
+      test:
+        [
+          "CMD",
+          "node",
+          "-e",
+          "require('http').get('http://127.0.0.1:'+(process.env.PORT)+'/api/v1/health',(r)=>process.exit(r.statusCode===200?0:1)).on('error',()=>process.exit(1))",
+        ]
       interval: 15s
       timeout: 5s
       retries: 5
