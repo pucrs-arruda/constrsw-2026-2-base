@@ -172,6 +172,9 @@ services:
       - POSTGRES_USER=${POSTGRESQL_USERNAME}
       - POSTGRES_PASSWORD=${POSTGRESQL_PASSWORD}
       - POSTGRESQL_DB=${POSTGRESQL_DB}
+      - PROFESSORS_DB=${PROFESSORS_DB}
+      - PROFESSORS_USERNAME=${PROFESSORS_USERNAME}
+      - PROFESSORS_PASSWORD=${PROFESSORS_PASSWORD}
     volumes:
       # No terminal, criar o volume externo: docker volume create constrsw-postgresql-data
       - constrsw-postgresql-data:${POSTGRESQL_DATA}
@@ -415,7 +418,12 @@ services:
       - DB_USER=${PROFESSORS_USERNAME}
       - DB_PASSWORD=${PROFESSORS_PASSWORD}
       - DB_NAME=${PROFESSORS_DB}
-      # COMPLETAR
+      - PORT=${PROFESSORS_INTERNAL_API_PORT}
+      - DATABASE_URL=postgres://${PROFESSORS_USERNAME}:${PROFESSORS_PASSWORD}@${POSTGRESQL_INTERNAL_HOST}:${POSTGRESQL_INTERNAL_PORT}/${PROFESSORS_DB}
+      - JWKS_URL=${KEYCLOAK_SERVER_URL}/realms/${KEYCLOAK_REALM}/protocol/openid-connect/certs
+      - JWT_ISSUER=${KEYCLOAK_SERVER_URL}/realms/${KEYCLOAK_REALM}
+      - JWT_AUDIENCE=oauth
+      - KEYCLOAK_REALM=${KEYCLOAK_REALM}
     ports:
       - "${PROFESSORS_EXTERNAL_API_PORT}:${PROFESSORS_INTERNAL_API_PORT}"
       - "${PROFESSORS_EXTERNAL_DEBUG_PORT}:${PROFESSORS_INTERNAL_DEBUG_PORT}"
@@ -425,10 +433,16 @@ services:
     depends_on:
       postgresql:
         condition: service_healthy
-      oauth:
+      keycloak:
         condition: service_healthy
     healthcheck:
-      test: ["CMD-SHELL", "curl -f http://localhost:${PROFESSORS_INTERNAL_API_PORT}/health || exit 1"]
+      test:
+        [
+          "CMD",
+          "node",
+          "-e",
+          "fetch('http://127.0.0.1:'+process.env.PORT+'/api/v1/health').then((r)=>process.exit(r.ok?0:1),()=>process.exit(1))",
+        ]
       interval: 15s
       timeout: 5s
       retries: 5
