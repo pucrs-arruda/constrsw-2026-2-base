@@ -263,11 +263,7 @@ services:
     image: constrsw/employees
     environment:
       - PORT=${EMPLOYEES_INTERNAL_API_PORT}
-      - DB_HOST=${POSTGRESQL_INTERNAL_HOST}
-      - DB_PORT=${POSTGRESQL_INTERNAL_PORT}
-      - DB_USER=${EMPLOYEES_USERNAME}
-      - DB_PASSWORD=${EMPLOYEES_PASSWORD}
-      - DB_NAME=${EMPLOYEES_DB}
+      - MONGODB_URI=mongodb://${MONGODB_USERNAME}:${MONGODB_PASSWORD}@${MONGODB_INTERNAL_HOST}:${MONGODB_INTERNAL_PORT}/cras_employees?authSource=${MONGODB_DB}
       - APP_ENV=local
       - APP_VERSION=1.0.0
       - OAUTH_BASE_URL=${OAUTH_INTERNAL_PROTOCOL}://${OAUTH_INTERNAL_HOST}:${OAUTH_INTERNAL_API_PORT}
@@ -279,7 +275,6 @@ services:
       - OTEL_SERVICE_NAME=employees-service
       - OTEL_EXPORTER_OTLP_METRICS_ENDPOINT=http://otel-collector:4318/v1/metrics
       - OTEL_EXPORTER_OTLP_TRACES_ENDPOINT=http://otel-collector:4318/v1/traces
-      - JAVA_TOOL_OPTIONS=-agentlib:jdwp=transport=dt_socket,server=y,suspend=n,address=*:${EMPLOYEES_INTERNAL_DEBUG_PORT}
     ports:
       - "${EMPLOYEES_EXTERNAL_API_PORT}:${EMPLOYEES_INTERNAL_API_PORT}"
       - "${EMPLOYEES_EXTERNAL_DEBUG_PORT}:${EMPLOYEES_INTERNAL_DEBUG_PORT}"
@@ -295,7 +290,7 @@ services:
       test:
         [
           "CMD-SHELL",
-          "curl -f http://127.0.0.1:${EMPLOYEES_INTERNAL_API_PORT}/health || exit 1",
+          "curl -f http://127.0.0.1:${EMPLOYEES_INTERNAL_API_PORT}/api/v1/health || exit 1",
         ]
       interval: 15s
       timeout: 5s
