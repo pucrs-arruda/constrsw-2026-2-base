@@ -1,0 +1,172 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "https://example.org/schemas/employee.json",
+  "title": "Modelo Conceitual — Employee e Dependent",
+  "description": "JSON Schema derivado do diagrama de classes UML \"Modelo Conceitual::Esquema Conceitual\" (Astah). Obrigatoriedade dos atributos alinhada às anotações de multiplicidade e descrições no modelo (phone e email do Employee são opcionais 0..1; demais atributos de Employee e Dependent são obrigatórios 1). A chave default indica valores iniciais sugeridos para novas instâncias ou formulários (UUID nulo e datas sentinela devem ser substituídos na persistência real).",
+  "$defs": {
+    "Status": {
+      "description": "Enumerado UML Modelo Conceitual::Domain::Status; literais Active e Inactive conforme diagrama Astah.",
+      "type": "string",
+      "enum": [
+        "Active",
+        "Inactive"
+      ],
+      "default": "Active"
+    },
+    "Dependent": {
+      "type": "object",
+      "description": "Classe Dependent — composição sob Employee (multiplicidade 0..*; papel dependents). Todos os atributos são obrigatórios (1).",
+      "properties": {
+        "id": {
+          "type": "string",
+          "format": "uuid",
+          "description": "Identificador único."
+        },
+        "name": {
+          "type": "string",
+          "description": "Obrigatório (1). Nome do dependente.",
+          "default": "",
+          "format": "text"
+        },
+        "birthDate": {
+          "type": "string",
+          "format": "date",
+          "description": "Obrigatório (1). Data de nascimento (UML: Date).",
+          "default": "1970-01-01"
+        },
+        "dependencyType": {
+          "type": "string",
+          "description": "Obrigatório (1). Tipo ou grau de parentesco em relação ao funcionário.",
+          "default": "",
+          "format": "text"
+        },
+        "status": {
+          "$ref": "#/$defs/Status",
+          "description": "Obrigatório (1). Situação cadastral ou de vínculo (enum Status).",
+          "default": "Active",
+          "type": "string",
+          "format": "text"
+        }
+      },
+      "required": [
+        "id",
+        "name",
+        "birthDate",
+        "dependencyType",
+        "status"
+      ],
+      "additionalProperties": false
+    },
+    "Employee": {
+      "type": "object",
+      "description": "Classe Employee — agregação opcional 0..1 com Professor; composição 1 para 0..* Dependent. Atributos phone e email são opcionais (0..1); os demais atributos listados em required são obrigatórios (1).",
+      "properties": {
+        "id": {
+          "type": "string",
+          "format": "uuid",
+          "description": "Identificador único."
+        },
+        "registrationNumber": {
+          "type": "string",
+          "description": "Obrigatório (1). Número de matrícula ou registro interno.",
+          "default": "",
+          "format": "text"
+        },
+        "name": {
+          "type": "string",
+          "description": "Obrigatório (1). Nome completo do funcionário.",
+          "default": "",
+          "format": "text"
+        },
+        "salary": {
+          "type": "number",
+          "description": "Obrigatório (1). Salário (UML: Double).",
+          "default": 0,
+          "format": "float"
+        },
+        "phone": {
+          "type": "string",
+          "description": "Opcional (0..1). Telefone de contato; pode ser omitido no cadastro inicial.",
+          "default": "",
+          "format": "text"
+        },
+        "hireDate": {
+          "type": "string",
+          "format": "date",
+          "description": "Obrigatório (1). Data de admissão (UML: Date).",
+          "default": "1970-01-01"
+        },
+        "position": {
+          "type": "string",
+          "description": "Obrigatório (1). Cargo ou função.",
+          "default": "",
+          "format": "text"
+        },
+        "email": {
+          "type": "string",
+          "format": "email",
+          "description": "Opcional (0..1). E-mail; valor inicial é marcador (domínio reservado para documentação) — substituir no cadastro real.",
+          "default": "user@example.com"
+        },
+        "dependents": {
+          "type": "array",
+          "description": "Coleção de dependentes (associação de composição Employee → Dependent, 0..*).",
+          "items": {
+            "$ref": "#/$defs/Dependent"
+          },
+          "default": [],
+          "format": "list"
+        },
+        "status": {
+          "$ref": "#/$defs/Status",
+          "description": "Obrigatório (1). Situação cadastral ou de vínculo (enum Status).",
+          "default": "Active",
+          "type": "string",
+          "format": "text"
+        }
+      },
+      "required": [
+        "id",
+        "registrationNumber",
+        "name",
+        "salary",
+        "hireDate",
+        "position",
+        "status"
+      ],
+      "additionalProperties": false
+    },
+    "HealthResponse": {
+      "type": "object",
+      "description": "Service health response.",
+      "required": [
+        "status"
+      ],
+      "properties": {
+        "status": {
+          "type": "string",
+          "format": "text",
+          "description": "Health state of the service."
+        }
+      },
+      "additionalProperties": false
+    }
+  },
+  "": {
+    "HealthResponse": {
+      "type": "object",
+      "description": "Service health response.",
+      "required": [
+        "status"
+      ],
+      "properties": {
+        "status": {
+          "type": "string",
+          "format": "text",
+          "description": "Health state of the service."
+        }
+      },
+      "additionalProperties": false
+    }
+  }
+}
