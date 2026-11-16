@@ -40,7 +40,7 @@ Cada faixa é `[início, fim)`. Extremos que se tocam não conflitam. Depois de 
 
 | Contexto | Principal | Secundária (1–N) | Atributos da secundária (v1) |
 |---|---|---|---|
-| `employees` | Employee | EmploymentBond | tipo de vínculo, início, fim?, unidade/setor (texto), situação (`ativo` \| `encerrado`) |
+| `employees` | Employee | Dependent | `name`, `birthDate`, `dependencyType`, `status` (spec-employees, 2026-11-16) |
 | `professors` | Professor | AcademicDegree | grau, área, instituição, ano. Principal: is-a Employee (`employeeId` 1–1) |
 | `students` | Student | AcademicAffiliation | código do curso, período de ingresso, situação (não é roster) |
 | `courses` | Course | SyllabusItem | `kind` (conteúdo \| bibliografia \| critério), enunciado, ordem |
@@ -54,7 +54,7 @@ Principais — atributos v1:
 
 | Principal | Atributos |
 |---|---|
-| Employee | `id`, nome, e-mail, ativo |
+| Employee | `id`, `registrationNumber`, `name`, `salary`, `hireDate`, `position`, `status`; `phone` e `email` opcionais; GET publica `ativo` derivado de `status` |
 | Professor | `employeeId` (obrigatório, 1–1); **não** copia nome/e-mail |
 | Student | `id` (já existente), nome, e-mail, ativo; origem seed/import |
 | Course | `id`/código, nome, carga horária, data de publicação do plano |
@@ -74,7 +74,7 @@ Cada grupo pluga o **próprio** domínio no BFF e as telas de **outro** domínio
 
 | Superfície | Persona | O que mostra / faz |
 |---|---|---|
-| Employee + EmploymentBond | Funcionário | Cadastrar/editar identidade e vínculos |
+| Employee + Dependent | Funcionário | Cadastrar/editar identidade e dependentes |
 | Professor + AcademicDegree | Funcionário | Criar papel docente sobre Employee existente |
 | Room + AccessibilityFeature; Resource + InventoryItem | Funcionário | Cadastro-mestre de espaço e recurso |
 | Ocupação por data + faixa | Funcionário | Sala efetiva / Resource agendados (FR-29) |
@@ -102,7 +102,7 @@ Cada grupo pluga o **próprio** domínio no BFF e as telas de **outro** domínio
 | `Pessoa` genérica para Student e staff | Student não é Employee; Professor is-a Employee |
 | Copiar nome/e-mail de Employee em Professor | Identidade fica em `employees` |
 | Todo Employee é Professor | Especialização só num sentido |
-| EmploymentBond como SIGRH | Sem cargo, salário ou ponto |
+| Folha, ponto ou módulo SIGRH | `salary` e `position` são atributos do Employee nesta entrega, não um módulo de folha |
 
 Nomes: **Closed CRAS** (travado 2026-08-24). Nome de trabalho no brief: Malha. Descartados: qualquer `SIG*`, nome de suíte, “Campus AI”, marca PUCRS como produto institucional.
 

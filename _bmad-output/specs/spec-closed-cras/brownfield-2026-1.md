@@ -24,7 +24,7 @@ Referência operacional da edição anterior (Close Cras / ConstrSW 2026/1). Inf
 | Student CRUD + academicHistory / notas / frequências | Non-goal; Student é recebido | CAP-3; PRD §7 |
 | Professor com mesmo UUID que Employee (identidade de store) | Is-a é só `employeeId` 1–1; store não define identidade | CAP-2; AD-3; non-goal identidade Mongo=Employee |
 | Materials aninhados em Course/Lesson | Modelo de plano é SyllabusItem + LessonTopic | CAP-4, CAP-6 |
-| Dependents em Employee | Par 1–N é EmploymentBond | CAP-1; `domain-pairs.md` |
+| Dependents no modelo de 2026-1 como identidade a copiar | A entrega `employees` de 2026-11-16 adota Dependent do JSON Schema atual; não copiar o agregado de 2026-1. | CAP-1; `domain-pairs.md`; spec-employees |
 | Reservation policies; room events | Par é ReservationLine; Room tem AccessibilityFeature | CAP-7, CAP-8 |
 | Stack de domínio sem checklist AD-3 (envelope/JWT/paths divergentes) | Conformidade poliglota, não banimento de linguagem | AD-3; CAP-9 |
 | Realm `constrsw`; roles `administrator` / read-only grosso | Papéis e mapa de escrita do PRD | CAP-11; NFR-CTR-2 |

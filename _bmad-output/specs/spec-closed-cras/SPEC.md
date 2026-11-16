@@ -25,8 +25,8 @@ sources:
 ## Capabilities
 
 - **CAP-1**
-  - **intent:** Funcionário cria, edita, desativa e reativa Employee e mantém EmploymentBond 1–N, publicando `id` + `ativo` para alocação e papel docente.
-  - **success:** `id` estável e e-mail único (ativos e inativos); desativar não apaga vínculos nem registro; Employee inativo bloqueia criar Professor; Class já atribuídas ficam RO e nova Reservation é recusada (FR-1a); sem delete físico nem provisionamento automático no Keycloak.
+  - **intent:** Funcionário mantém Employee e Dependent 0..*, publicando `id` estável e `ativo` para alocação e papel docente.
+  - **success:** `id` estável; e-mail, quando presente, é único inclusive em inativos e excluídos logicamente; Employee inativo bloqueia criar Professor; Class já atribuídas ficam RO e nova Reservation é recusada (FR-1a); sem delete físico nem provisionamento automático no Keycloak. A secundária desta entrega é Dependent (spec-employees).
 
 - **CAP-2**
   - **intent:** Funcionário cria Professor somente sobre Employee existente e ativo, com AcademicDegree 1–N, sem duplicar cadastro pessoal.
@@ -66,7 +66,7 @@ sources:
 
 - **CAP-11**
   - **intent:** Identidade institucional via REST API `backend/oauth` sobre Keycloak; BFF faz login browser; cada contexto é resource-server JWKS e expõe `GET /v1/identidade/me` com o mesmo schema.
-  - **success:** UI não chama o IdP (`keycloak-js` proibido); papéis literais `funcionario`|`coordenador`|`professor`|`student`; claims com IDs opacos; escritura obedece NFR-CTR-2; credencial recusada = 401 sem enumerar conta; create Employee não provisiona usuário no Keycloak.
+  - **success:** UI não chama o IdP (`keycloak-js` proibido); papéis literais `funcionario`|`coordenador`|`professor`|`student`; claims com IDs opacos; escritura obedece NFR-CTR-2; credencial recusada = 401 sem enumerar conta; create Employee não provisiona usuário no Keycloak. O serviço `employees` desta entrega não publica `GET /identidade/me`; os demais contextos seguem este capability.
 
 - **CAP-12**
   - **intent:** Uma SPA por papel (UX-LOGIN/HOME + UX-S1–S9) com frontend cruzado: cada grupo implementa telas de domínio alheio usando tokens de DESIGN.md.
@@ -103,7 +103,7 @@ Em laboratório (compose), as quatro personas completam UJ-1–UJ-4 na UI sem es
 
 - Login de laboratório: Direct Access Grant no client confidencial `bff`; cookies httpOnly no BFF (AD-4).
 - BFF em NestJS 12.x (não Spring) — composição TypeScript.
-- E-mail institucional de Employee é único; tipos de EmploymentBond v1: efetivo | temporário | bolsista.
+- E-mail de Employee, quando presente, é único.
 - `Class.studentIds` chega no mesmo seed/import que Student (FR-9).
 - OQ-3 default até fechar: LessonTopic exige pelo menos um de `syllabusItemId` ou enunciado extra.
 - Feriados não são excluídos na geração de Lesson na v1.

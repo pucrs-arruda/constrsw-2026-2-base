@@ -160,7 +160,7 @@ Dois grupos podem recusar PATCH de Reservation de formas incompatíveis com CAP-
 
 **SPEC CAP-2:** `employeeId` **1–1**.
 
-**Spine:** Equidade “Professor via `employeeId`; nem todo Employee é Professor”; OQ-2 FR-1a via GET `ativo`. **Quiet:** unicidade de e-mail; proibição de DELETE físico Employee; cardinalidade **1–1** explícita Professor↔Employee; tipos EmploymentBond (Assumption: efetivo \| temporário \| bolsista).
+**Spine:** Equidade “Professor via `employeeId`; nem todo Employee é Professor”; OQ-2 FR-1a via GET `ativo`. **Quiet:** unicidade de e-mail; proibição de DELETE físico Employee; cardinalidade **1–1** explícita Professor↔Employee.
 
 ---
 
@@ -190,7 +190,7 @@ Brownfield alerta “BFF sem wiring students” — spine assume módulo `studen
 
 ### G7 — gap (baixo) — non-goals que alargam agregado se ignorados
 
-SPEC Non-goals (notas, frequência, histórico; EmploymentBond estilo SIGRH; fila de aprovação de reserva) **não** viraram Prevents. AD-8 cobre tela de alta Student; AD-5 cobre 18 reservas padrão.
+SPEC Non-goals (notas, frequência, histórico; folha estilo SIGRH; fila de aprovação de reserva) **não** viraram Prevents. AD-8 cobre tela de alta Student; AD-5 cobre 18 reservas padrão.
 
 **Risco:** `lessons` ou `employees` alargam secundárias com campos de SIGRH ou lançamento de nota sem violar AD atuais.
 

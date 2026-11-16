@@ -6,7 +6,7 @@ Traceability do kernel SPEC para PRD, Architecture Spine e EXPERIENCE. IDs CAP s
 
 | CAP | Intent (curto) | FR | AD | UX | SM |
 | --- | --- | --- | --- | --- | --- |
-| CAP-1 | Employee + EmploymentBond + FR-1a | FR-1, FR-1a, FR-2, FR-3 | AD-1, AD-2 | UX-S1 | SM-1, SM-4 |
+| CAP-1 | Employee + Dependent + FR-1a | FR-1, FR-1a, FR-2, FR-3 | AD-1, AD-2 | UX-S1 | SM-1, SM-4 |
 | CAP-2 | Professor is-a + AcademicDegree | FR-4, FR-5, FR-6 | AD-1, AD-2, AD-3 | UX-S2 | SM-1, SM-4 |
 | CAP-3 | Student seed + AcademicAffiliation | FR-7, FR-8, FR-9 | AD-2, AD-7, AD-12 | — (sem alta UI); consumo UX-S9 | SM-4 |
 | CAP-4 | Course + SyllabusItem / plano | FR-10, FR-11, FR-12 | AD-2 | UX-S5 | SM-4 |

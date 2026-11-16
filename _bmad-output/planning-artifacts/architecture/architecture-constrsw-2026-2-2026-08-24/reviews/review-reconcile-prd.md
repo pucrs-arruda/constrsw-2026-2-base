@@ -89,7 +89,7 @@ Isso é drop silencioso típico de estrutura AD: o *Prevents* “UI decidindo co
 
 - **NFR-LGPD-1.** LGPD vale para cadastro administrativo, roster e avaliação. A exceção “fins exclusivamente acadêmicos” (art. 4º) é estreita; **não é isenção** do Closed CRAS. Tom de compliance: grupo pode assumir “trabalho de disciplina = fora da LGPD”.
 - **NFR-LGPD-2 (sujeito).** Lesson + Student nomeado é dado de localização: o BFF **só mostra ao próprio Student** (e papéis autorizados **daquela Class**). Occupação não nominativa aterrissou; o recorte da jornada “onde” do Caio, não.
-- **NFR-LGPD-4.** Student e Employee são titulares distintos. Direito de eliminação cede onde a lei de acervo exigir retenção — a v1 **não implementa acervo**, mas **não apaga `id` canônico** para “limpar tela”. Combina com FR-1 `[ASSUMPTION]`: desativar Employee não apaga EmploymentBond nem o histórico de `id`. Convenção OQ-2 cobre Class/Reservation após desativação; não cobre retenção de `id`/vínculos.
+- **NFR-LGPD-4.** Student e Employee são titulares distintos. Direito de eliminação cede onde a lei de acervo exigir retenção — a v1 **não implementa acervo**, mas **não apaga `id` canônico** para “limpar tela”. Combina com FR-1 `[ASSUMPTION]`: desativar Employee não apaga o histórico de `id`. Convenção OQ-2 cobre Class/Reservation após desativação; não cobre retenção de `id`/vínculos.
 - **FR-19 / FR-9.** Student só lê Lesson das Class em que **já está referenciado**. O read-model FR-19 está no mapa; o predicado de autorização não.
 - **FR-31.** Professor **sem atribuição** à Class não lê o roster dela. AD-6 coloca o roster no módulo `classes`; não restringe por `professorIds`.
 
@@ -124,7 +124,7 @@ AuthZ da spine (“quatro papéis; gateway recusa **escrita** fora de NFR-CTR-2;
 Não se pede que a spine copie o §7. Os itens abaixo mudam contrato compartilhado se um grupo os implementar e o outro não:
 
 - **Notas / frequência / histórico** em Lesson (§7) — `flagAvaliacao` (FR-17/FR-19) é flag, não lançamento. Sem non-goal na spine, `lessons` pode alargar o agregado.
-- **EmploymentBond como SIGRH** (FR-2: sem cargo, salário, ponto; SM-C2) — Equidade impede terceira classe, não impede atributos de folha na secundária.
+- **Folha como SIGRH** (FR-2: sem módulo de cargo, salário e ponto; SM-C2) — Equidade impede terceira classe, não impede atributos de folha na secundária.
 - **Secretaria de matrícula / SIS ao vivo / tela de alta** — tela de alta está no *Prevents* do AD-8; matrícula como escrita em `Class.studentIds` via UI não está recusada além de “Student sem rota de escrita”.
 - **Tom de visão §1 / non-users 3.2:** senta *ao lado* do SIS; não substitui SIGAA/TOTVS/Ellucian; não é ERP. A spine não precisa de pitch; precisa de um Deferred/Prevents de “não virar SIS nesta malha” se o mapa já puxa FR-1–FR-31 como se o recorte estivesse fechado.
 

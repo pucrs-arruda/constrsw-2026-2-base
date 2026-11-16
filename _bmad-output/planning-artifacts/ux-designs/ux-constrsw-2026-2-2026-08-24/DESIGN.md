@@ -228,7 +228,7 @@ Hierarquia por borda `{colors.border}` e superfície `{colors.card}` sobre `{col
 - **page-header** — `{typography.headline}` + uma linha `{typography.caption}` com o termo travado da superfície (ex.: “Turma — oferta do período, não a disciplina”).
 - **button-primary / button-secondary / button-destructive** — Altura 36px, `{rounded.md}`. Primário = afirmar invariante. Secundário = cancelar navegação, “voltar”. Destructive = cancelar Reservation ou desativar Employee. Disabled: 40% de opacidade, cursor `not-allowed`.
 - **data-table** — Cabeçalho `{colors.muted}`, linhas `{colors.card}`, divisórias `{colors.border}`. Densidade compacta (linha ~40px). Sem zebra. Coluna de faixa em `{typography.mono}`.
-- **master-detail-panel** — Principal à esquerda, secundária 1–N à direita (EmploymentBond, AcademicDegree, SyllabusItem, WeeklySlot, LessonTopic, ReservationLine, AccessibilityFeature, InventoryItem). A secundária nunca vira página órfã.
+- **master-detail-panel** — Principal à esquerda, secundária 1–N à direita (Dependent, AcademicDegree, SyllabusItem, WeeklySlot, LessonTopic, ReservationLine, AccessibilityFeature, InventoryItem). A secundária nunca vira página órfã.
 - **form-field** — Borda `{colors.border}`, foco anel 2px `{colors.ring}` offset 2px. Rótulo `{typography.label}` acima. Erro de invariante não fica só no campo: sobe para `{components.refusal-banner}`.
 - **faixa-picker** — Grade de códigos canônicos; cada célula mostra `{typography.mono}` (H) e caption (15:45–16:30). E1, E2 e O não são opções. Sem input de hora livre.
 - **occupancy-grid** — Eixo Y: Room ou Resource; eixo X: faixas do dia. Célula livre / tomada / exceção com os três tokens. Texto na célula: identificador, não nome de Student.

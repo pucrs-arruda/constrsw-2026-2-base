@@ -39,11 +39,11 @@ IDs canônicos a congelar no PRD (antes de tela): estudante, **employee** (pesso
 
 ## Esquema conceitual padronizado (equidade dos 9 grupos)
 
-Turma ConstrSW dividida em **9 grupos**, um por contexto de domínio. Critério único: o esquema conceitual de cada domínio tem **exatamente duas classes** — principal (agregado) e secundária em associação **1–N**. Exemplo canônico do grupo `employees`: **Employee** 1–N **EmploymentBond**. IDs de outros contextos são atributos da principal, não uma terceira classe. `bff` / `frontend` / `oauth` e o catálogo de **faixas** ficam fora desse critério.
+Turma ConstrSW dividida em **9 grupos**, um por contexto de domínio. Critério único: o esquema conceitual de cada domínio tem **exatamente duas classes** — principal (agregado) e secundária em associação **1–N**. Exemplo canônico do grupo `employees`: **Employee** 1–N **Dependent**. IDs de outros contextos são atributos da principal, não uma terceira classe. `bff` / `frontend` / `oauth` e o catálogo de **faixas** ficam fora desse critério.
 
 | Contexto | Principal | Secundária (1–N) | Atributos da secundária (v1) |
 |---|---|---|---|
-| `employees` | Employee | EmploymentBond | tipo de vínculo, início, fim?, unidade/setor (texto), situação |
+| `employees` | Employee | Dependent | `name`, `birthDate`, `dependencyType`, `status` |
 | `professors` | Professor | AcademicDegree | grau, área, instituição, ano. Principal: **is-a** Employee (`employeeId` 1–1 obrigatório) |
 | `students` | Student | AcademicAffiliation | código do curso, período de ingresso, situação (não é roster da turma) |
 | `courses` | Course | SyllabusItem | `kind` (conteúdo \| bibliografia \| critério), enunciado, ordem |
@@ -53,7 +53,7 @@ Turma ConstrSW dividida em **9 grupos**, um por contexto de domínio. Critério 
 | `lessons` | Lesson | LessonTopic | `syllabusItemId` e/ou enunciado extra, ordem |
 | `reservations` | Reservation | ReservationLine | `kind` (SALA \| RECURSO), `targetId` |
 
-**Employee** (principal): `id`, nome, e-mail institucional, ativo. **EmploymentBond** não é SIGRH: sem cargo, salário ou ponto. **[ASSUMPTION]** tipos de vínculo na v1: efetivo, temporário, bolsista.
+**Employee** (principal): `id`, `registrationNumber`, `name`, `salary`, `hireDate`, `position`, `status`; `phone` e `email` opcionais. Não é módulo de folha: sem ponto.
 
 Principais — atributos próprios e referências (sem terceira classe):
 

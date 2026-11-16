@@ -145,7 +145,7 @@ flowchart TB
 2. Paths `/v1/<contexto>` + tokens do glossário
 3. Listas com `items`
 4. RFC 9457 com `code=FR-*`
-5. JWT via JWKS + `GET /v1/identidade/me` (schema do fragmento oauth)
+5. JWT via JWKS + `GET /v1/identidade/me` (schema do fragmento oauth). Exceção da entrega `employees` (spec-employees, 2026-11-16): esse serviço não publica `GET /identidade/me`. Paths e lista dessa entrega são `/api/v1` e array JSON. O item continua para os outros contextos.
 6. Par `data` + `faixaId`; faixas só em `oauth/contracts/faixas.json`
 7. Direção de escrita AD-1; sem ciclo de escrita `lessons` ↔ `reservations`
 8. IDs de contrato = string; store não aparece no OpenAPI
@@ -160,6 +160,7 @@ flowchart TB
 
 - **Binds:** FR-27, UX-LOGIN, os 9 contextos, `bff`, `oauth`, OV-3
 - **Prevents:** adapter JS da UI ao Keycloak; nove endpoints de login; um grupo dono do IdP; token em `localStorage`; UI chamando o IdP; provisionar Employee→Keycloak na create; usar o adapter Node.js do Keycloak (DEPRECATED — usar OIDC/JWKS genérico)
+- **Exceção employees (2026-11-16):** o serviço `employees` desta entrega não implementa `GET /identidade/me`. JWKS e os papéis literais permanecem.
 - **Rule:** AuthN/AuthZ por roles via REST API OAuth em `backend/oauth` **sobre** Keycloak. Divisão: **oauth** = realm, roles/scopes, faixas, identity-gateway OpenAPI, adapters de referência; **BFF** = login browser, cookie httpOnly SameSite=Lax, propagação `Authorization: Bearer`; **domínios** = resource-server JWKS + `GET /v1/identidade/me` com o mesmo schema (`sub`, `email`, `papeis`, `employeeId`, `professorId`, `studentId`). Papéis v1 (strings literais do realm, sem prefixo `ROLE_` no contrato): `funcionario`\|`coordenador`\|`professor`\|`student`. `keycloak-js` **é proibido aqui** (o pacote ainda existe e é mantido — não é “deprecated”; a proibição é arquitetural). Adapters de referência em `oauth` são o padrão normativo de validação JWKS para os paved paths seed; qualquer outra linguagem deve equivaler ao mesmo contrato. `POST /v1/auth/login` no BFF usa Direct Access Grant do client confidencial `bff` no realm `closed-cras`. Credencial recusada: 401 sem enumerar. BFF/IdP down: 503; UI banner, sem fallback ao IdP. Federação CAFe/BAITA fora da v1. `[ASSUMPTION]` Direct Access Grant (não Authorization Code) para o `login-panel`.
 
 ### AD-5 — Sala efetiva em `lessons`; conflito no escritor [ADOPTED]
@@ -358,7 +359,7 @@ sequenceDiagram
 
 | Capability / Area | Lives in | Governed by |
 | --- | --- | --- |
-| FR-1, FR-2 Employee + EmploymentBond | `employees` + BFF módulo + UX-S1 | AD-1, AD-2, AD-6 |
+| FR-1, FR-2 Employee + Dependent | `employees` (spec-employees) + BFF módulo + UX-S1 | AD-1, AD-2, AD-6 |
 | FR-3, NFR-ID-1/2 identidade não copiada | consumidores guardam IDs | AD-1, AD-2, AD-3 |
 | FR-4, FR-5, FR-6 Professor is-a + AcademicDegree | `professors` (exige `employeeId` ativo) + UX-S2 | AD-1 OV-10, AD-4 |
 | FR-7, FR-8, FR-9 Student seed + affiliation; roster em Class | `students` import; `classes.studentIds` | AD-1, AD-8, AD-12 |

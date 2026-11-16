@@ -27,14 +27,14 @@ Este documento existe para ajudar os nove grupos (e os fluxos UX/arquitetura/ép
 | 10. Open Questions | 96 | Sim |
 | 11. Assumptions Index | 149 | Sim como índice; é reprise das tags já no corpo |
 
-**Fluxo atual vs. jornada do leitor:** Purpose → Vision → JTBD → UJs (EmploymentBond, faixa, sala efetiva ainda indefinidos) → Glossário → Features → NFRs → Constraints (regra 1–N) → Non-Goals → MVP → SMs. Detalhe prematuro nas UJs; andaime do par 1–N enterrado depois dos FRs. Quatro superfícies de “não é isto” (§2.2, Out of Scope por 4.x, §7, §8.2).
+**Fluxo atual vs. jornada do leitor:** Purpose → Vision → JTBD → UJs (Dependent, faixa, sala efetiva ainda indefinidos) → Glossário → Features → NFRs → Constraints (regra 1–N) → Non-Goals → MVP → SMs. Detalhe prematuro nas UJs; andaime do par 1–N enterrado depois dos FRs. Quatro superfícies de “não é isto” (§2.2, Out of Scope por 4.x, §7, §8.2).
 
 **Fora desta revisão (conteúdo sacrossanto):** não se cortam termos do Glossário, IDs de FR, nem bullets de **Consequences (testable)**. Propostas abaixo são só CUT / MERGE / MOVE / CONDENSE / PRESERVE.
 
 ## Recommendations
 
 ### 1. MOVE - §3 Glossary para imediatamente após §1 Vision
-**Rationale:** UJs e FRs usam EmploymentBond, faixa, esqueleto, sala efetiva, ReservationLine e is-a *antes* de o Glossário definir a língua que o próprio PRD declara âncora.
+**Rationale:** UJs e FRs usam Dependent, faixa, esqueleto, sala efetiva, ReservationLine e is-a *antes* de o Glossário definir a língua que o próprio PRD declara âncora.
 **Impact:** ~0 palavras (reordenação)
 **Comprehension note:** Melhora o andaime humano (overview da língua antes do detalhe). Não corta termos.
 
@@ -61,7 +61,7 @@ Este documento existe para ajudar os nove grupos (e os fluxos UX/arquitetura/ép
 ### 6. MOVE - §6 Constraints (ConstrSW) para imediatamente antes do §4 Features
 **Rationale:** A regra “uma principal + uma 1–N; IDs alheios não são terceira classe” é o filtro com que os grupos leem FR-2/6/8/12/14/21/22 — hoje só aparece depois de ~2.200 palavras de FRs.
 **Impact:** ~0 palavras (reordenação)
-**Comprehension note:** Grupos entendem *por que* EmploymentBond existe antes de implementar o par.
+**Comprehension note:** Grupos entendem *por que* Dependent existe antes de implementar o par.
 
 ### 7. CONDENSE - §8.1 In Scope; MERGE - §8.2 no §7
 **Rationale:** §8.1 é o tour do §4 numa frase só; §8.2 redireciona ao §7 — overview que recita o corpo.

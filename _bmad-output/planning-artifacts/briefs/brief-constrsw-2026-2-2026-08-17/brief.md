@@ -46,13 +46,13 @@ Formato travado: **APIs contract-first, BFF, UI web**. Não é app nativo. Não 
 
 Língua travada (não relitigar): **disciplina ≠ turma ≠ aula ≠ reserva ≠ faixa**. Sala ≠ prédio. Recurso ≠ sala. **Professor is-a Employee** (todo professor é funcionário; nem todo funcionário é professor). Estudante não é Employee. Plano de ensino ≠ nota de reserva. **Sala padrão** da turma ≠ **sala efetiva** da aula. Grade canônica no addendum: A–E, F–N e P; **sem E1, E2 ou O**.
 
-**Equidade entre grupos (não relitigar):** o esquema conceitual de **cada um dos 9 domínios** tem exatamente **duas classes** — uma **principal** (o agregado do contexto) e uma **secundária** em associação **1–N** com a principal (ex.: `Employee` 1–N `EmploymentBond`). IDs de *outros* contextos são atributos, não uma terceira classe. Os módulos `bff` e `oauth` são **compartilhados**: cada grupo incorpora *o seu* domínio neles (rotas/composição no BFF; papéis/escopos no OAuth). `frontend` fica fora do par 1–N. Detalhe no addendum.
+**Equidade entre grupos (não relitigar):** o esquema conceitual de **cada um dos 9 domínios** tem exatamente **duas classes** — uma **principal** (o agregado do contexto) e uma **secundária** em associação **1–N** com a principal (ex.: `Employee` 1–N `Dependent`). IDs de *outros* contextos são atributos, não uma terceira classe. Os módulos `bff` e `oauth` são **compartilhados**: cada grupo incorpora *o seu* domínio neles (rotas/composição no BFF; papéis/escopos no OAuth). `frontend` fica fora do par 1–N. Detalhe no addendum.
 
 ### O que cada grupo entrega
 
 | Serviço | Principal 1–N secundária (v1) | Fica para depois (neste grupo) |
 |---|---|---|
-| `employees` | **Employee** 1–N **EmploymentBond** (identidade da pessoa que trabalha na IES, inclusive quem leciona) | Folha, cargos SIGRH, ponto |
+| `employees` | **Employee** 1–N **Dependent** (identidade da pessoa que trabalha na IES, inclusive quem leciona) | Folha, cargos SIGRH, ponto |
 | `professors` | **Professor** 1–N **AcademicDegree**. **Is-a Employee:** `employeeId` obrigatório (1–1); não copia nome/e-mail | Lattes, progressão, encargos completos |
 | `students` | **Student** 1–N **AcademicAffiliation** (seed/import; sem UX de alta). Roster da turma fica em `classes` | Histórico, diploma XML, acervo, notas/frequência, SIS ao vivo |
 | `courses` | **Course** 1–N **SyllabusItem** (`kind`: conteúdo \| bibliografia \| critério) | Protocolo e-MEC, DCN, autorização/reconhecimento |

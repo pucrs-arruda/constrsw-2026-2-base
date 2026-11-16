@@ -31,7 +31,7 @@ Inventário herdado do addendum **Telas v1**, mais Login e Home. Onze superfíci
 |---|---|---|---|---|
 | UX-LOGIN | Login institucional | URL fria / sessão expirada | Autenticar via gateway REST de identidade | Compartilhada (todos os grupos) |
 | UX-HOME | Home do papel | Login ok; item Home da nav | Hub da jornada do papel; zero seletor de microsserviço | Compartilhada (todos os grupos) |
-| UX-S1 | Employee + EmploymentBond | Home / nav (Funcionário) | Cadastrar/editar Employee e vínculos 1–N | Exclusiva — OQ-1 |
+| UX-S1 | Employee + Dependent | Home / nav (Funcionário) | Cadastrar/editar Employee e vínculos 1–N | Exclusiva — OQ-1 |
 | UX-S2 | Professor + AcademicDegree | Home / nav (Funcionário); atalho pós-Employee | Criar papel docente sobre Employee existente; titulações | Exclusiva — OQ-1 |
 | UX-S3 | Room + AccessibilityFeature; Resource + InventoryItem | Home / nav (Funcionário) | Cadastro-mestre de espaço e recurso (duas zonas, uma superfície) | Exclusiva — OQ-1 |
 | UX-S4 | Ocupação por data + faixa | Home / nav (Funcionário) | Ocupação **agendada** de Room/Resource na data+faixa; sala efetiva | Exclusiva — OQ-1 |
@@ -83,7 +83,7 @@ Travada. Contratos e rótulos usam os mesmos termos. Proibido na chrome, form, t
 | Student | aluno como Employee |
 | sala padrão | “sala da turma” como se fosse o *onde* da aula |
 | sala efetiva | local, “sala da aula” ambíguo |
-| EmploymentBond, AcademicDegree, SyllabusItem, WeeklySlot, LessonTopic, AccessibilityFeature, InventoryItem, ReservationLine | terceira classe inventada na UI |
+| Dependent, AcademicDegree, SyllabusItem, WeeklySlot, LessonTopic, AccessibilityFeature, InventoryItem, ReservationLine | terceira classe inventada na UI |
 
 Professor na UX-S2 mostra nome/e-mail **resolvidos** do Employee (`employeeId`); campos de identidade não são editáveis no papel docente. Student na UX-S9 nunca vê “sala padrão” quando a efetiva for outra.
 
@@ -237,7 +237,7 @@ Nomes UJ verbatim do PRD. Climax em negrito. Falha = recusa de invariante, não 
 **Persona + contexto:** Helena, funcionária, steward de master data; um docente novo precisa existir como Employee antes de lecionar.
 
 1. Helena abre a UI, autentica em UX-LOGIN (gateway REST de identidade) no papel Funcionário e cai em UX-HOME.
-2. Card “Cadastrar quem trabalha” → UX-S1. Cria Employee (nome, e-mail institucional, ativo) e um EmploymentBond.
+2. Card “Cadastrar quem trabalha” → UX-S1. Cria Employee e um Dependent.
 3. Sem sair do papel, abre UX-S2. Seleciona o `employeeId` recém-criado (nome resolvido, não copiado). Cria Professor e um AcademicDegree.
 4. Em UX-S3 cadastra a Room (capacidade + pelo menos um AccessibilityFeature) e um Resource com InventoryItem.
 5. **Climax:** em UX-S4 escolhe uma data e lê o grid por faixa — salas e recursos ainda livres na grade. O `id` de Employee que ela acabou de gravar é o que S2 usou; não há segunda ficha de pessoa. Helena não escolheu microsserviço em nenhum passo.

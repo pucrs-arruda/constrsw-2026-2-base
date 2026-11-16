@@ -6,7 +6,7 @@ Matriz dos nove bounded contexts (equidade ConstrSW) e referências cross-servic
 
 | Contexto | Principal | Secundária 1–N | Notas |
 | --- | --- | --- | --- |
-| `employees` | Employee | EmploymentBond | Cadastro-mestre; não dono de Room/Resource/Professor |
+| `employees` | Employee | Dependent | Cadastro-mestre desta entrega (spec-employees, 2026-11-16). Não é dono de Room/Resource/Professor |
 | `professors` | Professor | AcademicDegree | is-a Employee via `employeeId` 1–1; não copia nome/e-mail; store PG ou Mongo irrelevante à identidade |
 | `students` | Student | AcademicAffiliation | Identidade recebida (seed); sem tela de alta |
 | `courses` | Course | SyllabusItem | `kind`: conteúdo \| bibliografia \| critério; plano datado |
@@ -79,7 +79,7 @@ Diagrama completo e regras: companion adotado `ARCHITECTURE-SPINE.md` (AD-1).
 
 | Papel | Escreve | Só lê |
 | --- | --- | --- |
-| `funcionario` | Employee, EmploymentBond, Room, Resource, cria Professor + AcademicDegree | Ocupação (via BFF); com Employee `ativo=false`, consumidores aplicam FR-1a (Class RO; recusa nova Reservation) |
+| `funcionario` | Employee, Dependent, Room, Resource, cria Professor + AcademicDegree | Ocupação (via BFF); com Employee `ativo=false`, consumidores aplicam FR-1a (Class RO; recusa nova Reservation) |
 | `coordenador` | Course, SyllabusItem, Class (dispara gerar Lesson) | — |
 | `professor` | Ajuste Lesson/LessonTopic; Reservation (+ cancelar) | Plano + roster da Class atribuída |
 | `student` | — | Lesson (sala efetiva), plano publicado via BFF |

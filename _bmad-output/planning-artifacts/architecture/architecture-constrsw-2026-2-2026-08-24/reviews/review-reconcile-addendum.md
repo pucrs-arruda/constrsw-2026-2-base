@@ -34,7 +34,7 @@
 ### Pares 1–N (equidade, não o schema)
 
 - Convenção Equidade: “Uma principal + uma secundária 1–N por contexto **(tabela do addendum)**. IDs alheios = atributos.”
-- Capability map cita EmploymentBond, AcademicDegree, affiliation, SyllabusItem, AccessibilityFeature, InventoryItem; AD-5 nomeia `ReservationLine.kind=SALA` / linhas `RECURSO`.
+- Capability map cita Dependent, AcademicDegree, affiliation, SyllabusItem, AccessibilityFeature, InventoryItem; AD-5 nomeia `ReservationLine.kind=SALA` / linhas `RECURSO`.
 - Professor is-a Employee (`employeeId`), sem copiar cadastro — AD-1 / mapa FR-3–FR-6.
 - Student seed/import JSON idempotente por `id`; sem tela de alta — convenção Student + AD-8 Prevents.
 - Sala efetiva = linha SALA senão `Class.roomId`; remoto sem Room — AD-5 (fórmula completa).
@@ -87,7 +87,7 @@ Isso **não** é miss: é o trabalho que o addendum pediu. Tensões dessa preenc
 
 ### G2 — Pares 1–N: tipos e atributos v1 não são invariante da malha
 
-- **No addendum:** duas tabelas — principal/secundária por contexto **e** atributos v1 de cada uma (EmploymentBond, AcademicDegree, AcademicAffiliation, SyllabusItem.`kind`, AccessibilityFeature, InventoryItem, **WeeklySlot (dia seg–sáb + `faixaId`)**, LessonTopic, ReservationLine `kind` SALA\|RECURSO + `targetId`; principals com `id`/nome/e-mail/ativo, Class.`roomId`+`professorIds`+`studentIds`, Lesson modalidade + `flagAvaliacao`, Reservation.`lessonId` opcional, etc.).
+- **No addendum:** duas tabelas — principal/secundária por contexto **e** atributos v1 de cada uma (Dependent, AcademicDegree, AcademicAffiliation, SyllabusItem.`kind`, AccessibilityFeature, InventoryItem, **WeeklySlot (dia seg–sáb + `faixaId`)**, LessonTopic, ReservationLine `kind` SALA\|RECURSO + `targetId`; principals com `id`/nome/e-mail/ativo, Class.`roomId`+`professorIds`+`studentIds`, Lesson modalidade + `flagAvaliacao`, Reservation.`lessonId` opcional, etc.).
 - **Na spine:** uma frase “tabela do addendum”. O nome **WeeklySlot** não ocorre. Atributos das secundárias (exceto ReservationLine na AD-5 e LessonTopic no Deferred OQ-3) não são Rule. Capability map ecoa alguns rótulos FR, não o schema mínimo.
 - **Por que diverge:** equidade ConstrSW *é* “1 principal + 1 secundária”. Sem os **nomes**, o grupo `classes` pode modelar esqueleto como RFC 5545, `employees` pode criar terceira classe Vínculo–Setor, `courses` pode soltar SyllabusItem num blob. Isso é exatamente a divergência que a tabela do addendum existia para impedir — e que a altitude da spine deveria fixar porque nove unidades escolhem incompatível.
 - **Severidade:** high (equidade + geração Lesson depende de WeeklySlot).
@@ -111,7 +111,7 @@ Isso **não** é miss: é o trabalho que o addendum pediu. Tensões dessa preenc
 
 | Rejeição | Efeito se um grupo relitigar |
 | --- | --- |
-| EmploymentBond como SIGRH (cargo, salário, ponto) | `employees` estoura o par 1–N e o recorte v1 |
+| Folha como SIGRH (cargo, salário, ponto) | `employees` estoura o par 1–N e o recorte v1 |
 | Todo Employee é Professor | cadastro-mestre vira só docentes; is-a num sentido some |
 | Ser o SIGAA/TOTVS da disciplina | escopo de SIS ao vivo (já “sem SIS” nas lacunas) |
 | App nativo ou totem | AD-8 implica web, mas não Prevents nativo |
