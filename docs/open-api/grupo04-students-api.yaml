@@ -431,6 +431,7 @@ paths:
               $ref: '#/components/schemas/AcademicEnrollmentRequest'
             example:
               course_code: 4646B
+              course_name: Engenharia de Software
               admission_term: 2024/1
               status: active
               start_date: '2024-03-04'
@@ -501,6 +502,18 @@ paths:
         explode: true
         example:
         - 4646B
+      - name: course_name
+        in: query
+        required: false
+        description: Filtra por `course_name`. Aceita todos os operadores.
+        schema:
+          type: array
+          items:
+            type: string
+        style: form
+        explode: true
+        example:
+        - Engenharia de Software
       - name: admission_term
         in: query
         required: false
@@ -648,6 +661,7 @@ paths:
               $ref: '#/components/schemas/AcademicEnrollmentRequest'
             example:
               course_code: 4646B
+              course_name: Engenharia de Software
               admission_term: 2024/1
               status: graduated
               start_date: '2024-03-04'
@@ -997,6 +1011,13 @@ components:
           description: Código do curso
           examples:
           - 4646B
+        course_name:
+          type: string
+          minLength: 1
+          maxLength: 200
+          description: Nome do curso
+          examples:
+          - Engenharia de Software
         admission_term:
           type: string
           pattern: ^[0-9]{4}/[12]$
@@ -1033,6 +1054,7 @@ components:
       - enabled
       - student_id
       - course_code
+      - course_name
       - admission_term
       - status
       - start_date
@@ -1050,6 +1072,13 @@ components:
           description: Código do curso
           examples:
           - 4646B
+        course_name:
+          type: string
+          minLength: 1
+          maxLength: 200
+          description: Nome do curso
+          examples:
+          - Engenharia de Software
         admission_term:
           type: string
           pattern: ^[0-9]{4}/[12]$
@@ -1083,6 +1112,7 @@ components:
           - 
       required:
       - course_code
+      - course_name
       - admission_term
       - status
       - start_date
@@ -1099,6 +1129,13 @@ components:
           description: Código do curso
           examples:
           - 4646B
+        course_name:
+          type: string
+          minLength: 1
+          maxLength: 200
+          description: Nome do curso
+          examples:
+          - Engenharia de Software
         admission_term:
           type: string
           pattern: ^[0-9]{4}/[12]$

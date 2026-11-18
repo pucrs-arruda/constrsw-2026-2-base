@@ -1,0 +1,817 @@
+openapi: 3.1.0
+jsonSchemaDialect: https://json-schema.org/draft/2020-12/schema
+info:
+  title: Employees API
+  version: 1.0.0
+  summary: REST API employees — ConstrSW 2026/2
+  description: |
+    Cadastro de Employee e de Dependent (composição 0..*). Um documento por Employee no MongoDB
+    `cras_employees`. Prefixo `/api/v1`. Lista é um array JSON, nunca um envelope `items`.
+
+    Os corpos estão nos JSON Schemas 2020-12 em `schemas/employee-*.schema.json` e
+    `schemas/dependent-*.schema.json`. O índice `arruda-employees-schemas.json` só aponta para
+    esses arquivos. Esta especificação é a fonte de rotas, status, autenticação e headers.
+
+    ## Autenticação
+
+    `GET /api/v1/health` e `GET /metrics` não pedem token. As demais rotas exigem
+    `Authorization: Bearer <jwt>`. O serviço valida o JWT no JWKS configurado (`OAUTH_BASE_URL` +
+    `OAUTH_JWKS_PATH`), com issuer e audience do ambiente. Os papéis saem de `realm_access.roles`.
+
+    - Leitura (`GET` de Employee e Dependent): `funcionario`, `coordenador`, `professor` ou `student`.
+    - Escrita (`POST`, `PUT`, `PATCH`, `DELETE`): só `funcionario`.
+
+    Token ausente ou inválido responde 401 com o mesmo `detail` (`Token ausente ou inválido`): a
+    resposta não informa se a conta existe. Papel autenticado sem permissão responde 403.
+
+    ## Duas representações
+
+    GET de coleção e GET por id incluem `ativo` (`Active` → true, `Inactive` → false), no Employee
+    e no Dependent. POST, PUT e PATCH não aceitam `ativo` no pedido e não o devolvem. Enviá-lo
+    responde 400.
+
+    POST de Employee não devolve `dependents`. PUT e PATCH de Employee devolvem os dependents
+    ainda visíveis, sem `ativo`. PUT e PATCH de Employee não alteram essa coleção.
+
+    ## Exclusão lógica e situação cadastral
+
+    `status` (`Active` ou `Inactive`) e a exclusão lógica são eixos diferentes. `Inactive` continua
+    nas leituras, com `ativo` false. `enabled` não faz parte destes schemas e não aparece no corpo
+    de sucesso. DELETE não apaga o documento: marca `enabled=false`. O registro some das leituras
+    e um PUT, PATCH ou DELETE seguinte responde 404. Não há undelete.
+
+    DELETE do Employee também marca os dependents. DELETE de um Dependent marca só aquele item;
+    o GET do Employee volta sem ele.
+
+    O segundo DELETE responde 404. Repetir o DELETE depois de um 204 não produz outro 204.
+
+    ## E-mail e matrícula
+
+    E-mail com texto é único entre todos os Employee, inclusive `Inactive` e excluídos logicamente.
+    A comparação é exata, depois de remover espaços nas pontas, e distingue maiúsculas. Vazio ou só
+    espaços não entra no índice. O próprio registro pode reenviar o mesmo e-mail. `registrationNumber`
+    não é único. `phone` não é único e não tem formato imposto.
+
+    No PUT, omitir `phone` ou `email` (ou enviá-los vazios) remove o valor gravado. No PATCH, campo
+    omitido permanece; vazio ou só espaços remove.
+
+    ## O que a lista não faz
+
+    Não há filtro, `sort`, `page` nem `size`. A coleção devolve todos os registros ainda endereçáveis.
+    Query string não muda o resultado. Coleção vazia é `[]`, com 200.
+
+    ## Erros
+
+    400, 401, 403, 404 e 409 usam `application/problem+json`, com `type`, `title`, `status`, `detail`,
+    `code` e `instance`. O `status` do corpo repete o HTTP. O 400 inclui `errors` (`field`, `message`)
+    com todos os problemas do corpo, não só o primeiro. `null` e campo fora do schema respondem 400.
+    Data é `AAAA-MM-DD`: mês inexistente responde 400; dia que não cabe no mês, como `2020-02-31`, é aceito.
+    JSON que não parseia não chega nesse validador: a resposta é 500 `internal`, com `instance` vazio.
+    Health não usa esse envelope. Falha inesperada responde 500, no mesmo envelope, com `code` `internal`.
+servers:
+  - url: http://localhost:8184
+    description: docker compose (porta externa)
+tags:
+  - name: employees
+    description: Coleção principal
+  - name: dependents
+    description: Dependentes compostos no documento do Employee
+  - name: operations
+    description: Health e métricas, sem token
+security:
+  - bearerAuth: []
+paths:
+  /api/v1/health:
+    get:
+      tags: [operations]
+      operationId: getEmployeesHealth
+      summary: Verifica se o Mongo responde
+      description: |
+        Sem `Authorization`. 200 `{status: ok}` quando o ping responde; 503 `{status: down}` quando
+        não responde. O corpo não é `application/problem+json`.
+      security: []
+      responses:
+        '200':
+          description: Mongo respondeu ao ping
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Health'
+              example:
+                status: ok
+        '503':
+          description: Mongo não respondeu ao ping
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Health'
+              example:
+                status: down
+  /metrics:
+    get:
+      tags: [operations]
+      operationId: getEmployeesMetrics
+      summary: Expõe a métrica employees_up
+      description: |
+        Sem `Authorization`. Texto no formato Prometheus, não JSON. Não faz parte do CRUD de
+        Employee. O valor publicado é o gauge `employees_up` 1 enquanto o processo responde.
+      security: []
+      responses:
+        '200':
+          description: Métrica do processo
+          content:
+            text/plain:
+              schema:
+                type: string
+              example: |
+                # HELP employees_up Processo employees no ar
+                # TYPE employees_up gauge
+                employees_up 1
+  /api/v1/employees:
+    get:
+      tags: [employees]
+      operationId: listEmployees
+      summary: Lista os Employee endereçáveis
+      description: |
+        200 e um array. Vazio é `[]`. Cada item traz `ativo` e os dependents ainda visíveis.
+        Employee excluído logicamente não entra. Não há filtro, ordenação nem paginação.
+
+        Papéis: `funcionario`, `coordenador`, `professor`, `student`.
+      responses:
+        '200':
+          description: Lista completa, possivelmente vazia
+          content:
+            application/json:
+              schema:
+                type: array
+                items:
+                  $ref: '#/components/schemas/EmployeeRead'
+              examples:
+                vazia:
+                  summary: Nenhum Employee endereçável
+                  value: []
+                comInativo:
+                  summary: Inactive continua na lista, com ativo false
+                  value:
+                    - id: 6f1c2b9e-8d4a-4c3e-9b1a-2f5d7e8c9a01
+                      registrationNumber: '100'
+                      name: Helena Costa
+                      salary: 8500.5
+                      hireDate: '2020-01-15'
+                      position: Analista
+                      phone: '5133203500'
+                      email: helena.costa@pucrs.br
+                      status: Inactive
+                      ativo: false
+                      dependents:
+                        - id: 7a2d3c4e-1b5f-4a6c-8d9e-0f1a2b3c4d5e
+                          name: Caio Costa
+                          birthDate: '2010-05-01'
+                          dependencyType: filho
+                          status: Active
+                          ativo: true
+        '401':
+          $ref: '#/components/responses/Unauthorized'
+        '403':
+          $ref: '#/components/responses/Forbidden'
+        '500':
+          $ref: '#/components/responses/InternalError'
+    post:
+      tags: [employees]
+      operationId: createEmployee
+      summary: Cria um Employee
+      description: |
+        O serviço emite o `id` e responde 201 com `Location` no caminho do recurso. O corpo de
+        resposta não traz `ativo` nem `dependents`. E-mail novo e não branco entra no índice único.
+        E-mail já usado, inclusive por registro Inactive ou excluído, responde 409.
+
+        Papel: `funcionario`.
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/EmployeeWrite'
+            example:
+              registrationNumber: '100'
+              name: Helena Costa
+              salary: 8500.5
+              hireDate: '2020-01-15'
+              position: Analista
+              status: Active
+              phone: '5133203500'
+              email: helena.costa@pucrs.br
+      responses:
+        '201':
+          description: Employee criado
+          headers:
+            Location:
+              $ref: '#/components/headers/EmployeeLocation'
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/EmployeeCreated'
+              example:
+                id: 6f1c2b9e-8d4a-4c3e-9b1a-2f5d7e8c9a01
+                registrationNumber: '100'
+                name: Helena Costa
+                salary: 8500.5
+                hireDate: '2020-01-15'
+                position: Analista
+                status: Active
+                phone: '5133203500'
+                email: helena.costa@pucrs.br
+        '400':
+          $ref: '#/components/responses/BadRequest'
+        '401':
+          $ref: '#/components/responses/Unauthorized'
+        '403':
+          $ref: '#/components/responses/Forbidden'
+        '409':
+          $ref: '#/components/responses/EmailConflict'
+        '500':
+          $ref: '#/components/responses/InternalError'
+  /api/v1/employees/{id}:
+    parameters:
+      - $ref: '#/components/parameters/EmployeeId'
+    get:
+      tags: [employees]
+      operationId: readEmployee
+      summary: Lê um Employee
+      description: |
+        200 com `ativo` e os dependents ainda visíveis. `Inactive` responde 200 com `ativo` false.
+        Id desconhecido ou Employee excluído logicamente responde 404. O formato do id não é
+        validado: qualquer string desconhecida é 404, não 400.
+
+        Papéis: `funcionario`, `coordenador`, `professor`, `student`.
+      responses:
+        '200':
+          description: Employee endereçável
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/EmployeeRead'
+              example:
+                id: 6f1c2b9e-8d4a-4c3e-9b1a-2f5d7e8c9a01
+                registrationNumber: '100'
+                name: Helena Costa
+                salary: 8500.5
+                hireDate: '2020-01-15'
+                position: Analista
+                phone: '5133203500'
+                email: helena.costa@pucrs.br
+                status: Inactive
+                ativo: false
+                dependents:
+                  - id: 7a2d3c4e-1b5f-4a6c-8d9e-0f1a2b3c4d5e
+                    name: Caio Costa
+                    birthDate: '2010-05-01'
+                    dependencyType: filho
+                    status: Active
+                    ativo: true
+        '401':
+          $ref: '#/components/responses/Unauthorized'
+        '403':
+          $ref: '#/components/responses/Forbidden'
+        '404':
+          $ref: '#/components/responses/EmployeeNotFound'
+        '500':
+          $ref: '#/components/responses/InternalError'
+    put:
+      tags: [employees]
+      operationId: replaceEmployee
+      summary: Substitui os atributos do Employee
+      description: |
+        Substitui registrationNumber, name, salary, hireDate, position, status, phone e email.
+        Não altera `dependents` nem `enabled`. phone e email omitidos, vazios ou só com espaços
+        deixam de existir. A resposta traz os dependents ainda visíveis, sem `ativo`.
+
+        Employee ausente ou excluído responde 404 e o documento permanece. O mesmo e-mail neste
+        id não é conflito; e-mail de outro documento é 409.
+
+        Papel: `funcionario`.
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/EmployeeWrite'
+            example:
+              registrationNumber: '100'
+              name: Helena Costa
+              salary: 8500.5
+              hireDate: '2020-01-15'
+              position: Analista
+              status: Inactive
+              email: helena.costa@pucrs.br
+      responses:
+        '200':
+          description: Employee substituído; dependents intocados
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/EmployeeUpdated'
+              example:
+                id: 6f1c2b9e-8d4a-4c3e-9b1a-2f5d7e8c9a01
+                registrationNumber: '100'
+                name: Helena Costa
+                salary: 8500.5
+                hireDate: '2020-01-15'
+                position: Analista
+                email: helena.costa@pucrs.br
+                status: Inactive
+                dependents:
+                  - id: 7a2d3c4e-1b5f-4a6c-8d9e-0f1a2b3c4d5e
+                    name: Caio Costa
+                    birthDate: '2010-05-01'
+                    dependencyType: filho
+                    status: Active
+        '400':
+          $ref: '#/components/responses/BadRequest'
+        '401':
+          $ref: '#/components/responses/Unauthorized'
+        '403':
+          $ref: '#/components/responses/Forbidden'
+        '404':
+          $ref: '#/components/responses/EmployeeNotFound'
+        '409':
+          $ref: '#/components/responses/EmailConflict'
+        '500':
+          $ref: '#/components/responses/InternalError'
+    patch:
+      tags: [employees]
+      operationId: patchEmployee
+      summary: Atualiza só os campos enviados
+      description: |
+        Altera somente os atributos presentes. Objeto vazio responde 200 sem mudar nada. phone ou
+        email vazio, ou só com espaços, remove esse valor. dependents não mudam. A resposta não
+        traz `ativo` e traz os dependents ainda visíveis, sem `ativo`.
+
+        Papel: `funcionario`.
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/EmployeePatch'
+            example:
+              position: Coordenação
+      responses:
+        '200':
+          description: Employee com os campos enviados alterados
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/EmployeeUpdated'
+              example:
+                id: 6f1c2b9e-8d4a-4c3e-9b1a-2f5d7e8c9a01
+                registrationNumber: '100'
+                name: Helena Costa
+                salary: 8500.5
+                hireDate: '2020-01-15'
+                position: Coordenação
+                email: helena.costa@pucrs.br
+                status: Active
+                dependents:
+                  - id: 7a2d3c4e-1b5f-4a6c-8d9e-0f1a2b3c4d5e
+                    name: Caio Costa
+                    birthDate: '2010-05-01'
+                    dependencyType: filho
+                    status: Active
+        '400':
+          $ref: '#/components/responses/BadRequest'
+        '401':
+          $ref: '#/components/responses/Unauthorized'
+        '403':
+          $ref: '#/components/responses/Forbidden'
+        '404':
+          $ref: '#/components/responses/EmployeeNotFound'
+        '409':
+          $ref: '#/components/responses/EmailConflict'
+        '500':
+          $ref: '#/components/responses/InternalError'
+    delete:
+      tags: [employees]
+      operationId: deleteEmployee
+      summary: Exclui logicamente o Employee
+      description: |
+        204 sem corpo. O documento permanece; `enabled` do Employee e de todos os dependents passa
+        a false. Novo GET, PUT, PATCH ou DELETE desse id responde 404.
+
+        Papel: `funcionario`.
+      responses:
+        '204':
+          description: Employee e dependents marcados como excluídos; sem corpo
+        '401':
+          $ref: '#/components/responses/Unauthorized'
+        '403':
+          $ref: '#/components/responses/Forbidden'
+        '404':
+          $ref: '#/components/responses/EmployeeNotFound'
+        '500':
+          $ref: '#/components/responses/InternalError'
+  /api/v1/employees/{id}/dependents:
+    parameters:
+      - $ref: '#/components/parameters/EmployeeId'
+    get:
+      tags: [dependents]
+      operationId: listDependents
+      summary: Lista os Dependent visíveis
+      description: |
+        200 e um array, vazio se não houver dependente visível. Cada item traz `ativo`. Employee
+        ausente ou excluído responde 404, com detail `Employee não encontrado`.
+
+        Papéis: `funcionario`, `coordenador`, `professor`, `student`.
+      responses:
+        '200':
+          description: Dependentes ainda visíveis
+          content:
+            application/json:
+              schema:
+                type: array
+                items:
+                  $ref: '#/components/schemas/DependentRead'
+              examples:
+                vazia:
+                  summary: Employee sem dependente visível
+                  value: []
+                umItem:
+                  value:
+                    - id: 7a2d3c4e-1b5f-4a6c-8d9e-0f1a2b3c4d5e
+                      name: Caio Costa
+                      birthDate: '2010-05-01'
+                      dependencyType: filho
+                      status: Active
+                      ativo: true
+        '401':
+          $ref: '#/components/responses/Unauthorized'
+        '403':
+          $ref: '#/components/responses/Forbidden'
+        '404':
+          $ref: '#/components/responses/EmployeeNotFound'
+        '500':
+          $ref: '#/components/responses/InternalError'
+    post:
+      tags: [dependents]
+      operationId: createDependent
+      summary: Cria um Dependent
+      description: |
+        201 com `Location` do dependente. A resposta não traz `ativo`. Se o Employee não está
+        endereçável, a resposta é 404 antes da validação do corpo.
+
+        Papel: `funcionario`.
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/DependentWrite'
+            example:
+              name: Caio Costa
+              birthDate: '2010-05-01'
+              dependencyType: filho
+              status: Active
+      responses:
+        '201':
+          description: Dependent criado
+          headers:
+            Location:
+              $ref: '#/components/headers/DependentLocation'
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/DependentWritten'
+              example:
+                id: 7a2d3c4e-1b5f-4a6c-8d9e-0f1a2b3c4d5e
+                name: Caio Costa
+                birthDate: '2010-05-01'
+                dependencyType: filho
+                status: Active
+        '400':
+          $ref: '#/components/responses/BadRequest'
+        '401':
+          $ref: '#/components/responses/Unauthorized'
+        '403':
+          $ref: '#/components/responses/Forbidden'
+        '404':
+          $ref: '#/components/responses/EmployeeNotFound'
+        '500':
+          $ref: '#/components/responses/InternalError'
+  /api/v1/employees/{id}/dependents/{dependentId}:
+    parameters:
+      - $ref: '#/components/parameters/EmployeeId'
+      - $ref: '#/components/parameters/DependentId'
+    get:
+      tags: [dependents]
+      operationId: readDependent
+      summary: Lê um Dependent
+      description: |
+        200 com `ativo`. 404 com detail `Employee não encontrado` se o pai não está endereçável, ou
+        `Dependent não encontrado` se o item não existe ou já foi excluído.
+
+        Papéis: `funcionario`, `coordenador`, `professor`, `student`.
+      responses:
+        '200':
+          description: Dependent visível
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/DependentRead'
+              example:
+                id: 7a2d3c4e-1b5f-4a6c-8d9e-0f1a2b3c4d5e
+                name: Caio Costa
+                birthDate: '2010-05-01'
+                dependencyType: filho
+                status: Inactive
+                ativo: false
+        '401':
+          $ref: '#/components/responses/Unauthorized'
+        '403':
+          $ref: '#/components/responses/Forbidden'
+        '404':
+          $ref: '#/components/responses/DependentNotFound'
+        '500':
+          $ref: '#/components/responses/InternalError'
+    put:
+      tags: [dependents]
+      operationId: replaceDependent
+      summary: Substitui um Dependent
+      description: |
+        Substitui name, birthDate, dependencyType e status desse item. Não cria nem remove outros.
+        A resposta não traz `ativo`.
+
+        Papel: `funcionario`.
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/DependentWrite'
+            example:
+              name: Caio Costa
+              birthDate: '2010-05-01'
+              dependencyType: filho
+              status: Inactive
+      responses:
+        '200':
+          description: Dependent substituído
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/DependentWritten'
+              example:
+                id: 7a2d3c4e-1b5f-4a6c-8d9e-0f1a2b3c4d5e
+                name: Caio Costa
+                birthDate: '2010-05-01'
+                dependencyType: filho
+                status: Inactive
+        '400':
+          $ref: '#/components/responses/BadRequest'
+        '401':
+          $ref: '#/components/responses/Unauthorized'
+        '403':
+          $ref: '#/components/responses/Forbidden'
+        '404':
+          $ref: '#/components/responses/DependentNotFound'
+        '500':
+          $ref: '#/components/responses/InternalError'
+    patch:
+      tags: [dependents]
+      operationId: patchDependent
+      summary: Atualiza só os campos enviados do Dependent
+      description: |
+        Objeto vazio responde 200 sem mudar nada. Campo de texto vazio responde 400: esses quatro
+        atributos não podem ser apagados. A resposta não traz `ativo`.
+
+        Papel: `funcionario`.
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/DependentPatch'
+            example:
+              name: Caio Costa Lima
+      responses:
+        '200':
+          description: Dependent com os campos enviados alterados
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/DependentWritten'
+              example:
+                id: 7a2d3c4e-1b5f-4a6c-8d9e-0f1a2b3c4d5e
+                name: Caio Costa Lima
+                birthDate: '2010-05-01'
+                dependencyType: filho
+                status: Active
+        '400':
+          $ref: '#/components/responses/BadRequest'
+        '401':
+          $ref: '#/components/responses/Unauthorized'
+        '403':
+          $ref: '#/components/responses/Forbidden'
+        '404':
+          $ref: '#/components/responses/DependentNotFound'
+        '500':
+          $ref: '#/components/responses/InternalError'
+    delete:
+      tags: [dependents]
+      operationId: deleteDependent
+      summary: Exclui logicamente um Dependent
+      description: |
+        204 sem corpo. Só esse item fica `enabled=false`. O Employee continua endereçável e o GET
+        do pai omite o item. Novo GET, PUT, PATCH ou DELETE desse dependentId responde 404.
+
+        Papel: `funcionario`.
+      responses:
+        '204':
+          description: Dependent marcado como excluído; sem corpo
+        '401':
+          $ref: '#/components/responses/Unauthorized'
+        '403':
+          $ref: '#/components/responses/Forbidden'
+        '404':
+          $ref: '#/components/responses/DependentNotFound'
+        '500':
+          $ref: '#/components/responses/InternalError'
+components:
+  securitySchemes:
+    bearerAuth:
+      type: http
+      scheme: bearer
+      bearerFormat: JWT
+      description: |
+        JWT de `realm_access.roles`. Leitura aceita funcionario, coordenador, professor e student.
+        Escrita aceita só funcionario.
+  parameters:
+    EmployeeId:
+      name: id
+      in: path
+      required: true
+      description: |
+        Id do Employee. O serviço emite UUID v4 na criação. A busca não valida o formato: string
+        desconhecida, ou id já excluído, responde 404.
+      schema:
+        type: string
+      example: 6f1c2b9e-8d4a-4c3e-9b1a-2f5d7e8c9a01
+    DependentId:
+      name: dependentId
+      in: path
+      required: true
+      description: |
+        Id do Dependent. O serviço emite UUID v4 na criação. String desconhecida ou item já
+        excluído responde 404.
+      schema:
+        type: string
+      example: 7a2d3c4e-1b5f-4a6c-8d9e-0f1a2b3c4d5e
+  headers:
+    EmployeeLocation:
+      description: Caminho do Employee criado, não uma URL absoluta.
+      schema:
+        type: string
+      example: /api/v1/employees/6f1c2b9e-8d4a-4c3e-9b1a-2f5d7e8c9a01
+    DependentLocation:
+      description: Caminho do Dependent criado, não uma URL absoluta.
+      schema:
+        type: string
+      example: /api/v1/employees/6f1c2b9e-8d4a-4c3e-9b1a-2f5d7e8c9a01/dependents/7a2d3c4e-1b5f-4a6c-8d9e-0f1a2b3c4d5e
+  schemas:
+    EmployeeRead:
+      $ref: ./schemas/employee-read.schema.json
+    EmployeeCreated:
+      $ref: ./schemas/employee-created.schema.json
+    EmployeeUpdated:
+      $ref: ./schemas/employee-updated.schema.json
+    EmployeeWrite:
+      $ref: ./schemas/employee-write.schema.json
+    EmployeePatch:
+      $ref: ./schemas/employee-patch.schema.json
+    DependentRead:
+      $ref: ./schemas/dependent-read.schema.json
+    DependentWritten:
+      $ref: ./schemas/dependent-written.schema.json
+    DependentWrite:
+      $ref: ./schemas/dependent-write.schema.json
+    DependentPatch:
+      $ref: ./schemas/dependent-patch.schema.json
+    Problem:
+      $ref: ./schemas/employee-problem.schema.json
+    Health:
+      $ref: ./schemas/employee-health.schema.json
+  responses:
+    BadRequest:
+      description: |
+        JSON parseado que não cumpre o schema: não é objeto, campo obrigatório ausente, campo
+        desconhecido (incluindo ativo, dependents e enabled), null, tipo errado ou valor inválido.
+        JSON que não parseia responde 500, não 400.
+      content:
+        application/problem+json:
+          schema:
+            $ref: '#/components/schemas/Problem'
+          example:
+            type: about:blank
+            title: Corpo inválido
+            status: 400
+            detail: O corpo não cumpre o contrato
+            code: validation
+            instance: /api/v1/employees
+            errors:
+              - field: ativo
+                message: Campo não permitido
+              - field: email
+                message: E-mail inválido
+    Unauthorized:
+      description: Authorization ausente, sem Bearer, ou JWT que o JWKS não aceita. O detail não distingue esses casos.
+      content:
+        application/problem+json:
+          schema:
+            $ref: '#/components/schemas/Problem'
+          example:
+            type: about:blank
+            title: Não autenticado
+            status: 401
+            detail: Token ausente ou inválido
+            code: unauthorized
+            instance: /api/v1/employees
+    Forbidden:
+      description: Token válido cujo realm_access.roles não inclui um papel aceito nesta rota.
+      content:
+        application/problem+json:
+          schema:
+            $ref: '#/components/schemas/Problem'
+          example:
+            type: about:blank
+            title: Proibido
+            status: 403
+            detail: Papel sem permissão
+            code: forbidden
+            instance: /api/v1/employees
+    EmployeeNotFound:
+      description: Não há Employee endereçável com esse id (desconhecido ou excluído logicamente).
+      content:
+        application/problem+json:
+          schema:
+            $ref: '#/components/schemas/Problem'
+          example:
+            type: about:blank
+            title: Não encontrado
+            status: 404
+            detail: Employee não encontrado
+            code: not-found
+            instance: /api/v1/employees/6f1c2b9e-8d4a-4c3e-9b1a-2f5d7e8c9a01
+    DependentNotFound:
+      description: |
+        Employee não endereçável (detail `Employee não encontrado`) ou Dependent inexistente ou
+        excluído (detail `Dependent não encontrado`).
+      content:
+        application/problem+json:
+          schema:
+            $ref: '#/components/schemas/Problem'
+          examples:
+            employee:
+              summary: Pai ausente ou excluído
+              value:
+                type: about:blank
+                title: Não encontrado
+                status: 404
+                detail: Employee não encontrado
+                code: not-found
+                instance: /api/v1/employees/6f1c2b9e-8d4a-4c3e-9b1a-2f5d7e8c9a01/dependents
+            dependent:
+              summary: Item ausente ou excluído
+              value:
+                type: about:blank
+                title: Não encontrado
+                status: 404
+                detail: Dependent não encontrado
+                code: not-found
+                instance: /api/v1/employees/6f1c2b9e-8d4a-4c3e-9b1a-2f5d7e8c9a01/dependents/7a2d3c4e-1b5f-4a6c-8d9e-0f1a2b3c4d5e
+    EmailConflict:
+      description: E-mail com texto já gravado em outro Employee, inclusive Inactive ou excluído logicamente.
+      content:
+        application/problem+json:
+          schema:
+            $ref: '#/components/schemas/Problem'
+          example:
+            type: about:blank
+            title: Conflito
+            status: 409
+            detail: E-mail já cadastrado
+            code: conflict
+            instance: /api/v1/employees
+    InternalError:
+      description: |
+        Falha não prevista. JSON sintaticamente inválido também cai aqui, com `instance` vazio,
+        porque o corpo nem chega ao validador. JSON parseado que fere o schema continua sendo 400.
+      content:
+        application/problem+json:
+          schema:
+            $ref: '#/components/schemas/Problem'
+          example:
+            type: about:blank
+            title: Erro interno
+            status: 500
+            detail: Falha inesperada
+            code: internal
+            instance: ''

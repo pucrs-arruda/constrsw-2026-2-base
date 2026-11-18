@@ -1,0 +1,71 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "title": "Problem",
+  "description": "Erro application/problem+json (RFC 9457) dos status 400, 401, 403, 404, 409 e da falha inesperada 500. status repete o HTTP. errors só acompanha o 400. JSON sintaticamente inválido responde 500, com instance vazio, e não 400. Health não usa este envelope. O 401 usa o mesmo detail para token ausente e token inválido: não informa se a conta existe.",
+  "type": "object",
+  "additionalProperties": false,
+  "required": ["type", "title", "status", "detail", "code", "instance"],
+  "properties": {
+    "type": {
+      "type": "string",
+      "const": "about:blank",
+      "description": "Sempre about:blank neste serviço."
+    },
+    "title": {
+      "type": "string",
+      "description": "Título curto: Corpo inválido, Não autenticado, Proibido, Não encontrado, Conflito ou Erro interno."
+    },
+    "status": {
+      "type": "integer",
+      "description": "O mesmo status HTTP da resposta."
+    },
+    "detail": {
+      "type": "string",
+      "description": "Explicação estável. 401: Token ausente ou inválido. 403: Papel sem permissão. 404 de Employee: Employee não encontrado. 404 de Dependent: Dependent não encontrado. 409: E-mail já cadastrado. 400: O corpo não cumpre o contrato. 500: Falha inesperada."
+    },
+    "code": {
+      "type": "string",
+      "enum": ["validation", "unauthorized", "forbidden", "not-found", "conflict", "internal"],
+      "description": "Código estável para o cliente decidir o que fazer. validation=400, unauthorized=401, forbidden=403, not-found=404, conflict=409, internal=500."
+    },
+    "instance": {
+      "type": "string",
+      "description": "Caminho da requisição. Na falha inesperada 500 pode vir vazio."
+    },
+    "errors": {
+      "type": "array",
+      "description": "Presente no 400. Ausente nos demais códigos.",
+      "items": {
+        "$ref": "./employee-field-error.schema.json"
+      }
+    }
+  },
+  "examples": [
+    {
+      "type": "about:blank",
+      "title": "Corpo inválido",
+      "status": 400,
+      "detail": "O corpo não cumpre o contrato",
+      "code": "validation",
+      "instance": "/api/v1/employees",
+      "errors": [
+        {
+          "field": "ativo",
+          "message": "Campo não permitido"
+        },
+        {
+          "field": "email",
+          "message": "E-mail inválido"
+        }
+      ]
+    },
+    {
+      "type": "about:blank",
+      "title": "Conflito",
+      "status": 409,
+      "detail": "E-mail já cadastrado",
+      "code": "conflict",
+      "instance": "/api/v1/employees"
+    }
+  ]
+}

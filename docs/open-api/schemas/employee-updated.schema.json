@@ -1,0 +1,90 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "title": "EmployeeUpdated",
+  "description": "Resposta 200 de PUT e PATCH /api/v1/employees/{id}. Traz dependents ainda visíveis, sem ativo neles e sem ativo no Employee. phone e email só aparecem quando continuam gravados. enabled não aparece.",
+  "type": "object",
+  "additionalProperties": false,
+  "required": [
+    "id",
+    "registrationNumber",
+    "name",
+    "salary",
+    "hireDate",
+    "position",
+    "status",
+    "dependents"
+  ],
+  "properties": {
+    "id": {
+      "type": "string",
+      "format": "uuid",
+      "readOnly": true,
+      "description": "UUID v4 emitido na criação. Imutável."
+    },
+    "registrationNumber": {
+      "type": "string",
+      "minLength": 1,
+      "pattern": "\\S"
+    },
+    "name": {
+      "type": "string",
+      "minLength": 1,
+      "pattern": "\\S"
+    },
+    "salary": {
+      "type": "number"
+    },
+    "hireDate": {
+      "type": "string",
+      "pattern": "^\\d{4}-\\d{2}-\\d{2}$",
+      "description": "Data de admissão gravada, AAAA-MM-DD."
+    },
+    "position": {
+      "type": "string",
+      "minLength": 1,
+      "pattern": "\\S"
+    },
+    "phone": {
+      "type": "string",
+      "minLength": 1,
+      "description": "Omitido quando não há telefone gravado depois da escrita."
+    },
+    "email": {
+      "type": "string",
+      "format": "email",
+      "description": "Omitido quando não há e-mail gravado depois da escrita."
+    },
+    "status": {
+      "type": "string",
+      "enum": ["Active", "Inactive"]
+    },
+    "dependents": {
+      "type": "array",
+      "description": "Dependentes ainda visíveis, na forma de escrita (sem ativo). A coleção não muda por causa deste PUT ou PATCH.",
+      "items": {
+        "$ref": "./dependent-written.schema.json"
+      }
+    }
+  },
+  "examples": [
+    {
+      "id": "6f1c2b9e-8d4a-4c3e-9b1a-2f5d7e8c9a01",
+      "registrationNumber": "100",
+      "name": "Helena Costa",
+      "salary": 8500.5,
+      "hireDate": "2020-01-15",
+      "position": "Coordenação",
+      "email": "helena.costa@pucrs.br",
+      "status": "Inactive",
+      "dependents": [
+        {
+          "id": "7a2d3c4e-1b5f-4a6c-8d9e-0f1a2b3c4d5e",
+          "name": "Caio Costa",
+          "birthDate": "2010-05-01",
+          "dependencyType": "filho",
+          "status": "Active"
+        }
+      ]
+    }
+  ]
+}

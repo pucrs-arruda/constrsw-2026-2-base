@@ -7,7 +7,8 @@ sources:
   - "{planning_artifacts}/prds/prd-constrsw-2026-2-2026-08-19/addendum.md"
   - "{planning_artifacts}/briefs/brief-constrsw-2026-2-2026-08-17/brief.md"
   - "{planning_artifacts}/research/domain-university-academic-and-resource-management-research-2026-08-17.md"
-updated: 2026-08-24
+  - "backend/oauth/README.md"
+updated: 2026-11-16
 colors:
   background: '#F4F1EC'
   foreground: '#1A1F24'
@@ -209,7 +210,7 @@ Grade de 8px (`{spacing.1}`–`{spacing.7}`). Gutter `{spacing.gutter}`; padding
 
 Desktop-first. Conteúdo de cadastro e oferta: duas colunas (lista | detalhe) a partir de 1024px; tabela de ocupação e esqueleto usam a largura útil inteira — Closed CRAS **é** produto de grade, não coluna única de leitura.
 
-`{components.app-shell}`: barra superior (produto + papel + identidade) + `{components.role-nav}` à esquerda com `{spacing.sidebar}`. Abaixo de 1024px a nav vira folha a partir do topo; abaixo de 768px as duas colunas empilham. A v1 não otimiza telefone: Student lê, Funcionário não cadastra Employee num polegar.
+`{components.app-shell}`: barra superior 56px com hambúrguer à esquerda e o nome **Closed CRAS**. `{components.role-nav}` abre dessa barra. Em ≥1024px a lista ocupa `{spacing.sidebar}` ao lado do conteúdo. Abaixo de 1024px a lista é folha; `Esc` fecha. Abaixo de 768px as duas colunas de cadastro empilham. A v1 não otimiza telefone: Student lê, Funcionário não cadastra Employee num polegar.
 
 Máximo de um `{components.confirm-dialog}` por vez. Sem stack de modal.
 
@@ -223,8 +224,8 @@ Hierarquia por borda `{colors.border}` e superfície `{colors.card}` sobre `{col
 
 ## Components
 
-- **app-shell** — Canvas `{colors.background}`. Barra superior 56px, borda inferior `{colors.border}`. Nome **Closed CRAS** à esquerda; à direita, nome da pessoa autenticada e papel (Funcionário, Coordenador, Professor, Student). Sem seletor de microsserviço.
-- **role-nav** — Lista das superfícies do papel. Item ativo: `{colors.primary}` / `{colors.primary-foreground}`. Itens de outro papel não existem no DOM visível (não ficam “desabilitados”).
+- **app-shell** — Canvas `{colors.background}`. Barra superior 56px, borda inferior `{colors.border}`. Hambúrguer à esquerda; nome **Closed CRAS** ao lado. À direita, nome da pessoa autenticada e papel (Funcionário, Coordenador, Professor, Student).
+- **role-nav** — Lista aberta pelo hambúrguer, nesta ordem: Employees, Professors, Students, Rooms, Courses, Classes, Lessons, Resources, Reservations. Item ativo: `{colors.primary}` / `{colors.primary-foreground}`. Em ≥1024px ocupa `{spacing.sidebar}`. Abaixo de 1024px é folha. Neste corte os itens não abrem CRUD.
 - **page-header** — `{typography.headline}` + uma linha `{typography.caption}` com o termo travado da superfície (ex.: “Turma — oferta do período, não a disciplina”).
 - **button-primary / button-secondary / button-destructive** — Altura 36px, `{rounded.md}`. Primário = afirmar invariante. Secundário = cancelar navegação, “voltar”. Destructive = cancelar Reservation ou desativar Employee. Disabled: 40% de opacidade, cursor `not-allowed`.
 - **data-table** — Cabeçalho `{colors.muted}`, linhas `{colors.card}`, divisórias `{colors.border}`. Densidade compacta (linha ~40px). Sem zebra. Coluna de faixa em `{typography.mono}`.
@@ -237,8 +238,8 @@ Hierarquia por borda `{colors.border}` e superfície `{colors.card}` sobre `{col
 - **status-pill** — Ativo / inativo / presencial / remoto / ad hoc. Cores muted ou primary; nunca accent.
 - **sala-efetiva-chip** — Padrão: muted com o código da Room. Exceção: `{colors.accent}` e o código da sala efetiva; a padrão não aparece ao lado como se fosse o *onde*. Remoto: pill “remoto”, sem Room.
 - **flag-avaliacao-mark** — Ponto ou rótulo “avaliação” em `{colors.warning}`. Presente ou ausente; sem semáforo.
-- **login-panel** — Card centrado, largura 400px. Título display. Campos de credencial institucional. Sem logotipo PUCRS.
-- **journey-card** — Home: título da jornada do papel + verbo. Sem ícone de microsserviço.
+- **login-panel** — Card centrado, largura 400px. Título display. Campos de credencial institucional. Banner de recusa dentro do card. Sem logotipo PUCRS.
+- **journey-card** — Fora deste corte. Quando UX-S* entrarem: título da jornada do papel + verbo. Sem ícone de microsserviço.
 - **confirm-dialog** — Uma pergunta, primário + secondary. Cancelar Reservation usa destructive no confirmar.
 - **skeleton-block** — Retângulos `{colors.muted}` no lugar de tabela ou grid; 4–6 linhas. Sem spinner de marca.
 

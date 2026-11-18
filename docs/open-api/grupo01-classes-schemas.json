@@ -118,7 +118,7 @@
         "endDate",
         "seats",
         "roomId",
-        "professorIds"
+        "professorId"
       ],
       "properties": {
         "courseId": {
@@ -137,14 +137,7 @@
         "roomId": {
           "$ref": "#/$defs/Uuid"
         },
-        "professorIds": {
-          "allOf": [
-            {
-              "$ref": "#/$defs/UuidArray"
-            }
-          ],
-          "minItems": 1
-        },
+        "professorId": { "$ref": "#/$defs/Uuid" },
         "studentIds": {
           "$ref": "#/$defs/UuidArray",
           "description": "Opcional. Omitido equivale a lista vazia."
@@ -165,7 +158,7 @@
           "maxLength": 64
         }
       },
-      "description": "Criação de Class. status default `active` e studentIds default [] se omitidos. professorIds não pode ser vazio. startDate ≤ endDate."
+      "description": "Criação de Class. status default `active` e studentIds default [] se omitidos. professorId é obrigatório. startDate ≤ endDate."
     },
     "ClassUpdate": {
       "type": "object",
@@ -176,7 +169,7 @@
         "endDate",
         "seats",
         "roomId",
-        "professorIds",
+        "professorId",
         "status"
       ],
       "properties": {
@@ -196,14 +189,7 @@
         "roomId": {
           "$ref": "#/$defs/Uuid"
         },
-        "professorIds": {
-          "allOf": [
-            {
-              "$ref": "#/$defs/UuidArray"
-            }
-          ],
-          "minItems": 1
-        },
+        "professorId": { "$ref": "#/$defs/Uuid" },
         "studentIds": {
           "$ref": "#/$defs/UuidArray",
           "description": "Opcional no PUT. Omitido equivale a lista vazia."
@@ -247,14 +233,7 @@
         "roomId": {
           "$ref": "#/$defs/Uuid"
         },
-        "professorIds": {
-          "allOf": [
-            {
-              "$ref": "#/$defs/UuidArray"
-            }
-          ],
-          "minItems": 1
-        },
+        "professorId": { "$ref": "#/$defs/Uuid" },
         "studentIds": {
           "$ref": "#/$defs/UuidArray"
         },
@@ -283,7 +262,7 @@
           "maxLength": 64
         }
       },
-      "description": "Atualização parcial. Não inclui courseId, startDate nem endDate (imutáveis). professorIds, se enviado, não pode ser vazio."
+      "description": "Atualização parcial. Não inclui courseId, startDate nem endDate (imutáveis). professorId, se enviado, substitui o professor da turma."
     },
     "Class": {
       "type": "object",
@@ -296,7 +275,7 @@
         "endDate",
         "seats",
         "roomId",
-        "professorIds",
+        "professorId",
         "studentIds",
         "status",
         "averageRating"
@@ -327,14 +306,7 @@
         "roomId": {
           "$ref": "#/$defs/Uuid"
         },
-        "professorIds": {
-          "allOf": [
-            {
-              "$ref": "#/$defs/UuidArray"
-            }
-          ],
-          "minItems": 1
-        },
+        "professorId": { "$ref": "#/$defs/Uuid" },
         "studentIds": {
           "$ref": "#/$defs/UuidArray"
         },
@@ -384,7 +356,7 @@
         "endDate",
         "seats",
         "roomId",
-        "professorIds"
+        "professorId"
       ],
       "properties": {
         "id": {
@@ -407,14 +379,7 @@
         "roomId": {
           "$ref": "#/$defs/Uuid"
         },
-        "professorIds": {
-          "allOf": [
-            {
-              "$ref": "#/$defs/UuidArray"
-            }
-          ],
-          "minItems": 1
-        },
+        "professorId": { "$ref": "#/$defs/Uuid" },
         "studentIds": {
           "$ref": "#/$defs/UuidArray",
           "description": "Opcional. Omitido equivale a lista vazia."

@@ -30,13 +30,6 @@
           "minimum": 1,
           "maximum": 2147483647
         },
-        "professorId": {
-          "type": "string",
-          "minLength": 1,
-          "pattern": "\\S",
-          "maxLength": 100,
-          "description": "Identificador do professor responsável na API externa; alinhar o formato com o grupo de professores."
-        },
         "bibliographicReferences": {
           "type": "array",
           "minItems": 1,
@@ -49,7 +42,6 @@
         "code",
         "name",
         "workloadHours",
-        "professorId",
         "bibliographicReferences"
       ],
       "description": "Criação atômica da disciplina e de ao menos uma referência bibliográfica.",
@@ -81,15 +73,7 @@
           "type": "integer",
           "minimum": 1,
           "maximum": 2147483647
-        },
-        "professorId": {
-          "type": "string",
-          "minLength": 1,
-          "pattern": "\\S",
-          "maxLength": 100,
-          "description": "Identificador do professor responsável na API externa; alinhar o formato com o grupo de professores."
-        }
-      },
+        }},
       "description": "Altera somente campos escalares informados; referências são gerenciadas nas rotas secundárias. Campos omitidos são preservados; null não é aceito.",
       "minProperties": 1,
       "title": "CoursePatch"
@@ -120,20 +104,11 @@
           "type": "integer",
           "minimum": 1,
           "maximum": 2147483647
-        },
-        "professorId": {
-          "type": "string",
-          "minLength": 1,
-          "pattern": "\\S",
-          "maxLength": 100,
-          "description": "Identificador do professor responsável na API externa; alinhar o formato com o grupo de professores."
-        }
-      },
+        }},
       "required": [
         "code",
         "name",
-        "workloadHours",
-        "professorId"
+        "workloadHours"
       ],
       "description": "Substitui todos os campos escalares editáveis da disciplina. Ementa omitida é removida. A coleção de referências é preservada e tem rotas próprias.",
       "title": "CourseUpdate"
@@ -176,13 +151,6 @@
           "minimum": 1,
           "maximum": 2147483647
         },
-        "professorId": {
-          "type": "string",
-          "minLength": 1,
-          "pattern": "\\S",
-          "maxLength": 100,
-          "description": "Identificador do professor responsável na API externa; alinhar o formato com o grupo de professores."
-        },
         "bibliographicReferences": {
           "type": "array",
           "minItems": 1,
@@ -197,7 +165,6 @@
         "code",
         "name",
         "workloadHours",
-        "professorId",
         "bibliographicReferences"
       ],
       "title": "Course"

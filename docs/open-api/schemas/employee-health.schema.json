@@ -1,0 +1,23 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "title": "Health",
+  "description": "Corpo de GET /api/v1/health. Não é application/problem+json. ok quando o Mongo responde ao ping; down quando não responde. Não há outros literais.",
+  "type": "object",
+  "additionalProperties": false,
+  "required": ["status"],
+  "properties": {
+    "status": {
+      "type": "string",
+      "enum": ["ok", "down"],
+      "description": "ok com HTTP 200; down com HTTP 503."
+    }
+  },
+  "examples": [
+    {
+      "status": "ok"
+    },
+    {
+      "status": "down"
+    }
+  ]
+}

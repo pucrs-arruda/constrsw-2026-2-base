@@ -1,12 +1,12 @@
 openapi: 3.1.0
 info:
-  title: Courses API — Courses and Bibliographic References
+  title: Courses API — Courses, Bibliographic References and Syllabus Items
   version: 1.0.0
   description: Group 05 courses service. Java/Spring Boot and PostgreSQL. Each active course owns one
-    or more active bibliographic references and references one responsible professor through an external
-    API. Bearer access is delegated to the professor-selected OAuth service. IDs and enabled are server-controlled.
-    Deletion is logical and transactional. Optional fields are omitted instead of null. Dependency failures
-    return 503 using the standard error envelope.
+    or more active bibliographic references and zero or more syllabus items. A syllabus item is the addressable
+    teaching-plan entry referenced by LessonTopic.syllabusItemId. Bearer access is delegated to the OAuth
+    service. IDs and enabled are server-controlled. Deletion is logical and transactional. Optional fields
+    are omitted instead of null. Dependency failures return 503 using the standard error envelope.
 servers:
 - url: '{baseUrl}/api/v1'
   description: Configurable courses API origin; the local Compose stack uses port 8085.
@@ -19,6 +19,8 @@ tags:
   description: Recurso principal.
 - name: Bibliographic references
   description: Coleção secundária pertencente a uma disciplina.
+- name: Syllabus items
+  description: Itens endereçáveis do plano de ensino de uma disciplina.
 security:
 - bearerAuth: []
 paths:
@@ -28,9 +30,12 @@ paths:
       - Courses
       operationId: getHealth
       summary: Saúde do serviço
-      description: |
-        Actuator em `/api/v1/health` (`show-details: never`). 200 com `{"status":"UP"}` e 503 com `{"status":"DOWN"}`.
+      description: 'Actuator em `/api/v1/health` (`show-details: never`). 200 com `{"status":"UP"}` e
+        503 com `{"status":"DOWN"}`.
+
         `GET /actuator/health` encaminha para este caminho.
+
+        '
       security: []
       responses:
         '200':
@@ -40,7 +45,8 @@ paths:
               schema:
                 type: object
                 additionalProperties: false
-                required: [status]
+                required:
+                - status
                 properties:
                   status:
                     const: UP
@@ -51,7 +57,8 @@ paths:
               schema:
                 type: object
                 additionalProperties: false
-                required: [status]
+                required:
+                - status
                 properties:
                   status:
                     type: string
@@ -62,8 +69,9 @@ paths:
       - Courses
       operationId: createCourse
       summary: Criar disciplina com referências
-      description: Valida o professor pela API externa; rejeita código duplicado com 409. A criação de
-        disciplina e referências é atômica. A coleção deve conter ao menos um item.
+      description: Rejeita código duplicado com 409. A criação da disciplina, das referências e dos itens
+        de plano informados é atômica. A coleção de referências deve conter ao menos um item. syllabusItems
+        é opcional.
       responses:
         '201':
           description: Disciplina e referências criadas na mesma transação.
@@ -80,7 +88,6 @@ paths:
                     name: Construção de Software
                     syllabus: Modelagem, construção e integração de APIs REST.
                     workloadHours: 60
-                    professorId: prof-eduardo
                     bibliographicReferences:
                     - id: 079edc66-7c2d-49da-bd20-523ec4b99cf4
                       enabled: true
@@ -91,6 +98,14 @@ paths:
                       year: 2019
                       edition: '10'
                       type: BASIC
+                    syllabusItems:
+                    - &id001
+                      id: 8e2b6f41-c3d7-4a95-b0e8-7f1a4c6d2b59
+                      enabled: true
+                      courseId: 42cedfbd-f998-4be7-a278-b74322fdf21a
+                      kind: CONTENT
+                      statement: Modelagem de contratos OpenAPI.
+                      order: 1
           headers:
             Location:
               description: URI do recurso criado.
@@ -121,7 +136,6 @@ paths:
                   name: Construção de Software
                   syllabus: Modelagem, construção e integração de APIs REST.
                   workloadHours: 60
-                  professorId: prof-eduardo
                   bibliographicReferences:
                   - title: Engenharia de Software
                     authors: Ian Sommerville
@@ -129,6 +143,11 @@ paths:
                     year: 2019
                     edition: '10'
                     type: BASIC
+                  syllabusItems:
+                  - &id002
+                    kind: CONTENT
+                    statement: Modelagem de contratos OpenAPI.
+                    order: 1
     get:
       tags:
       - Courses
@@ -154,7 +173,6 @@ paths:
                     name: Construção de Software
                     syllabus: Modelagem, construção e integração de APIs REST.
                     workloadHours: 60
-                    professorId: prof-eduardo
                     bibliographicReferences:
                     - id: 079edc66-7c2d-49da-bd20-523ec4b99cf4
                       enabled: true
@@ -165,6 +183,8 @@ paths:
                       year: 2019
                       edition: '10'
                       type: BASIC
+                    syllabusItems:
+                    - *id001
         '400':
           $ref: '#/components/responses/Error400'
         '401':
@@ -179,7 +199,6 @@ paths:
       - $ref: '#/components/parameters/CodeFilter'
       - $ref: '#/components/parameters/NameFilter'
       - $ref: '#/components/parameters/WorkloadHoursFilter'
-      - $ref: '#/components/parameters/ProfessorIdFilter'
   /courses/{courseId}:
     parameters:
     - $ref: '#/components/parameters/CourseId'
@@ -205,7 +224,6 @@ paths:
                     name: Construção de Software
                     syllabus: Modelagem, construção e integração de APIs REST.
                     workloadHours: 60
-                    professorId: prof-eduardo
                     bibliographicReferences:
                     - id: 079edc66-7c2d-49da-bd20-523ec4b99cf4
                       enabled: true
@@ -216,6 +234,8 @@ paths:
                       year: 2019
                       edition: '10'
                       type: BASIC
+                    syllabusItems:
+                    - *id001
         '400':
           $ref: '#/components/responses/Error400'
         '401':
@@ -232,8 +252,7 @@ paths:
       operationId: replaceCourse
       summary: Substituir campos escalares da disciplina
       description: Substitui os campos escalares; `syllabus` omitida é removida. Preserva IDs e a coleção
-        de referências, gerenciada exclusivamente nas rotas secundárias. Valida professorId pela API externa;
-        código duplicado retorna 409.
+        de referências, gerenciada exclusivamente nas rotas secundárias. Código duplicado retorna 409.
       responses:
         '200':
           description: Disciplina completa após substituição.
@@ -250,7 +269,6 @@ paths:
                     name: Construção de Software
                     syllabus: Modelagem, construção e integração de APIs REST.
                     workloadHours: 60
-                    professorId: prof-eduardo
                     bibliographicReferences:
                     - id: 079edc66-7c2d-49da-bd20-523ec4b99cf4
                       enabled: true
@@ -261,6 +279,8 @@ paths:
                       year: 2019
                       edition: '10'
                       type: BASIC
+                    syllabusItems:
+                    - *id001
         '400':
           $ref: '#/components/responses/Error400'
         '401':
@@ -286,15 +306,13 @@ paths:
                   name: Construção de Software
                   syllabus: Modelagem, construção e integração de APIs REST.
                   workloadHours: 60
-                  professorId: prof-eduardo
     patch:
       tags:
       - Courses
       operationId: patchCourse
       summary: Alterar parcialmente a disciplina
       description: Objeto JSON com ao menos um campo escalar editável. Campos omitidos permanecem inalterados.
-        Não é JSON Patch nem JSON Merge Patch; null e alterações diretas na coleção não são aceitos. Valida
-        professorId quando informado.
+        Não é JSON Patch nem JSON Merge Patch; null e alterações diretas na coleção não são aceitos.
       responses:
         '200':
           description: Disciplina completa após alteração.
@@ -311,7 +329,6 @@ paths:
                     name: Construção de Software
                     syllabus: Modelagem, construção e integração de APIs REST.
                     workloadHours: 80
-                    professorId: prof-eduardo
                     bibliographicReferences:
                     - id: 079edc66-7c2d-49da-bd20-523ec4b99cf4
                       enabled: true
@@ -322,6 +339,8 @@ paths:
                       year: 2019
                       edition: '10'
                       type: BASIC
+                    syllabusItems:
+                    - *id001
         '400':
           $ref: '#/components/responses/Error400'
         '401':
@@ -348,10 +367,9 @@ paths:
       tags:
       - Courses
       operationId: deleteCourse
-      summary: Excluir disciplina e suas referências (exclusão lógica)
-      description: 'Exclusão lógica: define `enabled=false` na disciplina e em todas as suas referências,
-        na mesma transação; nada é removido do banco. A obrigação de ter referências não impede excluir
-        a própria disciplina.'
+      summary: Excluir disciplina, referências e itens do plano (exclusão lógica)
+      description: 'Exclusão lógica: define enabled=false na disciplina, em todas as suas referências
+        e em todos os seus itens de plano, na mesma transação; nada é removido do banco.'
       responses:
         '204':
           description: Disciplina e suas referências excluídas logicamente (`enabled=false`); sem corpo.
@@ -630,6 +648,231 @@ paths:
           $ref: '#/components/responses/Error409'
         '503':
           $ref: '#/components/responses/Error503'
+  /courses/{courseId}/syllabus-items:
+    parameters:
+    - $ref: '#/components/parameters/CourseId'
+    post:
+      tags:
+      - Syllabus items
+      operationId: createSyllabusItem
+      summary: Adicionar item ao plano de ensino
+      description: O servidor atribui o ID e o vínculo à disciplina do path. Retorna 409 se a ordem já
+        pertencer a outro item ativo da mesma disciplina.
+      responses:
+        '201':
+          description: Item do plano criado.
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/SyllabusItem'
+              examples:
+                example:
+                  value: *id001
+          headers:
+            Location:
+              description: URI do recurso criado.
+              schema:
+                type: string
+                format: uri-reference
+              example: /api/v1/courses/42cedfbd-f998-4be7-a278-b74322fdf21a/syllabus-items/8e2b6f41-c3d7-4a95-b0e8-7f1a4c6d2b59
+        '400':
+          $ref: '#/components/responses/Error400'
+        '401':
+          $ref: '#/components/responses/Error401'
+        '403':
+          $ref: '#/components/responses/Error403'
+        '404':
+          $ref: '#/components/responses/Error404'
+        '409':
+          $ref: '#/components/responses/Error409'
+        '503':
+          $ref: '#/components/responses/Error503'
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/SyllabusItemCreate'
+            examples:
+              example:
+                value: *id002
+    get:
+      tags:
+      - Syllabus items
+      operationId: listSyllabusItems
+      summary: Listar ou filtrar itens do plano
+      description: Checa a existência da disciplina antes da busca. Combina filtros com AND. Com filtros
+        sem correspondência, retorna 404. Sem paginação.
+      responses:
+        '200':
+          description: Itens do plano que atendem aos filtros.
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/SyllabusItemList'
+              examples:
+                example:
+                  value:
+                  - *id001
+        '400':
+          $ref: '#/components/responses/Error400'
+        '401':
+          $ref: '#/components/responses/Error401'
+        '403':
+          $ref: '#/components/responses/Error403'
+        '404':
+          $ref: '#/components/responses/Error404'
+        '503':
+          $ref: '#/components/responses/Error503'
+      parameters:
+      - $ref: '#/components/parameters/KindFilter'
+      - $ref: '#/components/parameters/StatementFilter'
+      - $ref: '#/components/parameters/OrderFilter'
+  /courses/{courseId}/syllabus-items/{syllabusItemId}:
+    parameters:
+    - $ref: '#/components/parameters/CourseId'
+    - $ref: '#/components/parameters/SyllabusItemId'
+    get:
+      tags:
+      - Syllabus items
+      operationId: getSyllabusItem
+      summary: Consultar item do plano na disciplina
+      description: Retorna 404 se a disciplina não existir, se o item não existir ou se pertencer a outra
+        disciplina.
+      responses: &id003
+        '200':
+          description: Item do plano.
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/SyllabusItem'
+              examples:
+                example:
+                  value: *id001
+        '400':
+          $ref: '#/components/responses/Error400'
+        '401':
+          $ref: '#/components/responses/Error401'
+        '403':
+          $ref: '#/components/responses/Error403'
+        '404':
+          $ref: '#/components/responses/Error404'
+        '503':
+          $ref: '#/components/responses/Error503'
+    put:
+      tags:
+      - Syllabus items
+      operationId: replaceSyllabusItem
+      summary: Substituir item do plano
+      description: Substitui kind, enunciado e ordem. Preserva id e courseId. Ordem repetida em outro
+        item ativo retorna 409. Item de outra disciplina retorna 404.
+      responses:
+        '200':
+          description: Item do plano após substituição.
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/SyllabusItem'
+              examples:
+                example:
+                  value: *id001
+        '400':
+          $ref: '#/components/responses/Error400'
+        '401':
+          $ref: '#/components/responses/Error401'
+        '403':
+          $ref: '#/components/responses/Error403'
+        '404':
+          $ref: '#/components/responses/Error404'
+        '409':
+          $ref: '#/components/responses/Error409'
+        '503':
+          $ref: '#/components/responses/Error503'
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/SyllabusItemUpdate'
+            examples:
+              example:
+                value: *id002
+    patch:
+      tags:
+      - Syllabus items
+      operationId: patchSyllabusItem
+      summary: Alterar parcialmente o item do plano
+      description: Altera somente os campos informados. Omissões preservam valores. null não é aceito.
+        Ordem repetida retorna 409.
+      responses:
+        '200':
+          description: Item do plano após alteração.
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/SyllabusItem'
+              examples:
+                example:
+                  value:
+                    id: 8e2b6f41-c3d7-4a95-b0e8-7f1a4c6d2b59
+                    enabled: true
+                    courseId: 42cedfbd-f998-4be7-a278-b74322fdf21a
+                    kind: CONTENT
+                    statement: Modelagem de contratos OpenAPI e de tópicos de aula.
+                    order: 1
+        '400':
+          $ref: '#/components/responses/Error400'
+        '401':
+          $ref: '#/components/responses/Error401'
+        '403':
+          $ref: '#/components/responses/Error403'
+        '404':
+          $ref: '#/components/responses/Error404'
+        '409':
+          $ref: '#/components/responses/Error409'
+        '503':
+          $ref: '#/components/responses/Error503'
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/SyllabusItemPatch'
+            examples:
+              example:
+                value:
+                  statement: Modelagem de contratos OpenAPI e de tópicos de aula.
+    delete:
+      tags:
+      - Syllabus items
+      operationId: deleteSyllabusItem
+      summary: Excluir item do plano (exclusão lógica)
+      description: Define enabled=false. O item deixa de aparecer nas consultas. Não há mínimo de itens.
+        Item de outra disciplina retorna 404.
+      responses:
+        '204':
+          description: Item excluído logicamente (`enabled=false`); sem corpo.
+        '400':
+          $ref: '#/components/responses/Error400'
+        '401':
+          $ref: '#/components/responses/Error401'
+        '403':
+          $ref: '#/components/responses/Error403'
+        '404':
+          $ref: '#/components/responses/Error404'
+        '503':
+          $ref: '#/components/responses/Error503'
+  /courses/syllabus-items/{syllabusItemId}:
+    parameters:
+    - $ref: '#/components/parameters/SyllabusItemId'
+    get:
+      tags:
+      - Syllabus items
+      operationId: findSyllabusItem
+      summary: Buscar item do plano pelo identificador
+      description: Consulta usada por LessonTopic.syllabusItemId, que guarda só o UUID. Retorna 404 se
+        o item não existir, estiver excluído ou se a disciplina dona estiver excluída.
+      responses: *id003
 components:
   securitySchemes:
     bearerAuth:
@@ -832,25 +1075,23 @@ components:
           type: integer
           minimum: 1
           maximum: 2147483647
-        professorId:
-          type: string
-          minLength: 1
-          pattern: \S
-          maxLength: 100
-          description: Identificador do professor responsável na API externa; alinhar o formato com o
-            grupo de professores.
         bibliographicReferences:
           type: array
           minItems: 1
           items:
             $ref: '#/components/schemas/BibliographicReferenceCreate'
+        syllabusItems:
+          type: array
+          items:
+            $ref: '#/components/schemas/SyllabusItemCreate'
+          description: Itens iniciais do plano de ensino. Opcional; a coleção também tem rotas próprias.
       required:
       - code
       - name
       - workloadHours
-      - professorId
       - bibliographicReferences
-      description: Criação atômica da disciplina e de ao menos uma referência bibliográfica.
+      description: Criação atômica da disciplina, de ao menos uma referência bibliográfica e, se informados,
+        dos itens do plano de ensino.
       title: CourseCreate
     CourseUpdate:
       type: object
@@ -875,20 +1116,12 @@ components:
           type: integer
           minimum: 1
           maximum: 2147483647
-        professorId:
-          type: string
-          minLength: 1
-          pattern: \S
-          maxLength: 100
-          description: Identificador do professor responsável na API externa; alinhar o formato com o
-            grupo de professores.
       required:
       - code
       - name
       - workloadHours
-      - professorId
       description: Substitui todos os campos escalares editáveis da disciplina. Ementa omitida é removida.
-        A coleção de referências é preservada e tem rotas próprias.
+        Referências e itens do plano são preservados e têm rotas próprias.
       title: CourseUpdate
     CoursePatch:
       type: object
@@ -913,15 +1146,8 @@ components:
           type: integer
           minimum: 1
           maximum: 2147483647
-        professorId:
-          type: string
-          minLength: 1
-          pattern: \S
-          maxLength: 100
-          description: Identificador do professor responsável na API externa; alinhar o formato com o
-            grupo de professores.
-      description: Altera somente campos escalares informados; referências são gerenciadas nas rotas secundárias.
-        Campos omitidos são preservados; null não é aceito.
+      description: Altera somente campos escalares informados; referências e itens do plano são gerenciados
+        nas rotas secundárias. Campos omitidos são preservados; null não é aceito.
       minProperties: 1
       title: CoursePatch
     Course:
@@ -957,26 +1183,25 @@ components:
           type: integer
           minimum: 1
           maximum: 2147483647
-        professorId:
-          type: string
-          minLength: 1
-          pattern: \S
-          maxLength: 100
-          description: Identificador do professor responsável na API externa; alinhar o formato com o
-            grupo de professores.
         bibliographicReferences:
           type: array
           minItems: 1
           items:
             $ref: '#/components/schemas/BibliographicReference'
+        syllabusItems:
+          type: array
+          items:
+            $ref: '#/components/schemas/SyllabusItem'
+          description: Itens endereçáveis do plano de ensino. Pode ser vazia; cada item tem id próprio
+            para LessonTopic.syllabusItemId.
       required:
       - id
       - enabled
       - code
       - name
       - workloadHours
-      - professorId
       - bibliographicReferences
+      - syllabusItems
       title: Course
     CourseList:
       type: array
@@ -1034,6 +1259,143 @@ components:
       description: Formato de erro do projeto; a pilha contém descrições de domínio sanitizadas, sem credenciais
         ou stack traces internos.
       title: ApiError
+    SyllabusItemCreate:
+      type: object
+      additionalProperties: false
+      properties:
+        kind:
+          type: string
+          enum:
+          - CONTENT
+          - BIBLIOGRAPHY
+          - CRITERION
+          description: 'Tipo do item do plano: CONTENT (conteúdo), BIBLIOGRAPHY (bibliografia) ou CRITERION
+            (critério).'
+        statement:
+          type: string
+          minLength: 1
+          pattern: \S
+          maxLength: 2000
+          description: Enunciado do item do plano de ensino.
+        order:
+          type: integer
+          minimum: 1
+          maximum: 32767
+          description: Posição do item no plano da disciplina; única entre os itens ativos.
+      required:
+      - kind
+      - statement
+      - order
+      description: Novo item do plano de ensino da disciplina indicada no path. id e courseId são definidos
+        pelo servidor.
+      title: SyllabusItemCreate
+    SyllabusItemUpdate:
+      type: object
+      additionalProperties: false
+      properties:
+        kind:
+          type: string
+          enum:
+          - CONTENT
+          - BIBLIOGRAPHY
+          - CRITERION
+          description: 'Tipo do item do plano: CONTENT (conteúdo), BIBLIOGRAPHY (bibliografia) ou CRITERION
+            (critério).'
+        statement:
+          type: string
+          minLength: 1
+          pattern: \S
+          maxLength: 2000
+          description: Enunciado do item do plano de ensino.
+        order:
+          type: integer
+          minimum: 1
+          maximum: 32767
+          description: Posição do item no plano da disciplina; única entre os itens ativos.
+      required:
+      - kind
+      - statement
+      - order
+      description: Substitui os campos do item. IDs permanecem imutáveis. A ordem não pode repetir a de
+        outro item ativo da mesma disciplina.
+      title: SyllabusItemUpdate
+    SyllabusItemPatch:
+      type: object
+      additionalProperties: false
+      properties:
+        kind:
+          type: string
+          enum:
+          - CONTENT
+          - BIBLIOGRAPHY
+          - CRITERION
+          description: 'Tipo do item do plano: CONTENT (conteúdo), BIBLIOGRAPHY (bibliografia) ou CRITERION
+            (critério).'
+        statement:
+          type: string
+          minLength: 1
+          pattern: \S
+          maxLength: 2000
+          description: Enunciado do item do plano de ensino.
+        order:
+          type: integer
+          minimum: 1
+          maximum: 32767
+          description: Posição do item no plano da disciplina; única entre os itens ativos.
+      description: Altera somente os campos informados. Campos omitidos permanecem inalterados; null não
+        é aceito.
+      minProperties: 1
+      title: SyllabusItemPatch
+    SyllabusItem:
+      type: object
+      additionalProperties: false
+      properties:
+        id:
+          type: string
+          format: uuid
+          readOnly: true
+        enabled:
+          type: boolean
+          readOnly: true
+          default: true
+          description: 'Exclusão lógica: true para registro ativo; false para registro excluído logicamente.
+            Controlado pelo servidor.'
+        courseId:
+          type: string
+          format: uuid
+          readOnly: true
+        kind:
+          type: string
+          enum:
+          - CONTENT
+          - BIBLIOGRAPHY
+          - CRITERION
+          description: 'Tipo do item do plano: CONTENT (conteúdo), BIBLIOGRAPHY (bibliografia) ou CRITERION
+            (critério).'
+        statement:
+          type: string
+          minLength: 1
+          pattern: \S
+          maxLength: 2000
+          description: Enunciado do item do plano de ensino.
+        order:
+          type: integer
+          minimum: 1
+          maximum: 32767
+          description: Posição do item no plano da disciplina; única entre os itens ativos.
+      required:
+      - id
+      - enabled
+      - courseId
+      - kind
+      - statement
+      - order
+      title: SyllabusItem
+    SyllabusItemList:
+      type: array
+      items:
+        $ref: '#/components/schemas/SyllabusItem'
+      title: SyllabusItemList
   parameters:
     CourseId:
       name: courseId
@@ -1110,24 +1472,6 @@ components:
           value: '{gteq}60'
         '3':
           value: '{lt}120'
-    ProfessorIdFilter:
-      name: professorId
-      in: query
-      required: false
-      description: Igualdade ou {neq} sobre o ID externo.
-      schema:
-        oneOf:
-        - type: string
-          minLength: 1
-          pattern: ^(?!\{).*\S.*$
-          maxLength: 100
-        - type: string
-          pattern: ^\{(?:neq)\}.*\S.*$
-      examples:
-        '1':
-          value: prof-eduardo
-        '2':
-          value: '{neq}prof-outro'
     TitleFilter:
       name: title
       in: query
@@ -1198,10 +1542,74 @@ components:
           value: BASIC
         '2':
           value: '{neq}SUPPLEMENTARY'
+    SyllabusItemId:
+      name: syllabusItemId
+      in: path
+      required: true
+      description: UUID de um item do plano de ensino.
+      schema:
+        type: string
+        format: uuid
+      example: 8e2b6f41-c3d7-4a95-b0e8-7f1a4c6d2b59
+    KindFilter:
+      name: kind
+      in: query
+      required: false
+      description: Igualdade ou {neq} para CONTENT, BIBLIOGRAPHY e CRITERION.
+      schema:
+        type: string
+        enum:
+        - CONTENT
+        - BIBLIOGRAPHY
+        - CRITERION
+        - '{neq}CONTENT'
+        - '{neq}BIBLIOGRAPHY'
+        - '{neq}CRITERION'
+      examples:
+        '1':
+          value: CONTENT
+        '2':
+          value: '{neq}CRITERION'
+    StatementFilter:
+      name: statement
+      in: query
+      required: false
+      description: Igualdade, {neq} ou {like} sobre o enunciado. Em {like}, % representa qualquer sequência.
+      schema:
+        oneOf:
+        - type: string
+          minLength: 1
+          pattern: ^(?!\{).*\S.*$
+          maxLength: 2000
+        - type: string
+          pattern: ^\{(?:neq|like)\}.*\S.*$
+      examples:
+        '1':
+          value: Modelagem de contratos OpenAPI.
+        '2':
+          value: '{like}%OpenAPI%'
+    OrderFilter:
+      name: order
+      in: query
+      required: false
+      description: Igualdade de 1 a 32767 ou comparações com operandos entre 0 e 32767, sem sinal nem
+        zeros à esquerda.
+      schema:
+        oneOf:
+        - type: integer
+          minimum: 1
+          maximum: 32767
+        - type: string
+          pattern: ^\{(?:neq|gt|gteq|lt|lteq)\}(?:0|[1-9][0-9]{0,4})$
+      examples:
+        '1':
+          value: 1
+        '2':
+          value: '{gteq}1'
   responses:
     Error400:
-      description: 'Requisição inválida: JSON, UUID, filtros, atributos ou professorId inexistente. Propriedades
-        desconhecidas também geram 400.'
+      description: 'Requisição inválida: JSON, UUID, filtros, atributos. Propriedades desconhecidas também
+        geram 400.'
       content:
         application/json:
           schema:
@@ -1210,8 +1618,8 @@ components:
             error:
               value:
                 error_code: CO-400
-                error_description: 'Requisição inválida: JSON, UUID, filtros, atributos ou professorId
-                  inexistente. Propriedades desconhecidas também geram 400.'
+                error_description: 'Requisição inválida: JSON, UUID, filtros, atributos. Propriedades
+                  desconhecidas também geram 400.'
                 error_source: CoursesAPI
                 error_stack: []
     Error401:
@@ -1247,8 +1655,8 @@ components:
                 error_source: CoursesAPI
                 error_stack: []
     Error404:
-      description: Disciplina ou referência não encontrada; referência não pertence à disciplina indicada;
-        ou nenhum resultado para os filtros informados.
+      description: Disciplina, referência ou item de plano não encontrado; referência ou item não pertence
+        à disciplina indicada; ou nenhum resultado para os filtros informados.
       content:
         application/json:
           schema:
@@ -1257,13 +1665,13 @@ components:
             error:
               value:
                 error_code: CO-404
-                error_description: Disciplina ou referência não encontrada; referência não pertence à
-                  disciplina indicada; ou nenhum resultado para os filtros informados.
+                error_description: Disciplina, referência ou item de plano não encontrado; referência
+                  ou item não pertence à disciplina indicada; ou nenhum resultado para os filtros informados.
                 error_source: CoursesAPI
                 error_stack: []
     Error409:
-      description: 'Conflito com uma regra de domínio: código de disciplina duplicado ou tentativa de
-        remover sua última referência.'
+      description: 'Conflito com uma regra de domínio: código de disciplina duplicado, tentativa de remover
+        sua última referência, ou ordem de item de plano já usada por outro item ativo da mesma disciplina.'
       content:
         application/json:
           schema:
@@ -1272,12 +1680,13 @@ components:
             error:
               value:
                 error_code: CO-409
-                error_description: 'Conflito com uma regra de domínio: código de disciplina duplicado
-                  ou tentativa de remover sua última referência.'
+                error_description: 'Conflito com uma regra de domínio: código de disciplina duplicado,
+                  tentativa de remover sua última referência, ou ordem de item de plano já usada por outro
+                  item ativo da mesma disciplina.'
                 error_source: CoursesAPI
                 error_stack: []
     Error503:
-      description: The OAuth or professors dependency is unavailable or returned an invalid response.
+      description: The OAuth dependency is unavailable or returned an invalid response.
       content:
         application/json:
           schema:

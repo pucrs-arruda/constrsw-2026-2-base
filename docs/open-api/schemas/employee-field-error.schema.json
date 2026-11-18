@@ -1,0 +1,37 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "title": "FieldError",
+  "description": "Um erro de campo dentro de Problem.errors. O 400 devolve todos os campos inválidos de uma vez, não só o primeiro.",
+  "type": "object",
+  "additionalProperties": false,
+  "required": ["field", "message"],
+  "properties": {
+    "field": {
+      "type": "string",
+      "description": "Nome do campo, ou body quando o JSON não é um objeto.",
+      "examples": ["email", "ativo", "body"]
+    },
+    "message": {
+      "type": "string",
+      "description": "Mensagem estável produzida pelo serviço.",
+      "examples": [
+        "Campo obrigatório",
+        "Campo não permitido",
+        "null não é valor",
+        "Texto obrigatório",
+        "Texto inválido",
+        "Número obrigatório",
+        "Data deve ser YYYY-MM-DD",
+        "Status deve ser Active ou Inactive",
+        "E-mail inválido",
+        "Objeto JSON obrigatório"
+      ]
+    }
+  },
+  "examples": [
+    {
+      "field": "email",
+      "message": "E-mail inválido"
+    }
+  ]
+}

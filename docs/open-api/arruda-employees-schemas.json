@@ -1,0 +1,44 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "arruda-employees-schemas.json",
+  "title": "Employees API — JSON Schemas",
+  "description": "Índice dos JSON Schemas 2020-12 do serviço employees. Os arquivos em schemas/ são a definição dos corpos. Este documento só os reúne, para não haver uma segunda cópia. A documentação OpenAPI está em arruda-employees-api.yaml e aponta para os mesmos arquivos.",
+  "$defs": {
+    "EmployeeWrite": {
+      "$ref": "schemas/employee-write.schema.json"
+    },
+    "EmployeePatch": {
+      "$ref": "schemas/employee-patch.schema.json"
+    },
+    "EmployeeCreated": {
+      "$ref": "schemas/employee-created.schema.json"
+    },
+    "EmployeeUpdated": {
+      "$ref": "schemas/employee-updated.schema.json"
+    },
+    "EmployeeRead": {
+      "$ref": "schemas/employee-read.schema.json"
+    },
+    "DependentWrite": {
+      "$ref": "schemas/dependent-write.schema.json"
+    },
+    "DependentPatch": {
+      "$ref": "schemas/dependent-patch.schema.json"
+    },
+    "DependentWritten": {
+      "$ref": "schemas/dependent-written.schema.json"
+    },
+    "DependentRead": {
+      "$ref": "schemas/dependent-read.schema.json"
+    },
+    "FieldError": {
+      "$ref": "schemas/employee-field-error.schema.json"
+    },
+    "Problem": {
+      "$ref": "schemas/employee-problem.schema.json"
+    },
+    "Health": {
+      "$ref": "schemas/employee-health.schema.json"
+    }
+  }
+}

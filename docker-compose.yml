@@ -118,17 +118,19 @@ services:
       dockerfile: Dockerfile
     image: constrsw/oauth
     environment:
-      - KEYCLOAK_SERVER_URL=${KEYCLOAK_SERVER_URL}
+      - PORT=${OAUTH_INTERNAL_API_PORT}
+      - NODE_ENV=${OAUTH_NODE_ENV}
+      - KEYCLOAK_URL=${KEYCLOAK_SERVER_URL}
       - KEYCLOAK_REALM=${KEYCLOAK_REALM}
       - KEYCLOAK_CLIENT_ID=${KEYCLOAK_CLIENT_ID}
       - KEYCLOAK_CLIENT_SECRET=${KEYCLOAK_CLIENT_SECRET}
-      - KEYCLOAK_ADMIN=${KEYCLOAK_ADMIN}
-      - KEYCLOAK_ADMIN_PASSWORD=${KEYCLOAK_ADMIN_PASSWORD}
-      - OAUTH_INTERNAL_PROTOCOL=${OAUTH_INTERNAL_PROTOCOL}
-      - OAUTH_INTERNAL_HOST=${OAUTH_INTERNAL_HOST}
+      - KEYCLOAK_TIMEOUT_MS=${OAUTH_KEYCLOAK_TIMEOUT_MS}
+      - KEYCLOAK_ADMIN_CLIENT_ID=${OAUTH_KEYCLOAK_ADMIN_CLIENT_ID}
+      - KEYCLOAK_ADMIN_CLIENT_SECRET=${OAUTH_KEYCLOAK_ADMIN_CLIENT_SECRET}
+      - SESSION_COOKIE_NAME=${OAUTH_SESSION_COOKIE_NAME}
+      - COOKIE_SECURE=${OAUTH_COOKIE_SECURE}
+      - COOKIE_SAME_SITE=${OAUTH_COOKIE_SAME_SITE}
       - OAUTH_INTERNAL_API_PORT=${OAUTH_INTERNAL_API_PORT}
-      - OAUTH_INTERNAL_DEBUG_PORT=${OAUTH_INTERNAL_DEBUG_PORT}
-      - OAUTH_INTERNAL_METRICS_PORT=${OAUTH_INTERNAL_METRICS_PORT}
     ports:
       - "${OAUTH_EXTERNAL_API_PORT}:${OAUTH_INTERNAL_API_PORT}"
       - "${OAUTH_EXTERNAL_DEBUG_PORT}:${OAUTH_INTERNAL_DEBUG_PORT}"
@@ -263,22 +265,16 @@ services:
     image: constrsw/employees
     environment:
       - PORT=${EMPLOYEES_INTERNAL_API_PORT}
-      - MONGODB_URI=mongodb://${MONGODB_USERNAME}:${MONGODB_PASSWORD}@${MONGODB_INTERNAL_HOST}:${MONGODB_INTERNAL_PORT}/cras_employees?authSource=${MONGODB_DB}
-      - APP_ENV=local
-      - APP_VERSION=1.0.0
-      - OAUTH_BASE_URL=${OAUTH_INTERNAL_PROTOCOL}://${OAUTH_INTERNAL_HOST}:${OAUTH_INTERNAL_API_PORT}
-      - OAUTH_VALIDATE_PATH=/auth/validate
-      - OAUTH_JWKS_PATH=/auth/jwks
-      - JWT_ISSUER=${KEYCLOAK_INTERNAL_PROTOCOL}://${KEYCLOAK_INTERNAL_HOST}:${KEYCLOAK_INTERNAL_API_PORT}/realms/${KEYCLOAK_REALM}
-      - JWT_AUDIENCE=oauth
-      - JWT_CLIENT_AUDIENCE=${KEYCLOAK_CLIENT_ID}
-      - OTEL_SERVICE_NAME=employees-service
-      - OTEL_EXPORTER_OTLP_METRICS_ENDPOINT=http://otel-collector:4318/v1/metrics
-      - OTEL_EXPORTER_OTLP_TRACES_ENDPOINT=http://otel-collector:4318/v1/traces
+      - MONGODB_URI=${EMPLOYEES_MONGODB_URI}
+      - OAUTH_BASE_URL=${EMPLOYEES_OAUTH_BASE_URL}
+      - OAUTH_JWKS_PATH=${EMPLOYEES_OAUTH_JWKS_PATH}
+      - JWT_ISSUER=${EMPLOYEES_JWT_ISSUER}
+      - JWT_AUDIENCE=${EMPLOYEES_JWT_AUDIENCE}
+      - JWT_CLIENT_AUDIENCE=${EMPLOYEES_JWT_CLIENT_AUDIENCE}
     ports:
       - "${EMPLOYEES_EXTERNAL_API_PORT}:${EMPLOYEES_INTERNAL_API_PORT}"
       - "${EMPLOYEES_EXTERNAL_DEBUG_PORT}:${EMPLOYEES_INTERNAL_DEBUG_PORT}"
-      - "${EMPLOYEES_EXTERNAL_METRICS_PORT}:${EMPLOYEES_INTERNAL_API_PORT}"
+      - "${EMPLOYEES_EXTERNAL_METRICS_PORT}:${EMPLOYEES_INTERNAL_METRICS_PORT}"
     networks:
       - constrsw
     depends_on:
@@ -306,16 +302,15 @@ services:
       dockerfile: Dockerfile
     image: constrsw/classes
     environment:
-      - DB_HOST=${POSTGRESQL_INTERNAL_HOST}
-      - DB_PORT=${POSTGRESQL_INTERNAL_PORT}
-      - DB_USER=${CLASSES_USERNAME}
-      - DB_PASSWORD=${CLASSES_PASSWORD}
-      - DB_NAME=${CLASSES_DB}
-      # COMPLETAR
+      - CLASSES_INTERNAL_API_PORT=${CLASSES_INTERNAL_API_PORT}
+      - DATABASE_URL=${CLASSES_DATABASE_URL}
+      - DATABASE_USERNAME=${CLASSES_USERNAME}
+      - DATABASE_PASSWORD=${CLASSES_PASSWORD}
+      - KEYCLOAK_JWKS_URL=${KEYCLOAK_JWKS_URL}
     ports:
       - "${CLASSES_EXTERNAL_API_PORT}:${CLASSES_INTERNAL_API_PORT}"
       - "${CLASSES_EXTERNAL_DEBUG_PORT}:${CLASSES_INTERNAL_DEBUG_PORT}"
-      - "${CLASSES_EXTERNAL_METRICS_PORT}:${CLASSES_INTERNAL_API_PORT}"
+      - "${CLASSES_EXTERNAL_METRICS_PORT}:${CLASSES_INTERNAL_METRICS_PORT}"
     networks:
       - constrsw
     depends_on:
@@ -324,7 +319,7 @@ services:
       oauth:
         condition: service_healthy
     healthcheck:
-      test: ["CMD-SHELL", "curl -f http://localhost:${CLASSES_INTERNAL_API_PORT}/health || exit 1"]
+      test: ["CMD-SHELL", "curl -f http://127.0.0.1:${CLASSES_INTERNAL_API_PORT}/api/v1/health || exit 1"]
       interval: 15s
       timeout: 5s
       retries: 5
@@ -339,16 +334,15 @@ services:
       dockerfile: Dockerfile
     image: constrsw/courses
     environment:
-      - DB_HOST=${POSTGRESQL_INTERNAL_HOST}
-      - DB_PORT=${POSTGRESQL_INTERNAL_PORT}
-      - DB_USER=${COURSES_USERNAME}
-      - DB_PASSWORD=${COURSES_PASSWORD}
-      - DB_NAME=${COURSES_DB}
-      # COMPLETAR
+      - SERVER_PORT=${COURSES_INTERNAL_API_PORT}
+      - DATABASE_URL=${COURSES_DATABASE_URL}
+      - DATABASE_USER=${COURSES_USERNAME}
+      - DATABASE_PASSWORD=${COURSES_PASSWORD}
+      - OAUTH_VALIDATION_URL=${COURSES_OAUTH_VALIDATION_URL}
     ports:
       - "${COURSES_EXTERNAL_API_PORT}:${COURSES_INTERNAL_API_PORT}"
       - "${COURSES_EXTERNAL_DEBUG_PORT}:${COURSES_INTERNAL_DEBUG_PORT}"
-      - "${COURSES_EXTERNAL_METRICS_PORT}:${COURSES_INTERNAL_API_PORT}"
+      - "${COURSES_EXTERNAL_METRICS_PORT}:${COURSES_INTERNAL_METRICS_PORT}"
     networks:
       - constrsw
     depends_on:
@@ -357,7 +351,7 @@ services:
       oauth:
         condition: service_healthy
     healthcheck:
-      test: ["CMD-SHELL", "curl -f http://localhost:${COURSES_INTERNAL_API_PORT}/health || exit 1"]
+      test: ["CMD-SHELL", "curl -f http://127.0.0.1:${COURSES_INTERNAL_API_PORT}/api/v1/health || exit 1"]
       interval: 15s
       timeout: 5s
       retries: 5
@@ -372,16 +366,25 @@ services:
       dockerfile: Dockerfile
     image: constrsw/lessons
     environment:
+      - SERVER_PORT=${LESSONS_INTERNAL_API_PORT}
+      - MANAGEMENT_SERVER_PORT=${LESSONS_INTERNAL_METRICS_PORT}
+      - MANAGEMENT_ENDPOINTS_WEB_BASE_PATH=${LESSONS_MANAGEMENT_BASE_PATH}
       - DB_HOST=${POSTGRESQL_INTERNAL_HOST}
       - DB_PORT=${POSTGRESQL_INTERNAL_PORT}
+      - DB_NAME=${LESSONS_DB}
       - DB_USER=${LESSONS_USERNAME}
       - DB_PASSWORD=${LESSONS_PASSWORD}
-      - DB_NAME=${LESSONS_DB}
-      # COMPLETAR
+      - LESSONS_JWT_ISSUER=${LESSONS_JWT_ISSUER}
+      - LESSONS_JWKS_URI=${LESSONS_JWKS_URI}
+      - LESSONS_JWT_AUDIENCE=${LESSONS_JWT_AUDIENCE}
+      - LESSONS_CLASSES_URL=${LESSONS_CLASSES_URL}
+      - LESSONS_SYLLABUS_ITEMS_URL=${LESSONS_SYLLABUS_ITEMS_URL}
+      - LESSONS_RESERVATIONS_URL=${LESSONS_RESERVATIONS_URL}
+      - LESSONS_HTTP_TIMEOUT_MS=${LESSONS_HTTP_TIMEOUT_MS}
     ports:
       - "${LESSONS_EXTERNAL_API_PORT}:${LESSONS_INTERNAL_API_PORT}"
       - "${LESSONS_EXTERNAL_DEBUG_PORT}:${LESSONS_INTERNAL_DEBUG_PORT}"
-      - "${LESSONS_EXTERNAL_METRICS_PORT}:${LESSONS_INTERNAL_API_PORT}"
+      - "${LESSONS_EXTERNAL_METRICS_PORT}:${LESSONS_INTERNAL_METRICS_PORT}"
     networks:
       - constrsw
     depends_on:
@@ -390,7 +393,7 @@ services:
       oauth:
         condition: service_healthy
     healthcheck:
-      test: ["CMD-SHELL", "curl -f http://localhost:${LESSONS_INTERNAL_API_PORT}/health || exit 1"]
+      test: ["CMD-SHELL", "curl -f http://127.0.0.1:${LESSONS_INTERNAL_METRICS_PORT}/health || exit 1"]
       interval: 15s
       timeout: 5s
       retries: 5
@@ -405,16 +408,17 @@ services:
       dockerfile: Dockerfile
     image: constrsw/professors
     environment:
-      - DB_HOST=${POSTGRESQL_INTERNAL_HOST}
-      - DB_PORT=${POSTGRESQL_INTERNAL_PORT}
-      - DB_USER=${PROFESSORS_USERNAME}
-      - DB_PASSWORD=${PROFESSORS_PASSWORD}
-      - DB_NAME=${PROFESSORS_DB}
-      # COMPLETAR
+      - PORT=${PROFESSORS_INTERNAL_API_PORT}
+      - NODE_ENV=${PROFESSORS_NODE_ENV}
+      - DATABASE_URL=${PROFESSORS_DATABASE_URL}
+      - JWKS_URL=${KEYCLOAK_JWKS_URL}
+      - JWT_ISSUER=${KEYCLOAK_ISSUER}
+      - JWT_AUDIENCE=${JWT_AUDIENCE}
+      - KEYCLOAK_REALM=${KEYCLOAK_REALM}
     ports:
       - "${PROFESSORS_EXTERNAL_API_PORT}:${PROFESSORS_INTERNAL_API_PORT}"
       - "${PROFESSORS_EXTERNAL_DEBUG_PORT}:${PROFESSORS_INTERNAL_DEBUG_PORT}"
-      - "${PROFESSORS_EXTERNAL_METRICS_PORT}:${PROFESSORS_INTERNAL_API_PORT}"
+      - "${PROFESSORS_EXTERNAL_METRICS_PORT}:${PROFESSORS_INTERNAL_METRICS_PORT}"
     networks:
       - constrsw
     depends_on:
@@ -423,7 +427,13 @@ services:
       oauth:
         condition: service_healthy
     healthcheck:
-      test: ["CMD-SHELL", "curl -f http://localhost:${PROFESSORS_INTERNAL_API_PORT}/health || exit 1"]
+      test:
+        [
+          "CMD",
+          "node",
+          "-e",
+          "require('http').get('http://127.0.0.1:'+(process.env.PORT)+'/api/v1/health',(r)=>process.exit(r.statusCode===200?0:1)).on('error',()=>process.exit(1))",
+        ]
       interval: 15s
       timeout: 5s
       retries: 5
@@ -438,16 +448,16 @@ services:
       dockerfile: Dockerfile
     image: constrsw/reservations
     environment:
-      - DB_HOST=${POSTGRESQL_INTERNAL_HOST}
-      - DB_PORT=${POSTGRESQL_INTERNAL_PORT}
+      - RESERVATIONS_INTERNAL_API_PORT=${RESERVATIONS_INTERNAL_API_PORT}
+      - DB_URL=${RESERVATIONS_DATABASE_URL}
       - DB_USER=${RESERVATIONS_USERNAME}
       - DB_PASSWORD=${RESERVATIONS_PASSWORD}
-      - DB_NAME=${RESERVATIONS_DB}
-      # COMPLETAR
+      - KEYCLOAK_JWKS_URI=${KEYCLOAK_JWKS_URL}
+      - KEYCLOAK_ALLOWED_ISSUERS=${KEYCLOAK_ALLOWED_ISSUERS}
     ports:
       - "${RESERVATIONS_EXTERNAL_API_PORT}:${RESERVATIONS_INTERNAL_API_PORT}"
       - "${RESERVATIONS_EXTERNAL_DEBUG_PORT}:${RESERVATIONS_INTERNAL_DEBUG_PORT}"
-      - "${RESERVATIONS_EXTERNAL_METRICS_PORT}:${RESERVATIONS_INTERNAL_API_PORT}"
+      - "${RESERVATIONS_EXTERNAL_METRICS_PORT}:${RESERVATIONS_INTERNAL_METRICS_PORT}"
     networks:
       - constrsw
     depends_on:
@@ -456,7 +466,7 @@ services:
       oauth:
         condition: service_healthy
     healthcheck:
-      test: ["CMD-SHELL", "curl -f http://localhost:${RESERVATIONS_INTERNAL_API_PORT}/health || exit 1"]
+      test: ["CMD-SHELL", "curl -f http://127.0.0.1:${RESERVATIONS_INTERNAL_API_PORT}/api/v1/health || exit 1"]
       interval: 15s
       timeout: 5s
       retries: 5
@@ -471,16 +481,17 @@ services:
       dockerfile: Dockerfile
     image: constrsw/resources
     environment:
-      - DB_HOST=${POSTGRESQL_INTERNAL_HOST}
-      - DB_PORT=${POSTGRESQL_INTERNAL_PORT}
-      - DB_USER=${RESOURCES_USERNAME}
-      - DB_PASSWORD=${RESOURCES_PASSWORD}
-      - DB_NAME=${RESOURCES_DB}
-      # COMPLETAR
+      - PORT=${RESOURCES_INTERNAL_API_PORT}
+      - NODE_ENV=${RESOURCES_NODE_ENV}
+      - DATABASE_URL=${RESOURCES_DATABASE_URL}
+      - DB_SSL=${RESOURCES_DB_SSL}
+      - KEYCLOAK_JWKS_URL=${KEYCLOAK_JWKS_URL}
+      - KEYCLOAK_ISSUER=${KEYCLOAK_ISSUER}
+      - JWT_AUDIENCE=${JWT_AUDIENCE}
     ports:
       - "${RESOURCES_EXTERNAL_API_PORT}:${RESOURCES_INTERNAL_API_PORT}"
       - "${RESOURCES_EXTERNAL_DEBUG_PORT}:${RESOURCES_INTERNAL_DEBUG_PORT}"
-      - "${RESOURCES_EXTERNAL_METRICS_PORT}:${RESOURCES_INTERNAL_API_PORT}"
+      - "${RESOURCES_EXTERNAL_METRICS_PORT}:${RESOURCES_INTERNAL_METRICS_PORT}"
     networks:
       - constrsw
     depends_on:
@@ -489,7 +500,13 @@ services:
       oauth:
         condition: service_healthy
     healthcheck:
-      test: ["CMD-SHELL", "curl -f http://localhost:${RESOURCES_INTERNAL_API_PORT}/health || exit 1"]
+      test:
+        [
+          "CMD",
+          "node",
+          "-e",
+          "require('http').get('http://127.0.0.1:'+(process.env.PORT)+'/api/v1/health',(r)=>process.exit(r.statusCode===200?0:1)).on('error',()=>process.exit(1))",
+        ]
       interval: 15s
       timeout: 5s
       retries: 5
@@ -504,16 +521,17 @@ services:
       dockerfile: Dockerfile
     image: constrsw/rooms
     environment:
-      - DB_HOST=${POSTGRESQL_INTERNAL_HOST}
-      - DB_PORT=${POSTGRESQL_INTERNAL_PORT}
+      - ROOMS_INTERNAL_API_PORT=${ROOMS_INTERNAL_API_PORT}
+      - DB_URL=${ROOMS_DATABASE_URL}
       - DB_USER=${ROOMS_USERNAME}
       - DB_PASSWORD=${ROOMS_PASSWORD}
-      - DB_NAME=${ROOMS_DB}
-      # COMPLETAR
+      - KEYCLOAK_JWKS_URL=${KEYCLOAK_JWKS_URL}
+      - KEYCLOAK_ALLOWED_ISSUERS=${KEYCLOAK_ALLOWED_ISSUERS}
+      - MANAGEMENT_PORT=${ROOMS_INTERNAL_METRICS_PORT}
     ports:
       - "${ROOMS_EXTERNAL_API_PORT}:${ROOMS_INTERNAL_API_PORT}"
       - "${ROOMS_EXTERNAL_DEBUG_PORT}:${ROOMS_INTERNAL_DEBUG_PORT}"
-      - "${ROOMS_EXTERNAL_METRICS_PORT}:${ROOMS_INTERNAL_API_PORT}"
+      - "${ROOMS_EXTERNAL_METRICS_PORT}:${ROOMS_INTERNAL_METRICS_PORT}"
     networks:
       - constrsw
     depends_on:
@@ -522,7 +540,7 @@ services:
       oauth:
         condition: service_healthy
     healthcheck:
-      test: ["CMD-SHELL", "curl -f http://localhost:${ROOMS_INTERNAL_API_PORT}/health || exit 1"]
+      test: ["CMD-SHELL", "curl -f http://127.0.0.1:${ROOMS_INTERNAL_METRICS_PORT}/health || exit 1"]
       interval: 15s
       timeout: 5s
       retries: 5
@@ -537,16 +555,18 @@ services:
       dockerfile: Dockerfile
     image: constrsw/students
     environment:
+      - STUDENTS_INTERNAL_API_PORT=${STUDENTS_INTERNAL_API_PORT}
       - DB_HOST=${POSTGRESQL_INTERNAL_HOST}
       - DB_PORT=${POSTGRESQL_INTERNAL_PORT}
+      - DB_NAME=${STUDENTS_DB}
       - DB_USER=${STUDENTS_USERNAME}
       - DB_PASSWORD=${STUDENTS_PASSWORD}
-      - DB_NAME=${STUDENTS_DB}
-      # COMPLETAR
+      - KEYCLOAK_SERVER_URL=${KEYCLOAK_SERVER_URL}
+      - KEYCLOAK_REALM=${KEYCLOAK_REALM}
     ports:
       - "${STUDENTS_EXTERNAL_API_PORT}:${STUDENTS_INTERNAL_API_PORT}"
       - "${STUDENTS_EXTERNAL_DEBUG_PORT}:${STUDENTS_INTERNAL_DEBUG_PORT}"
-      - "${STUDENTS_EXTERNAL_METRICS_PORT}:${STUDENTS_INTERNAL_API_PORT}"
+      - "${STUDENTS_EXTERNAL_METRICS_PORT}:${STUDENTS_INTERNAL_METRICS_PORT}"
     networks:
       - constrsw
     depends_on:
@@ -571,25 +591,22 @@ services:
     image: constrsw/bff
     environment:
       - PORT=${BFF_INTERNAL_API_PORT}
-      - APP_ENV=local
-      - APP_VERSION=1.0.0
-      # Autenticacao (auth permanece isolado; BFF valida JWT localmente via JWKS)
-      - OAUTH_BASE_URL=${OAUTH_INTERNAL_PROTOCOL}://${OAUTH_INTERNAL_HOST}:${OAUTH_INTERNAL_API_PORT}
-      - OAUTH_JWKS_PATH=/auth/jwks
-      - OAUTH_VALIDATE_PATH=/auth/validate
-      - JWT_ISSUER=${KEYCLOAK_INTERNAL_PROTOCOL}://${KEYCLOAK_INTERNAL_HOST}:${KEYCLOAK_INTERNAL_API_PORT}/realms/${KEYCLOAK_REALM}
-      - JWT_AUDIENCE=oauth
-      - JWT_CLIENT_AUDIENCE=${KEYCLOAK_CLIENT_ID}
-      # Base URLs dos servicos agregados (alguns ainda nao definidos no compose)
-      - CLASSES_BASE_URL=${CLASSES_INTERNAL_PROTOCOL}://${CLASSES_INTERNAL_HOST}:${CLASSES_INTERNAL_API_PORT}
-      - COURSES_BASE_URL=${COURSES_INTERNAL_PROTOCOL}://${COURSES_INTERNAL_HOST}:${COURSES_INTERNAL_API_PORT}
-      - EMPLOYEES_BASE_URL=${EMPLOYEES_INTERNAL_PROTOCOL}://${EMPLOYEES_INTERNAL_HOST}:${EMPLOYEES_INTERNAL_API_PORT}/api/v1
-      - LESSONS_BASE_URL=${LESSONS_INTERNAL_PROTOCOL}://${LESSONS_INTERNAL_HOST}:${LESSONS_INTERNAL_API_PORT}
-      - PROFESSORS_BASE_URL=${PROFESSORS_INTERNAL_PROTOCOL}://${PROFESSORS_INTERNAL_HOST}:${PROFESSORS_INTERNAL_API_PORT}
-      - RESERVATIONS_BASE_URL=${RESERVATIONS_INTERNAL_PROTOCOL}://${RESERVATIONS_INTERNAL_HOST}:${RESERVATIONS_INTERNAL_API_PORT}
-      - RESOURCES_BASE_URL=${RESOURCES_INTERNAL_PROTOCOL}://${RESOURCES_INTERNAL_HOST}:${RESOURCES_INTERNAL_API_PORT}
-      - ROOMS_BASE_URL=${ROOMS_INTERNAL_PROTOCOL}://${ROOMS_INTERNAL_HOST}:${ROOMS_INTERNAL_API_PORT}
-      # Resiliencia (HTTP e circuit breaker por downstream)
+      - APP_ENV=${BFF_APP_ENV}
+      - APP_VERSION=${BFF_APP_VERSION}
+      - OAUTH_BASE_URL=${BFF_OAUTH_BASE_URL}
+      - OAUTH_JWKS_PATH=${BFF_OAUTH_JWKS_PATH}
+      - OAUTH_VALIDATE_PATH=${BFF_OAUTH_VALIDATE_PATH}
+      - JWT_ISSUER=${BFF_JWT_ISSUER}
+      - JWT_AUDIENCE=${BFF_JWT_AUDIENCE}
+      - JWT_CLIENT_AUDIENCE=${BFF_JWT_CLIENT_AUDIENCE}
+      - CLASSES_BASE_URL=${BFF_CLASSES_BASE_URL}
+      - COURSES_BASE_URL=${BFF_COURSES_BASE_URL}
+      - EMPLOYEES_BASE_URL=${BFF_EMPLOYEES_BASE_URL}
+      - LESSONS_BASE_URL=${BFF_LESSONS_BASE_URL}
+      - PROFESSORS_BASE_URL=${BFF_PROFESSORS_BASE_URL}
+      - RESERVATIONS_BASE_URL=${BFF_RESERVATIONS_BASE_URL}
+      - RESOURCES_BASE_URL=${BFF_RESOURCES_BASE_URL}
+      - ROOMS_BASE_URL=${BFF_ROOMS_BASE_URL}
       - BFF_HTTP_TIMEOUT_MS=${BFF_HTTP_TIMEOUT_MS}
       - BFF_HTTP_RETRIES=${BFF_HTTP_RETRIES}
       - BFF_CIRCUIT_BREAKER_TIMEOUT_MS=${BFF_CIRCUIT_BREAKER_TIMEOUT_MS}
@@ -597,12 +614,11 @@ services:
       - BFF_CIRCUIT_BREAKER_RESET_TIMEOUT_MS=${BFF_CIRCUIT_BREAKER_RESET_TIMEOUT_MS}
       - BFF_CIRCUIT_BREAKER_VOLUME_THRESHOLD=${BFF_CIRCUIT_BREAKER_VOLUME_THRESHOLD}
       - BFF_CIRCUIT_BREAKER_ROLLING_WINDOW_MS=${BFF_CIRCUIT_BREAKER_ROLLING_WINDOW_MS}
-      # Observabilidade
-      - OTEL_SERVICE_NAME=bff-service
+      - OTEL_SERVICE_NAME=${BFF_OTEL_SERVICE_NAME}
       - BFF_INTERNAL_METRICS_PORT=${BFF_INTERNAL_METRICS_PORT}
-      - OTEL_EXPORTER_OTLP_METRICS_ENDPOINT=http://otel-collector:4318/v1/metrics
-      - OTEL_EXPORTER_OTLP_TRACES_ENDPOINT=http://otel-collector:4318/v1/traces
-      - NODE_OPTIONS=--inspect=0.0.0.0:${BFF_INTERNAL_DEBUG_PORT}
+      - OTEL_EXPORTER_OTLP_METRICS_ENDPOINT=${OTEL_EXPORTER_OTLP_METRICS_ENDPOINT}
+      - OTEL_EXPORTER_OTLP_TRACES_ENDPOINT=${OTEL_EXPORTER_OTLP_TRACES_ENDPOINT}
+      - NODE_OPTIONS=${BFF_NODE_OPTIONS}
     ports:
       - "${BFF_EXTERNAL_API_PORT}:${BFF_INTERNAL_API_PORT}"
       - "${BFF_EXTERNAL_DEBUG_PORT}:${BFF_INTERNAL_DEBUG_PORT}"

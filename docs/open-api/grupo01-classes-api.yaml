@@ -558,8 +558,8 @@ components:
     ClassCreate:
       type: object
       additionalProperties: false
-      required: [courseId, startDate, endDate, seats, roomId, professorIds]
-      description: status default `active` e studentIds default [] se omitidos. professorIds não pode ser vazio. startDate ≤ endDate.
+      required: [courseId, startDate, endDate, seats, roomId, professorId]
+      description: status default `active` e studentIds default [] se omitidos. professorId é obrigatório. startDate ≤ endDate.
       properties:
         courseId:
           $ref: "#/components/schemas/Uuid"
@@ -572,10 +572,8 @@ components:
           minimum: 1
         roomId:
           $ref: "#/components/schemas/Uuid"
-        professorIds:
-          allOf:
-            - $ref: "#/components/schemas/UuidArray"
-          minItems: 1
+        professorId:
+          $ref: "#/components/schemas/Uuid"
         studentIds:
           $ref: "#/components/schemas/UuidArray"
           description: Opcional. Omitido equivale a lista vazia.
@@ -594,7 +592,7 @@ components:
     ClassUpdate:
       type: object
       additionalProperties: false
-      required: [courseId, startDate, endDate, seats, roomId, professorIds, status]
+      required: [courseId, startDate, endDate, seats, roomId, professorId, status]
       description: Substituição total (PUT). studentIds omitido vira []. courseId, startDate e endDate são imutáveis após a criação — alteração → 422.
       properties:
         courseId:
@@ -608,10 +606,8 @@ components:
           minimum: 1
         roomId:
           $ref: "#/components/schemas/Uuid"
-        professorIds:
-          allOf:
-            - $ref: "#/components/schemas/UuidArray"
-          minItems: 1
+        professorId:
+          $ref: "#/components/schemas/Uuid"
         studentIds:
           $ref: "#/components/schemas/UuidArray"
           description: Opcional no PUT. Omitido equivale a lista vazia.
@@ -637,10 +633,8 @@ components:
           minimum: 1
         roomId:
           $ref: "#/components/schemas/Uuid"
-        professorIds:
-          allOf:
-            - $ref: "#/components/schemas/UuidArray"
-          minItems: 1
+        professorId:
+          $ref: "#/components/schemas/Uuid"
         studentIds:
           $ref: "#/components/schemas/UuidArray"
         code:
@@ -658,7 +652,7 @@ components:
     Class:
       type: object
       additionalProperties: false
-      required: [id, enabled, courseId, startDate, endDate, seats, roomId, professorIds, studentIds, status, 
+      required: [id, enabled, courseId, startDate, endDate, seats, roomId, professorId, studentIds, status, 
             averageRating]
       properties:
         id:
@@ -680,10 +674,8 @@ components:
           minimum: 1
         roomId:
           $ref: "#/components/schemas/Uuid"
-        professorIds:
-          allOf:
-            - $ref: "#/components/schemas/UuidArray"
-          minItems: 1
+        professorId:
+          $ref: "#/components/schemas/Uuid"
         studentIds:
           $ref: "#/components/schemas/UuidArray"
         code:
@@ -709,7 +701,7 @@ components:
     ClassImportItem:
       type: object
       additionalProperties: false
-      required: [courseId, startDate, endDate, seats, roomId, professorIds]
+      required: [courseId, startDate, endDate, seats, roomId, professorId]
       properties:
         id:
           $ref: "#/components/schemas/Uuid"
@@ -724,10 +716,8 @@ components:
           minimum: 1
         roomId:
           $ref: "#/components/schemas/Uuid"
-        professorIds:
-          allOf:
-            - $ref: "#/components/schemas/UuidArray"
-          minItems: 1
+        professorId:
+          $ref: "#/components/schemas/Uuid"
         studentIds:
           $ref: "#/components/schemas/UuidArray"
         code:

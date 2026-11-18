@@ -328,6 +328,15 @@
             "4646B"
           ]
         },
+        "course_name": {
+          "type": "string",
+          "minLength": 1,
+          "maxLength": 200,
+          "description": "Nome do curso",
+          "examples": [
+            "Engenharia de Software"
+          ]
+        },
         "admission_term": {
           "type": "string",
           "pattern": "^[0-9]{4}/[12]$",
@@ -375,6 +384,7 @@
         "enabled",
         "student_id",
         "course_code",
+        "course_name",
         "admission_term",
         "status",
         "start_date",
@@ -394,6 +404,15 @@
           "description": "Código do curso",
           "examples": [
             "4646B"
+          ]
+        },
+        "course_name": {
+          "type": "string",
+          "minLength": 1,
+          "maxLength": 200,
+          "description": "Nome do curso",
+          "examples": [
+            "Engenharia de Software"
           ]
         },
         "admission_term": {
@@ -455,6 +474,15 @@
             "4646B"
           ]
         },
+        "course_name": {
+          "type": "string",
+          "minLength": 1,
+          "maxLength": 200,
+          "description": "Nome do curso",
+          "examples": [
+            "Engenharia de Software"
+          ]
+        },
         "admission_term": {
           "type": "string",
           "pattern": "^[0-9]{4}/[12]$",
@@ -499,6 +527,7 @@
       },
       "required": [
         "course_code",
+        "course_name",
         "admission_term",
         "status",
         "start_date"

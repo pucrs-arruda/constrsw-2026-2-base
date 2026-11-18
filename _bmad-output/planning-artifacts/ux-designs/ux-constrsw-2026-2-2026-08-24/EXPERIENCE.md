@@ -6,7 +6,8 @@ sources:
   - "{planning_artifacts}/prds/prd-constrsw-2026-2-2026-08-19/addendum.md"
   - "{planning_artifacts}/briefs/brief-constrsw-2026-2-2026-08-17/brief.md"
   - "{planning_artifacts}/research/domain-university-academic-and-resource-management-research-2026-08-17.md"
-updated: 2026-08-24
+  - "backend/oauth/README.md"
+updated: 2026-11-16
 ---
 
 # Closed CRAS — Experience Spine
@@ -17,9 +18,9 @@ UI web única, acesso por papel, ConstrSW PUCRS 2026/2. Identidade visual em `DE
 
 Form-factor: **uma** UI web com acesso por papel — não app nativo, não totem, não quatro produtos. Desktop-first (laboratório); leitura de Student cabe em viewport estreita; cadastro e grade não.
 
-Não há sistema de UI nomeado. Tokens e anatomia visual: `DESIGN.md`. A UI autentica via **gateway REST de identidade**; não abre adaptador próprio ao IdP. A UI não faz join de nove OpenAPIs no browser: lê e escreve jornadas via BFF.
+Não há sistema de UI nomeado. Tokens e anatomia visual: `DESIGN.md`. A UI autentica com `POST /login` de `backend/oauth` (`multipart/form-data`: `username`, `password`; credentials incluídos). Sucesso `201` segue o cookie httpOnly que o oauth grava; a UI não persiste `access_token` nem `refresh_token`. Logout é `POST /logout` e volta a UX-LOGIN. Sem Keycloak no browser e sem `keycloak-js`. A UI não faz join de nove OpenAPIs no browser.
 
-Papel ≠ serviço. Helena não escolhe `employees`; escolhe cadastrar quem trabalha. Quatro papéis na chrome: Funcionário, Coordenador, Professor, Student.
+Neste corte, a chrome lista nove serviços. O papel continua na barra (Funcionário, Coordenador, Professor, Student). UX-S1–UX-S9 permanecem especificadas e fora deste corte: o item do menu não abre CRUD.
 
 V1 claro apenas. Sem modo offline. Sem tela de alta de Student.
 
@@ -29,8 +30,8 @@ Inventário herdado do addendum **Telas v1**, mais Login e Home. Onze superfíci
 
 | ID | Superfície | Chega de | Propósito | Dono de implementação |
 |---|---|---|---|---|
-| UX-LOGIN | Login institucional | URL fria / sessão expirada | Autenticar via gateway REST de identidade | Compartilhada (todos os grupos) |
-| UX-HOME | Home do papel | Login ok; item Home da nav | Hub da jornada do papel; zero seletor de microsserviço | Compartilhada (todos os grupos) |
+| UX-LOGIN | Login institucional | URL fria / sessão expirada | Autenticar com `POST /login` de `backend/oauth` | Compartilhada (todos os grupos) |
+| UX-HOME | Home do shell | Login ok | Marcar o item ativo da lista; sem CRUD | Compartilhada (todos os grupos) |
 | UX-S1 | Employee + Dependent | Home / nav (Funcionário) | Cadastrar/editar Employee e vínculos 1–N | Exclusiva — OQ-1 |
 | UX-S2 | Professor + AcademicDegree | Home / nav (Funcionário); atalho pós-Employee | Criar papel docente sobre Employee existente; titulações | Exclusiva — OQ-1 |
 | UX-S3 | Room + AccessibilityFeature; Resource + InventoryItem | Home / nav (Funcionário) | Cadastro-mestre de espaço e recurso (duas zonas, uma superfície) | Exclusiva — OQ-1 |
@@ -41,7 +42,9 @@ Inventário herdado do addendum **Telas v1**, mais Login e Home. Onze superfíci
 | UX-S8 | Plano + roster da Class | Home / nav (Professor) | Leitura do plano da disciplina e roster da turma | Exclusiva — OQ-1 |
 | UX-S9 | Onde / o quê / avaliação + plano | Home / nav (Student) | Sala efetiva, tópico, `flagAvaliacao`, plano publicado | Exclusiva — OQ-1 |
 
-Nav `{components.role-nav}` lista **somente** as superfícies do papel:
+Neste corte, `{components.role-nav}` é a lista do hambúrguer, nesta ordem: Employees, Professors, Students, Rooms, Courses, Classes, Lessons, Resources, Reservations. Item ativo marcado. Abaixo de 1024px a lista é folha; `Esc` fecha. Nenhum item chama serviço de domínio.
+
+O mapa por papel não é a chrome deste corte. Vale quando UX-S1–UX-S9 entrarem:
 
 | Papel | Superfícies |
 |---|---|
@@ -50,7 +53,7 @@ Nav `{components.role-nav}` lista **somente** as superfícies do papel:
 | Professor | UX-HOME, UX-S7, UX-S8 |
 | Student | UX-HOME, UX-S9 |
 
-Modal: no máximo um `{components.confirm-dialog}`. Sem rota para cadastro de Student. Sem superfície “escolher contexto/backend”.
+Modal: no máximo um `{components.confirm-dialog}`. Sem rota para cadastro de Student. A lista do shell é fixa; não há um segundo seletor de backend.
 
 IA fecha: UJ-1→S1–S4; UJ-2→S5–S6; UJ-3→S7–S8; UJ-4→S9; autenticação→LOGIN. Toda superfície tem jornada que a alcança (Login/Home = todas).
 
@@ -107,8 +110,8 @@ Comportamento. Visual em `DESIGN.md.Components`.
 
 | Component | Onde | Regras |
 |---|---|---|
-| app-shell | Todas autenticadas | Chrome mostra papel atual. Sem menu de serviços. Logout volta a UX-LOGIN. |
-| role-nav | Todas autenticadas | Só destinos do papel. Ativo = superfície corrente. Não lista UX-S* de outro papel “desabilitadas”. |
+| app-shell | Todas autenticadas | Barra com hambúrguer à esquerda e **Closed CRAS**. Papel e identidade à direita. Logout: `POST /logout` e volta a UX-LOGIN. |
+| role-nav | Todas autenticadas | Lista fixa: Employees, Professors, Students, Rooms, Courses, Classes, Lessons, Resources, Reservations. Ativo = item corrente. Neste corte não abre CRUD e não chama o serviço. |
 | page-header | Cada UX-S* e Home | Título = nome da superfície (tabela IA). Caption = uma linha de língua (ex. “Reserva de Room é exceção, não a sala padrão”). |
 | button-primary | Afirmar | Um primário visível por zona. Disabled até o formulário poder submeter; o clique ainda pode recusar invariante no servidor — a recusa sobe no banner, não some o botão. |
 | button-secondary | Navegar / abortar form | Nunca destrói Reservation. |
@@ -123,8 +126,8 @@ Comportamento. Visual em `DESIGN.md.Components`.
 | status-pill | S1–S3, S7, S9 | Ativo/inativo; presencial/remoto; Reservation ad hoc vs ligada à aula. |
 | sala-efetiva-chip | S4, S7, S9 | Valor = sala efetiva. Se divergir, variante accent e a padrão **não** compete como *onde*. Remoto: sem Room. |
 | flag-avaliacao-mark | S7, S9 | Visível quando `flagAvaliacao`. Student pergunta “tem avaliação?” neste marca. |
-| login-panel | UX-LOGIN | Submit chama o gateway REST de identidade. Falha de credencial: banner no painel, sem enumerar se o id existe. |
-| journey-card | UX-HOME | Um card por verbo do papel (tabela Home). Clique = superfície correspondente. |
+| login-panel | UX-LOGIN | Submit: `POST /login` (`username`, `password`, credentials incluídos). `201`: cookie httpOnly; a UI não persiste `access_token` nem `refresh_token`; navega a UX-HOME. `401`: banner no painel, sem enumerar conta. `503` ou rede: banner “Identidade indisponível.” |
+| journey-card | UX-HOME | Fora deste corte. Quando UX-S* entrarem, um card por verbo do papel (tabela Home). |
 | confirm-dialog | Destructive | Nomeia o objeto (Employee, Reservation) e o efeito (faixa devolvida; Class somente leitura se OQ-2 default). |
 | skeleton-block | Cold load | Espelha tabela ou grid da superfície; some quando o BFF responde. |
 
@@ -135,7 +138,7 @@ Comportamento. Visual em `DESIGN.md.Components`.
 | Cold load | Todas autenticadas | `{components.skeleton-block}` no corpo; chrome do shell já visível com papel. |
 | Sessão ausente / expirada | Qualquer URL autenticada | Redirect UX-LOGIN; depois, volta à URL pedida se o papel puder. |
 | Credencial recusada | UX-LOGIN | Banner no `{components.login-panel}`. Não revela existência de conta. |
-| Gateway de identidade indisponível | UX-LOGIN | Banner: “Identidade indisponível. A UI não fala com o IdP direto.” Sem fallback de adaptador. |
+| Gateway de identidade indisponível | UX-LOGIN | Banner: “Identidade indisponível.” Sem Keycloak no browser e sem `keycloak-js`. |
 | BFF indisponível | Qualquer autenticada | Banner de página: jornada ilegível; sem join local de APIs. |
 | Permission denied (papel) | URL de outra papel | Redirect UX-HOME do papel atual. Sem “403” com nome de serviço. |
 | Permission denied (Professor sem atribuição) | UX-S7, UX-S8 | Lista só Class atribuídas; Class alheia não aparece. |
@@ -166,7 +169,7 @@ Mouse e teclado de formulário, não paleta estilo IDE.
 - Sem atalho que troque de papel. Sem `⌘K` obrigatório na v1. `[ASSUMPTION]`
 - Hover não é a única via para ação destrutiva: cancelar Reservation é botão visível + dialog.
 
-**Banido:** drag-and-drop da grade, infinite scroll, time picker livre, stack de modal > 1, escolher microsserviço, cadastrar Student.
+**Banido:** drag-and-drop da grade, infinite scroll, time picker livre, stack de modal > 1, chamar as nove APIs no browser, cadastrar Student.
 
 ## Accessibility Floor
 
@@ -186,8 +189,8 @@ Comportamento. Contraste em `DESIGN.md`.
 
 | Breakpoint | Comportamento |
 |---|---|
-| ≥ 1024px | `{components.role-nav}` visível. master-detail em duas colunas. occupancy-grid em largura útil. |
-| 768–1023px | Nav em folha. master-detail empilha (lista acima). Grid de ocupação com scroll horizontal nas faixas; códigos de faixa permanecem visíveis. |
+| ≥ 1024px | `{components.role-nav}` ao lado do conteúdo (`{spacing.sidebar}`), aberta pelo hambúrguer. master-detail em duas colunas. occupancy-grid em largura útil. |
+| 768–1023px | Nav em folha a partir do hambúrguer; `Esc` fecha. master-detail empilha (lista acima). Grid de ocupação com scroll horizontal nas faixas; códigos de faixa permanecem visíveis. |
 | < 768px | Mesmo que 768, densidade menor. UX-S9 usável. UX-S1–S6 e S4 não são o recorte de demo no telefone. |
 
 Não é app nativo. Não há paridade iOS/Android.
@@ -199,7 +202,7 @@ Herdado das alternativas rejeitadas do addendum e do recorte do PRD — não de 
 - **Levantar:** língua única API/BFF/UI; sala padrão na abertura da turma; *onde* = sala efetiva; faixa canônica; Recurso no feliz, Room na exceção; roster longe da Reservation.
 - **Rejeitado — nove CRUDs com `pessoa`:** a chrome não tem “Pessoas”. Employee e Student não compartilham ficha.
 - **Rejeitado — cada grupo implementa as próprias telas:** partição cruzada; OQ-1.
-- **Rejeitado — adaptador JS da UI no IdP:** Login só via gateway REST.
+- **Rejeitado — adaptador JS da UI no IdP:** Login só em `POST /login` de `backend/oauth`. Sem Keycloak no browser e sem `keycloak-js`.
 - **Rejeitado — app nativo / totem / quatro produtos.**
 - **Rejeitado — tela de alta de Student.**
 - **Rejeitado — 18 reservas da sala padrão:** UX-S6 não cria Reservation ao abrir a turma; UX-S7 não oferece “reservar sala padrão”.
@@ -221,6 +224,8 @@ Picker e grid usam a tabela do addendum (A 08:00–08:45 … P 21:45–22:30). C
 
 ## Home (por papel)
 
+Neste corte a Home não renderiza estes cards. A navegação é a lista do hambúrguer, sem CRUD. A tabela permanece o mapa das superfícies UX-S*, fora deste update.
+
 | Papel | Cards (verbo → superfície) |
 |---|---|
 | Funcionário | Cadastrar quem trabalha → S1; Criar papel docente → S2; Cadastrar Room e Resource → S3; Consultar ocupação por data + faixa → S4 |
@@ -230,17 +235,17 @@ Picker e grid usam a tabela do addendum (A 08:00–08:45 … P 21:45–22:30). C
 
 ## Key Flows
 
-Nomes UJ verbatim do PRD. Climax em negrito. Falha = recusa de invariante, não crash genérico.
+Nomes UJ verbatim do PRD. Climax em negrito. Falha = recusa de invariante, não crash genérico. Neste corte o shell autentica no oauth e a Home só marca o item da lista. Os passos que entram em UX-S* descrevem as superfícies futuras, fora deste update.
 
 ### UJ-1. Helena cadastra quem trabalha — e só então o papel docente existe.
 
 **Persona + contexto:** Helena, funcionária, steward de master data; um docente novo precisa existir como Employee antes de lecionar.
 
-1. Helena abre a UI, autentica em UX-LOGIN (gateway REST de identidade) no papel Funcionário e cai em UX-HOME.
+1. Helena abre a UI, autentica em UX-LOGIN (`POST /login` de `backend/oauth`) e cai em UX-HOME.
 2. Card “Cadastrar quem trabalha” → UX-S1. Cria Employee e um Dependent.
 3. Sem sair do papel, abre UX-S2. Seleciona o `employeeId` recém-criado (nome resolvido, não copiado). Cria Professor e um AcademicDegree.
 4. Em UX-S3 cadastra a Room (capacidade + pelo menos um AccessibilityFeature) e um Resource com InventoryItem.
-5. **Climax:** em UX-S4 escolhe uma data e lê o grid por faixa — salas e recursos ainda livres na grade. O `id` de Employee que ela acabou de gravar é o que S2 usou; não há segunda ficha de pessoa. Helena não escolheu microsserviço em nenhum passo.
+5. **Climax:** em UX-S4 escolhe uma data e lê o grid por faixa — salas e recursos ainda livres na grade. O `id` de Employee que ela acabou de gravar é o que S2 usou; não há segunda ficha de pessoa. No shell deste corte o menu só nomeia o destino; Helena não chamou as APIs dos nove serviços.
 
 **Falha:** em S2 ela tenta criar Professor sem Employee → `{components.refusal-banner}` FR-4; o papel docente não nasce. Tentar “novo Student” não existe na nav.
 
