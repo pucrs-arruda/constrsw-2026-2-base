@@ -9,7 +9,7 @@
     "field": {
       "type": "string",
       "description": "Nome do campo, ou body quando o JSON não é um objeto.",
-      "examples": ["email", "ativo", "body"]
+      "examples": ["email", "enabled", "body"]
     },
     "message": {
       "type": "string",

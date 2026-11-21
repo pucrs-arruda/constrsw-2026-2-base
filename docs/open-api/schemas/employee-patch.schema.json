@@ -1,7 +1,7 @@
 {
   "$schema": "https://json-schema.org/draft/2020-12/schema",
   "title": "EmployeePatch",
-  "description": "Corpo de PATCH /api/v1/employees/{id}. Todos os campos são opcionais; o objeto vazio responde 200 e não altera nada. Cada campo enviado substitui só esse atributo. phone ou email vazio, ou só com espaços, remove o valor gravado. id, ativo, dependents, enabled e qualquer outro campo respondem 400. null responde 400. dependents já gravados permanecem.",
+  "description": "Corpo de PATCH /api/v1/employees/{id}. Todos os campos são opcionais; o objeto vazio responde 200 e não altera nada. Cada campo enviado substitui só esse atributo. phone ou email vazio, ou só com espaços, remove o valor gravado. id, dependents, enabled e qualquer outro campo respondem 400. null responde 400. dependents já gravados permanecem.",
   "type": "object",
   "additionalProperties": false,
   "properties": {

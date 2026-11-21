@@ -1,7 +1,7 @@
 {
   "$schema": "https://json-schema.org/draft/2020-12/schema",
   "title": "EmployeeWrite",
-  "description": "Corpo de POST e PUT /api/v1/employees. O serviço gera o id (UUID v4) e não aceita id, ativo, dependents, enabled nem qualquer outro campo. null responde 400. phone e email são opcionais: omitidos, vazios ou só com espaços não são gravados. No PUT, omitir phone ou email remove o valor que estava gravado. dependents já gravados permanecem. Texto é gravado sem espaços nas pontas.",
+  "description": "Corpo de POST e PUT /api/v1/employees. O serviço gera o id (UUID v4) e não aceita id, dependents, enabled nem qualquer outro campo. null responde 400. phone e email são opcionais: omitidos, vazios ou só com espaços não são gravados. No PUT, omitir phone ou email remove o valor que estava gravado. dependents já gravados permanecem. Texto é gravado sem espaços nas pontas.",
   "type": "object",
   "additionalProperties": false,
   "required": [

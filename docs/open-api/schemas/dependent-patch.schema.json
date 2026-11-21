@@ -1,7 +1,7 @@
 {
   "$schema": "https://json-schema.org/draft/2020-12/schema",
   "title": "DependentPatch",
-  "description": "Corpo de PATCH do Dependent. Todos os campos são opcionais; o objeto vazio responde 200 e não altera nada. Campo enviado vazio ou só com espaços responde 400: não há como apagar name, birthDate, dependencyType ou status. id, ativo, enabled e qualquer outro campo respondem 400. null responde 400.",
+  "description": "Corpo de PATCH do Dependent. Todos os campos são opcionais; o objeto vazio responde 200 e não altera nada. Campo enviado vazio ou só com espaços responde 400: não há como apagar name, birthDate, dependencyType ou status. id, enabled e qualquer outro campo respondem 400. null responde 400.",
   "type": "object",
   "additionalProperties": false,
   "properties": {

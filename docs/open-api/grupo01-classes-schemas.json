@@ -65,6 +65,17 @@
       "format": "date",
       "description": "Data do período da oferta (calendário), não horário do dia."
     },
+    "AcademicYear": {
+      "type": "integer",
+      "minimum": 2000,
+      "maximum": 2100,
+      "description": "Ano em que a turma foi ofertada."
+    },
+    "AcademicSemester": {
+      "type": "integer",
+      "enum": [1, 2],
+      "description": "Semestre em que a turma foi ofertada (1 ou 2)."
+    },
     "IsoDateTime": {
       "type": "string",
       "format": "date-time"
@@ -116,6 +127,8 @@
         "courseId",
         "startDate",
         "endDate",
+        "year",
+        "semester",
         "seats",
         "roomId",
         "professorId"
@@ -129,6 +142,12 @@
         },
         "endDate": {
           "$ref": "#/$defs/IsoDate"
+        },
+        "year": {
+          "$ref": "#/$defs/AcademicYear"
+        },
+        "semester": {
+          "$ref": "#/$defs/AcademicSemester"
         },
         "seats": {
           "type": "integer",
@@ -158,7 +177,7 @@
           "maxLength": 64
         }
       },
-      "description": "Criação de Class. status default `active` e studentIds default [] se omitidos. professorId é obrigatório. startDate ≤ endDate."
+      "description": "Criação de Class. status default `active` e studentIds default [] se omitidos. professorId é obrigatório. startDate ≤ endDate. year entre 2000 e 2100. semester 1 ou 2."
     },
     "ClassUpdate": {
       "type": "object",
@@ -167,6 +186,8 @@
         "courseId",
         "startDate",
         "endDate",
+        "year",
+        "semester",
         "seats",
         "roomId",
         "professorId",
@@ -181,6 +202,12 @@
         },
         "endDate": {
           "$ref": "#/$defs/IsoDate"
+        },
+        "year": {
+          "$ref": "#/$defs/AcademicYear"
+        },
+        "semester": {
+          "$ref": "#/$defs/AcademicSemester"
         },
         "seats": {
           "type": "integer",
@@ -219,7 +246,7 @@
           "maxLength": 64
         }
       },
-      "description": "Substituição total (PUT). studentIds omitido vira []. courseId, startDate e endDate são imutáveis após a criação — alteração → 422."
+      "description": "Substituição total (PUT). studentIds omitido vira []. courseId, startDate, endDate, year e semester são imutáveis após a criação — alteração → 422."
     },
     "ClassPatch": {
       "type": "object",
@@ -262,7 +289,7 @@
           "maxLength": 64
         }
       },
-      "description": "Atualização parcial. Não inclui courseId, startDate nem endDate (imutáveis). professorId, se enviado, substitui o professor da turma."
+      "description": "Atualização parcial. Não inclui courseId, startDate, endDate, year nem semester (imutáveis). professorId, se enviado, substitui o professor da turma."
     },
     "Class": {
       "type": "object",
@@ -273,6 +300,8 @@
         "courseId",
         "startDate",
         "endDate",
+        "year",
+        "semester",
         "seats",
         "roomId",
         "professorId",
@@ -298,6 +327,12 @@
         },
         "endDate": {
           "$ref": "#/$defs/IsoDate"
+        },
+        "year": {
+          "$ref": "#/$defs/AcademicYear"
+        },
+        "semester": {
+          "$ref": "#/$defs/AcademicSemester"
         },
         "seats": {
           "type": "integer",
@@ -354,6 +389,8 @@
         "courseId",
         "startDate",
         "endDate",
+        "year",
+        "semester",
         "seats",
         "roomId",
         "professorId"
@@ -371,6 +408,12 @@
         },
         "endDate": {
           "$ref": "#/$defs/IsoDate"
+        },
+        "year": {
+          "$ref": "#/$defs/AcademicYear"
+        },
+        "semester": {
+          "$ref": "#/$defs/AcademicSemester"
         },
         "seats": {
           "type": "integer",

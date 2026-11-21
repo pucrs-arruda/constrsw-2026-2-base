@@ -24,20 +24,15 @@ info:
     Token ausente ou inválido responde 401 com o mesmo `detail` (`Token ausente ou inválido`): a
     resposta não informa se a conta existe. Papel autenticado sem permissão responde 403.
 
-    ## Duas representações
-
-    GET de coleção e GET por id incluem `ativo` (`Active` → true, `Inactive` → false), no Employee
-    e no Dependent. POST, PUT e PATCH não aceitam `ativo` no pedido e não o devolvem. Enviá-lo
-    responde 400.
-
     POST de Employee não devolve `dependents`. PUT e PATCH de Employee devolvem os dependents
-    ainda visíveis, sem `ativo`. PUT e PATCH de Employee não alteram essa coleção.
+    ainda visíveis. PUT e PATCH de Employee não alteram essa coleção.
 
     ## Exclusão lógica e situação cadastral
 
-    `status` (`Active` ou `Inactive`) e a exclusão lógica são eixos diferentes. `Inactive` continua
-    nas leituras, com `ativo` false. `enabled` não faz parte destes schemas e não aparece no corpo
-    de sucesso. DELETE não apaga o documento: marca `enabled=false`. O registro some das leituras
+    `status` (`Active` ou `Inactive`) é a situação cadastral. `Inactive` continua nas leituras.
+    A exclusão lógica é o atributo `enabled`, somente leitura: nasce `true`,
+    aparece no corpo de sucesso de Employee e Dependent e não pode ser enviado pelo cliente.
+    DELETE não apaga o documento: marca `enabled=false`. O registro some das leituras
     e um PUT, PATCH ou DELETE seguinte responde 404. Não há undelete.
 
     DELETE do Employee também marca os dependents. DELETE de um Dependent marca só aquele item;
@@ -133,7 +128,7 @@ paths:
       operationId: listEmployees
       summary: Lista os Employee endereçáveis
       description: |
-        200 e um array. Vazio é `[]`. Cada item traz `ativo` e os dependents ainda visíveis.
+        200 e um array. Vazio é `[]`. Cada item traz `enabled` e os dependents ainda visíveis.
         Employee excluído logicamente não entra. Não há filtro, ordenação nem paginação.
 
         Papéis: `funcionario`, `coordenador`, `professor`, `student`.
@@ -151,7 +146,7 @@ paths:
                   summary: Nenhum Employee endereçável
                   value: []
                 comInativo:
-                  summary: Inactive continua na lista, com ativo false
+                  summary: Inactive continua na lista, com enabled true
                   value:
                     - id: 6f1c2b9e-8d4a-4c3e-9b1a-2f5d7e8c9a01
                       registrationNumber: '100'
@@ -161,15 +156,15 @@ paths:
                       position: Analista
                       phone: '5133203500'
                       email: helena.costa@pucrs.br
+                      enabled: true
                       status: Inactive
-                      ativo: false
                       dependents:
                         - id: 7a2d3c4e-1b5f-4a6c-8d9e-0f1a2b3c4d5e
+                          enabled: true
                           name: Caio Costa
                           birthDate: '2010-05-01'
                           dependencyType: filho
                           status: Active
-                          ativo: true
         '401':
           $ref: '#/components/responses/Unauthorized'
         '403':
@@ -182,7 +177,7 @@ paths:
       summary: Cria um Employee
       description: |
         O serviço emite o `id` e responde 201 com `Location` no caminho do recurso. O corpo de
-        resposta não traz `ativo` nem `dependents`. E-mail novo e não branco entra no índice único.
+        resposta traz `enabled` true e não traz `dependents`. E-mail novo e não branco entra no índice único.
         E-mail já usado, inclusive por registro Inactive ou excluído, responde 409.
 
         Papel: `funcionario`.
@@ -213,6 +208,7 @@ paths:
                 $ref: '#/components/schemas/EmployeeCreated'
               example:
                 id: 6f1c2b9e-8d4a-4c3e-9b1a-2f5d7e8c9a01
+                enabled: true
                 registrationNumber: '100'
                 name: Helena Costa
                 salary: 8500.5
@@ -239,7 +235,7 @@ paths:
       operationId: readEmployee
       summary: Lê um Employee
       description: |
-        200 com `ativo` e os dependents ainda visíveis. `Inactive` responde 200 com `ativo` false.
+        200 com `enabled` e os dependents ainda visíveis. `Inactive` responde 200 com `status` Inactive e `enabled` true.
         Id desconhecido ou Employee excluído logicamente responde 404. O formato do id não é
         validado: qualquer string desconhecida é 404, não 400.
 
@@ -260,15 +256,15 @@ paths:
                 position: Analista
                 phone: '5133203500'
                 email: helena.costa@pucrs.br
+                enabled: true
                 status: Inactive
-                ativo: false
                 dependents:
                   - id: 7a2d3c4e-1b5f-4a6c-8d9e-0f1a2b3c4d5e
+                    enabled: true
                     name: Caio Costa
                     birthDate: '2010-05-01'
                     dependencyType: filho
                     status: Active
-                    ativo: true
         '401':
           $ref: '#/components/responses/Unauthorized'
         '403':
@@ -284,7 +280,7 @@ paths:
       description: |
         Substitui registrationNumber, name, salary, hireDate, position, status, phone e email.
         Não altera `dependents` nem `enabled`. phone e email omitidos, vazios ou só com espaços
-        deixam de existir. A resposta traz os dependents ainda visíveis, sem `ativo`.
+        deixam de existir. A resposta traz `enabled` e os dependents ainda visíveis.
 
         Employee ausente ou excluído responde 404 e o documento permanece. O mesmo e-mail neste
         id não é conflito; e-mail de outro documento é 409.
@@ -318,10 +314,12 @@ paths:
                 salary: 8500.5
                 hireDate: '2020-01-15'
                 position: Analista
+                enabled: true
                 email: helena.costa@pucrs.br
                 status: Inactive
                 dependents:
                   - id: 7a2d3c4e-1b5f-4a6c-8d9e-0f1a2b3c4d5e
+                    enabled: true
                     name: Caio Costa
                     birthDate: '2010-05-01'
                     dependencyType: filho
@@ -344,8 +342,8 @@ paths:
       summary: Atualiza só os campos enviados
       description: |
         Altera somente os atributos presentes. Objeto vazio responde 200 sem mudar nada. phone ou
-        email vazio, ou só com espaços, remove esse valor. dependents não mudam. A resposta não
-        traz `ativo` e traz os dependents ainda visíveis, sem `ativo`.
+        email vazio, ou só com espaços, remove esse valor. dependents não mudam. A resposta traz
+        `enabled` e os dependents ainda visíveis.
 
         Papel: `funcionario`.
       requestBody:
@@ -370,10 +368,12 @@ paths:
                 salary: 8500.5
                 hireDate: '2020-01-15'
                 position: Coordenação
+                enabled: true
                 email: helena.costa@pucrs.br
                 status: Active
                 dependents:
                   - id: 7a2d3c4e-1b5f-4a6c-8d9e-0f1a2b3c4d5e
+                    enabled: true
                     name: Caio Costa
                     birthDate: '2010-05-01'
                     dependencyType: filho
@@ -418,7 +418,7 @@ paths:
       operationId: listDependents
       summary: Lista os Dependent visíveis
       description: |
-        200 e um array, vazio se não houver dependente visível. Cada item traz `ativo`. Employee
+        200 e um array, vazio se não houver dependente visível. Cada item traz `enabled`. Employee
         ausente ou excluído responde 404, com detail `Employee não encontrado`.
 
         Papéis: `funcionario`, `coordenador`, `professor`, `student`.
@@ -438,11 +438,11 @@ paths:
                 umItem:
                   value:
                     - id: 7a2d3c4e-1b5f-4a6c-8d9e-0f1a2b3c4d5e
+                      enabled: true
                       name: Caio Costa
                       birthDate: '2010-05-01'
                       dependencyType: filho
                       status: Active
-                      ativo: true
         '401':
           $ref: '#/components/responses/Unauthorized'
         '403':
@@ -456,7 +456,7 @@ paths:
       operationId: createDependent
       summary: Cria um Dependent
       description: |
-        201 com `Location` do dependente. A resposta não traz `ativo`. Se o Employee não está
+        201 com `Location` do dependente. A resposta traz `enabled` true. Se o Employee não está
         endereçável, a resposta é 404 antes da validação do corpo.
 
         Papel: `funcionario`.
@@ -483,6 +483,7 @@ paths:
                 $ref: '#/components/schemas/DependentWritten'
               example:
                 id: 7a2d3c4e-1b5f-4a6c-8d9e-0f1a2b3c4d5e
+                enabled: true
                 name: Caio Costa
                 birthDate: '2010-05-01'
                 dependencyType: filho
@@ -506,7 +507,7 @@ paths:
       operationId: readDependent
       summary: Lê um Dependent
       description: |
-        200 com `ativo`. 404 com detail `Employee não encontrado` se o pai não está endereçável, ou
+        200 com `enabled`. 404 com detail `Employee não encontrado` se o pai não está endereçável, ou
         `Dependent não encontrado` se o item não existe ou já foi excluído.
 
         Papéis: `funcionario`, `coordenador`, `professor`, `student`.
@@ -519,11 +520,11 @@ paths:
                 $ref: '#/components/schemas/DependentRead'
               example:
                 id: 7a2d3c4e-1b5f-4a6c-8d9e-0f1a2b3c4d5e
+                enabled: true
                 name: Caio Costa
                 birthDate: '2010-05-01'
                 dependencyType: filho
                 status: Inactive
-                ativo: false
         '401':
           $ref: '#/components/responses/Unauthorized'
         '403':
@@ -537,8 +538,8 @@ paths:
       operationId: replaceDependent
       summary: Substitui um Dependent
       description: |
-        Substitui name, birthDate, dependencyType e status desse item. Não cria nem remove outros.
-        A resposta não traz `ativo`.
+        Substitui name, birthDate, dependencyType e status desse item. Não cria nem remove outros
+        e não altera `enabled`. A resposta traz `enabled`.
 
         Papel: `funcionario`.
       requestBody:
@@ -561,6 +562,7 @@ paths:
                 $ref: '#/components/schemas/DependentWritten'
               example:
                 id: 7a2d3c4e-1b5f-4a6c-8d9e-0f1a2b3c4d5e
+                enabled: true
                 name: Caio Costa
                 birthDate: '2010-05-01'
                 dependencyType: filho
@@ -581,7 +583,7 @@ paths:
       summary: Atualiza só os campos enviados do Dependent
       description: |
         Objeto vazio responde 200 sem mudar nada. Campo de texto vazio responde 400: esses quatro
-        atributos não podem ser apagados. A resposta não traz `ativo`.
+        atributos não podem ser apagados. A resposta traz `enabled`.
 
         Papel: `funcionario`.
       requestBody:
@@ -601,6 +603,7 @@ paths:
                 $ref: '#/components/schemas/DependentWritten'
               example:
                 id: 7a2d3c4e-1b5f-4a6c-8d9e-0f1a2b3c4d5e
+                enabled: true
                 name: Caio Costa Lima
                 birthDate: '2010-05-01'
                 dependencyType: filho
@@ -703,7 +706,7 @@ components:
     BadRequest:
       description: |
         JSON parseado que não cumpre o schema: não é objeto, campo obrigatório ausente, campo
-        desconhecido (incluindo ativo, dependents e enabled), null, tipo errado ou valor inválido.
+        desconhecido (incluindo dependents e enabled), null, tipo errado ou valor inválido.
         JSON que não parseia responde 500, não 400.
       content:
         application/problem+json:
@@ -717,7 +720,7 @@ components:
             code: validation
             instance: /api/v1/employees
             errors:
-              - field: ativo
+              - field: enabled
                 message: Campo não permitido
               - field: email
                 message: E-mail inválido

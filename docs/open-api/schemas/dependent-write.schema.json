@@ -1,7 +1,7 @@
 {
   "$schema": "https://json-schema.org/draft/2020-12/schema",
   "title": "DependentWrite",
-  "description": "Corpo de POST e PUT /api/v1/employees/{id}/dependents e /dependents/{dependentId}. id, ativo e enabled não entram no corpo; enviá-los responde 400. null e campo desconhecido respondem 400. Texto é gravado sem espaços nas pontas. PUT substitui só esse Dependent e não cria nem remove outros itens.",
+  "description": "Corpo de POST e PUT /api/v1/employees/{id}/dependents e /dependents/{dependentId}. id e enabled não entram no corpo; enviá-los responde 400. null e campo desconhecido respondem 400. Texto é gravado sem espaços nas pontas. PUT substitui só esse Dependent e não cria nem remove outros itens.",
   "type": "object",
   "additionalProperties": false,
   "required": ["name", "birthDate", "dependencyType", "status"],

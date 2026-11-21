@@ -12,6 +12,9 @@ info:
     - `autorId` nunca no contrato público de leitura
     - `averageRating` calculado (não persistido)
     - `startDate`/`endDate` = datas do período da oferta (não horários)
+    - `year` = ano em que a turma foi ofertada (2000–2100)
+    - `semester` = semestre em que a turma foi ofertada (`1` ou `2`)
+    - `year` e `semester` são imutáveis após a criação, como `startDate` e `endDate`
 
     Filtros: equals (`status=active`) ou `{op}` no valor —
     `neq`, `gt`, `gteq`, `lt`, `lteq`, `like`
@@ -75,7 +78,7 @@ paths:
       description: |
         FR-2. Equals: `status=active`.
         Operadores: `status={neq}closed`, `seats={gt}20`,
-        `startDate={gteq}2026-02-01`, `label={like}%BD%`.
+        `startDate={gteq}2026-02-01`, `year=2026`, `semester=1`, `label={like}%BD%`.
       parameters:
         - $ref: "#/components/parameters/filterId"
         - $ref: "#/components/parameters/filterStatus"
@@ -83,6 +86,8 @@ paths:
         - $ref: "#/components/parameters/filterRoomId"
         - $ref: "#/components/parameters/filterStartDate"
         - $ref: "#/components/parameters/filterEndDate"
+        - $ref: "#/components/parameters/filterYear"
+        - $ref: "#/components/parameters/filterSemester"
         - $ref: "#/components/parameters/filterSeats"
         - $ref: "#/components/parameters/filterCode"
         - $ref: "#/components/parameters/filterLabel"
@@ -153,7 +158,7 @@ paths:
       tags: [classes]
       operationId: replaceClass
       summary: Atualizar Class (total)
-      description: PUT total. startDate/endDate imutáveis após create → 422 se alterados.
+      description: PUT total. startDate/endDate e year/semester imutáveis após create → 422 se alterados.
       requestBody:
         required: true
         content:
@@ -459,6 +464,22 @@ components:
       schema:
         $ref: "#/components/schemas/FilterOperatorValue"
       example: "{lteq}2026-07-31"
+    filterYear:
+      name: year
+      in: query
+      required: false
+      description: Ano em que a turma foi ofertada.
+      schema:
+        $ref: "#/components/schemas/FilterOperatorValue"
+      example: "2026"
+    filterSemester:
+      name: semester
+      in: query
+      required: false
+      description: Semestre em que a turma foi ofertada (1 ou 2).
+      schema:
+        $ref: "#/components/schemas/FilterOperatorValue"
+      example: "1"
     filterSeats:
       name: seats
       in: query
@@ -522,6 +543,17 @@ components:
       format: date
       description: Data do período da oferta (calendário), não horário.
 
+    AcademicYear:
+      type: integer
+      minimum: 2000
+      maximum: 2100
+      description: Ano em que a turma foi ofertada.
+
+    AcademicSemester:
+      type: integer
+      enum: [1, 2]
+      description: Semestre em que a turma foi ofertada (1 ou 2).
+
     IsoDateTime:
       type: string
       format: date-time
@@ -558,8 +590,8 @@ components:
     ClassCreate:
       type: object
       additionalProperties: false
-      required: [courseId, startDate, endDate, seats, roomId, professorId]
-      description: status default `active` e studentIds default [] se omitidos. professorId é obrigatório. startDate ≤ endDate.
+      required: [courseId, startDate, endDate, year, semester, seats, roomId, professorId]
+      description: status default `active` e studentIds default [] se omitidos. professorId é obrigatório. startDate ≤ endDate. year entre 2000 e 2100. semester 1 ou 2.
       properties:
         courseId:
           $ref: "#/components/schemas/Uuid"
@@ -567,6 +599,10 @@ components:
           $ref: "#/components/schemas/IsoDate"
         endDate:
           $ref: "#/components/schemas/IsoDate"
+        year:
+          $ref: "#/components/schemas/AcademicYear"
+        semester:
+          $ref: "#/components/schemas/AcademicSemester"
         seats:
           type: integer
           minimum: 1
@@ -592,8 +628,8 @@ components:
     ClassUpdate:
       type: object
       additionalProperties: false
-      required: [courseId, startDate, endDate, seats, roomId, professorId, status]
-      description: Substituição total (PUT). studentIds omitido vira []. courseId, startDate e endDate são imutáveis após a criação — alteração → 422.
+      required: [courseId, startDate, endDate, year, semester, seats, roomId, professorId, status]
+      description: Substituição total (PUT). studentIds omitido vira []. courseId, startDate, endDate, year e semester são imutáveis após a criação — alteração → 422.
       properties:
         courseId:
           $ref: "#/components/schemas/Uuid"
@@ -601,6 +637,10 @@ components:
           $ref: "#/components/schemas/IsoDate"
         endDate:
           $ref: "#/components/schemas/IsoDate"
+        year:
+          $ref: "#/components/schemas/AcademicYear"
+        semester:
+          $ref: "#/components/schemas/AcademicSemester"
         seats:
           type: integer
           minimum: 1
@@ -627,6 +667,7 @@ components:
       type: object
       additionalProperties: false
       minProperties: 1
+      description: Atualização parcial. Não inclui courseId, startDate, endDate, year nem semester (imutáveis).
       properties:
         seats:
           type: integer
@@ -652,7 +693,7 @@ components:
     Class:
       type: object
       additionalProperties: false
-      required: [id, enabled, courseId, startDate, endDate, seats, roomId, professorId, studentIds, status, 
+      required: [id, enabled, courseId, startDate, endDate, year, semester, seats, roomId, professorId, studentIds, status, 
             averageRating]
       properties:
         id:
@@ -669,6 +710,10 @@ components:
           $ref: "#/components/schemas/IsoDate"
         endDate:
           $ref: "#/components/schemas/IsoDate"
+        year:
+          $ref: "#/components/schemas/AcademicYear"
+        semester:
+          $ref: "#/components/schemas/AcademicSemester"
         seats:
           type: integer
           minimum: 1
@@ -701,7 +746,7 @@ components:
     ClassImportItem:
       type: object
       additionalProperties: false
-      required: [courseId, startDate, endDate, seats, roomId, professorId]
+      required: [courseId, startDate, endDate, year, semester, seats, roomId, professorId]
       properties:
         id:
           $ref: "#/components/schemas/Uuid"
@@ -711,6 +756,10 @@ components:
           $ref: "#/components/schemas/IsoDate"
         endDate:
           $ref: "#/components/schemas/IsoDate"
+        year:
+          $ref: "#/components/schemas/AcademicYear"
+        semester:
+          $ref: "#/components/schemas/AcademicSemester"
         seats:
           type: integer
           minimum: 1

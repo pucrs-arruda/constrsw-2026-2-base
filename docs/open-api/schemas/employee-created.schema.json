@@ -1,11 +1,12 @@
 {
   "$schema": "https://json-schema.org/draft/2020-12/schema",
   "title": "EmployeeCreated",
-  "description": "Resposta 201 de POST /api/v1/employees. Não traz ativo nem dependents. phone e email só aparecem quando foram gravados. enabled não aparece.",
+  "description": "Resposta 201 de POST /api/v1/employees. Não traz dependents. Traz enabled, somente leitura, true na criação. phone e email só aparecem quando foram gravados.",
   "type": "object",
   "additionalProperties": false,
   "required": [
     "id",
+    "enabled",
     "registrationNumber",
     "name",
     "salary",
@@ -19,6 +20,12 @@
       "format": "uuid",
       "readOnly": true,
       "description": "UUID v4 emitido pelo serviço. Imutável."
+    },
+    "enabled": {
+      "type": "boolean",
+      "readOnly": true,
+      "default": true,
+      "description": "Exclusão lógica: true para registro ativo; false para registro excluído logicamente. Controlado pelo servidor."
     },
     "registrationNumber": {
       "type": "string",
@@ -61,6 +68,7 @@
   "examples": [
     {
       "id": "6f1c2b9e-8d4a-4c3e-9b1a-2f5d7e8c9a01",
+      "enabled": true,
       "registrationNumber": "100",
       "name": "Helena Costa",
       "salary": 8500.5,

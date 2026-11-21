@@ -50,7 +50,7 @@
       "instance": "/api/v1/employees",
       "errors": [
         {
-          "field": "ativo",
+          "field": "enabled",
           "message": "Campo não permitido"
         },
         {

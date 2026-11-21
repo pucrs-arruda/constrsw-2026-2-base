@@ -46,6 +46,11 @@
           "default": "Active",
           "type": "string",
           "format": "text"
+        },
+        "enabled": {
+          "type": "boolean",
+          "description": "Obrigatório (1). Exclusão lógica: true para registro endereçável; false para excluído logicamente. Controlado pelo servidor. Nasce true.",
+          "default": true
         }
       },
       "required": [
@@ -53,7 +58,8 @@
         "name",
         "birthDate",
         "dependencyType",
-        "status"
+        "status",
+        "enabled"
       ],
       "additionalProperties": false
     },
@@ -123,6 +129,11 @@
           "default": "Active",
           "type": "string",
           "format": "text"
+        },
+        "enabled": {
+          "type": "boolean",
+          "description": "Obrigatório (1). Exclusão lógica: true para registro endereçável; false para excluído logicamente. Controlado pelo servidor. Nasce true.",
+          "default": true
         }
       },
       "required": [
@@ -132,7 +143,8 @@
         "salary",
         "hireDate",
         "position",
-        "status"
+        "status",
+        "enabled"
       ],
       "additionalProperties": false
     },

@@ -1,11 +1,12 @@
 {
   "$schema": "https://json-schema.org/draft/2020-12/schema",
   "title": "DependentWritten",
-  "description": "Resposta 201, 200 de PUT e 200 de PATCH de Dependent. Não traz ativo nem enabled. Também é o item de dependents na resposta de PUT e PATCH de Employee.",
+  "description": "Resposta 201, 200 de PUT e 200 de PATCH de Dependent. Traz enabled, somente leitura. Também é o item de dependents na resposta de PUT e PATCH de Employee.",
   "type": "object",
   "additionalProperties": false,
   "required": [
     "id",
+    "enabled",
     "name",
     "birthDate",
     "dependencyType",
@@ -17,6 +18,12 @@
       "format": "uuid",
       "readOnly": true,
       "description": "UUID v4 emitido pelo serviço. Imutável."
+    },
+    "enabled": {
+      "type": "boolean",
+      "readOnly": true,
+      "default": true,
+      "description": "Exclusão lógica: true para registro ativo; false para registro excluído logicamente. Controlado pelo servidor."
     },
     "name": {
       "type": "string",
@@ -42,6 +49,7 @@
   "examples": [
     {
       "id": "7a2d3c4e-1b5f-4a6c-8d9e-0f1a2b3c4d5e",
+      "enabled": true,
       "name": "Caio Costa",
       "birthDate": "2010-05-01",
       "dependencyType": "filho",
