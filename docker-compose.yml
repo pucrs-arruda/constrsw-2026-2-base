@@ -88,6 +88,7 @@ services:
       - KC_HTTP_MANAGEMENT_PORT=${KC_HTTP_MANAGEMENT_PORT}
       - KEYCLOAK_ADMIN=${KEYCLOAK_ADMIN}
       - KEYCLOAK_ADMIN_PASSWORD=${KEYCLOAK_ADMIN_PASSWORD}
+      - JAVA_OPTS_APPEND=-XX:+IgnoreUnrecognizedVMOptions -XX:UseSVE=0
     volumes:
       # No terminal, criar o volume externo: docker volume create constrsw-keycloak-data
       - constrsw-keycloak-data:/opt/keycloak/data
