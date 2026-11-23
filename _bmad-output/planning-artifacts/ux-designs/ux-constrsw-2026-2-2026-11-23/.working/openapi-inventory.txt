@@ -1,0 +1,320 @@
+=== BFF ===
+title: BFF API
+tags: ['bff', 'students', 'courses', 'resources', 'professors', 'rooms', 'classes', 'lessons', 'reservations', 'employees']
+GET    /api/v1/courses  tags=['courses']  :: Lista disciplinas e as classes do semestre em curso
+POST   /api/v1/courses  tags=[]  :: 
+GET    /api/v1/courses/{courseId}  tags=['courses']  :: Recupera uma disciplina e as classes do semestre em curso
+PUT    /api/v1/courses/{courseId}  tags=[]  :: 
+PATCH  /api/v1/courses/{courseId}  tags=[]  :: 
+DELETE /api/v1/courses/{courseId}  tags=[]  :: 
+GET    /api/v1/professors  tags=['professors']  :: Lista professores e as classes do semestre em curso
+POST   /api/v1/professors  tags=[]  :: 
+GET    /api/v1/professors/{id}  tags=['professors']  :: Recupera um professor e as classes do semestre em curso
+PUT    /api/v1/professors/{id}  tags=[]  :: 
+PATCH  /api/v1/professors/{id}  tags=[]  :: 
+DELETE /api/v1/professors/{id}  tags=[]  :: 
+GET    /api/v1/resources  tags=['resources']  :: Lista resources e as reservations futuras
+POST   /api/v1/resources  tags=[]  :: 
+GET    /api/v1/resources/{resourceId}  tags=['resources']  :: Recupera um resource e as reservations futuras
+PUT    /api/v1/resources/{resourceId}  tags=[]  :: 
+PATCH  /api/v1/resources/{resourceId}  tags=[]  :: 
+DELETE /api/v1/resources/{resourceId}  tags=[]  :: 
+GET    /api/v1/rooms  tags=['rooms']  :: Lista salas e as classes do semestre em curso
+POST   /api/v1/rooms  tags=[]  :: 
+GET    /api/v1/rooms/{id}  tags=['rooms']  :: Recupera uma sala e as classes do semestre em curso
+PUT    /api/v1/rooms/{id}  tags=[]  :: 
+PATCH  /api/v1/rooms/{id}  tags=[]  :: 
+DELETE /api/v1/rooms/{id}  tags=[]  :: 
+GET    /api/v1/students  tags=['students']  :: Lista estudantes e as classes do semestre em curso
+POST   /api/v1/students  tags=[]  :: 
+GET    /api/v1/students/{id}  tags=['students']  :: Recupera um estudante e as classes do semestre em curso
+PUT    /api/v1/students/{id}  tags=[]  :: 
+PATCH  /api/v1/students/{id}  tags=[]  :: 
+DELETE /api/v1/students/{id}  tags=[]  :: 
+GET    /health  tags=['bff']  :: Saúde do processo da BFF
+
+=== EXTERNAL REFS IN BFF ===
+./arruda-employees-api.yaml#/paths/~1api~1v1~1employees
+./arruda-employees-api.yaml#/paths/~1api~1v1~1employees~1{id}
+./arruda-employees-api.yaml#/paths/~1api~1v1~1employees~1{id}~1dependents
+./arruda-employees-api.yaml#/paths/~1api~1v1~1employees~1{id}~1dependents~1{dependentId}
+./grupo01-classes-api.yaml#/components/schemas/Class
+./grupo01-classes-api.yaml#/paths/~1api~1v1~1classes
+./grupo01-classes-api.yaml#/paths/~1api~1v1~1classes~1import
+./grupo01-classes-api.yaml#/paths/~1api~1v1~1classes~1{classId}
+./grupo01-classes-api.yaml#/paths/~1api~1v1~1classes~1{classId}~1reviews
+./grupo01-classes-api.yaml#/paths/~1api~1v1~1classes~1{classId}~1reviews~1{reviewId}
+./grupo02-lessons-api.yaml#/paths/~1lessons
+./grupo02-lessons-api.yaml#/paths/~1lessons~1generate
+./grupo02-lessons-api.yaml#/paths/~1lessons~1{lessonId}
+./grupo02-lessons-api.yaml#/paths/~1lessons~1{lessonId}~1topics
+./grupo02-lessons-api.yaml#/paths/~1lessons~1{lessonId}~1topics~1{topicId}
+./grupo03-reservations-api.yaml#/components/schemas/Reservation
+./grupo03-reservations-api.yaml#/paths/~1api~1v1~1identidade~1me
+./grupo03-reservations-api.yaml#/paths/~1api~1v1~1reservations
+./grupo03-reservations-api.yaml#/paths/~1api~1v1~1reservations~1ocupacao
+./grupo03-reservations-api.yaml#/paths/~1api~1v1~1reservations~1{id}
+./grupo03-reservations-api.yaml#/paths/~1api~1v1~1reservations~1{id}~1details
+./grupo03-reservations-api.yaml#/paths/~1api~1v1~1reservations~1{id}~1details~1{detailId}
+./grupo04-students-api.yaml#/components/schemas/Student
+./grupo04-students-api.yaml#/paths/~1api~1v1~1students/get/parameters/0
+./grupo04-students-api.yaml#/paths/~1api~1v1~1students/get/parameters/1
+./grupo04-students-api.yaml#/paths/~1api~1v1~1students/get/parameters/2
+./grupo04-students-api.yaml#/paths/~1api~1v1~1students/get/parameters/3
+./grupo04-students-api.yaml#/paths/~1api~1v1~1students/get/parameters/4
+./grupo04-students-api.yaml#/paths/~1api~1v1~1students/get/parameters/5
+./grupo04-students-api.yaml#/paths/~1api~1v1~1students/get/responses/400
+./grupo04-students-api.yaml#/paths/~1api~1v1~1students/get/responses/401
+./grupo04-students-api.yaml#/paths/~1api~1v1~1students/get/responses/403
+./grupo04-students-api.yaml#/paths/~1api~1v1~1students/post
+./grupo04-students-api.yaml#/paths/~1api~1v1~1students~1{id}/delete
+./grupo04-students-api.yaml#/paths/~1api~1v1~1students~1{id}/get/responses/400
+./grupo04-students-api.yaml#/paths/~1api~1v1~1students~1{id}/get/responses/401
+./grupo04-students-api.yaml#/paths/~1api~1v1~1students~1{id}/get/responses/403
+./grupo04-students-api.yaml#/paths/~1api~1v1~1students~1{id}/get/responses/404
+./grupo04-students-api.yaml#/paths/~1api~1v1~1students~1{id}/parameters/0
+./grupo04-students-api.yaml#/paths/~1api~1v1~1students~1{id}/patch
+./grupo04-students-api.yaml#/paths/~1api~1v1~1students~1{id}/put
+./grupo04-students-api.yaml#/paths/~1api~1v1~1students~1{id}~1enrollments
+./grupo04-students-api.yaml#/paths/~1api~1v1~1students~1{id}~1enrollments~1{enrollmentId}
+./grupo05-courses-api.yaml#/components/schemas/Course
+./grupo05-courses-api.yaml#/paths/~1courses/get/parameters/0
+./grupo05-courses-api.yaml#/paths/~1courses/get/parameters/1
+./grupo05-courses-api.yaml#/paths/~1courses/get/parameters/2
+./grupo05-courses-api.yaml#/paths/~1courses/get/responses/400
+./grupo05-courses-api.yaml#/paths/~1courses/get/responses/401
+./grupo05-courses-api.yaml#/paths/~1courses/get/responses/403
+./grupo05-courses-api.yaml#/paths/~1courses/get/responses/404
+./grupo05-courses-api.yaml#/paths/~1courses/get/responses/503
+./grupo05-courses-api.yaml#/paths/~1courses/post
+./grupo05-courses-api.yaml#/paths/~1courses~1syllabus-items~1{syllabusItemId}
+./grupo05-courses-api.yaml#/paths/~1courses~1{courseId}/delete
+./grupo05-courses-api.yaml#/paths/~1courses~1{courseId}/get/responses/400
+./grupo05-courses-api.yaml#/paths/~1courses~1{courseId}/get/responses/401
+./grupo05-courses-api.yaml#/paths/~1courses~1{courseId}/get/responses/403
+./grupo05-courses-api.yaml#/paths/~1courses~1{courseId}/get/responses/404
+./grupo05-courses-api.yaml#/paths/~1courses~1{courseId}/get/responses/503
+./grupo05-courses-api.yaml#/paths/~1courses~1{courseId}/parameters/0
+./grupo05-courses-api.yaml#/paths/~1courses~1{courseId}/patch
+./grupo05-courses-api.yaml#/paths/~1courses~1{courseId}/put
+./grupo05-courses-api.yaml#/paths/~1courses~1{courseId}~1bibliographic-references
+./grupo05-courses-api.yaml#/paths/~1courses~1{courseId}~1bibliographic-references~1{referenceId}
+./grupo05-courses-api.yaml#/paths/~1courses~1{courseId}~1syllabus-items
+./grupo05-courses-api.yaml#/paths/~1courses~1{courseId}~1syllabus-items~1{syllabusItemId}
+./grupo06-resources-api.yaml#/components/schemas/Resource
+./grupo06-resources-api.yaml#/components/schemas/ResourceAggregate
+./grupo06-resources-api.yaml#/paths/~1api~1v1~1resources/get/parameters/0
+./grupo06-resources-api.yaml#/paths/~1api~1v1~1resources/get/parameters/1
+./grupo06-resources-api.yaml#/paths/~1api~1v1~1resources/get/parameters/2
+./grupo06-resources-api.yaml#/paths/~1api~1v1~1resources/get/parameters/3
+./grupo06-resources-api.yaml#/paths/~1api~1v1~1resources/get/parameters/4
+./grupo06-resources-api.yaml#/paths/~1api~1v1~1resources/get/parameters/5
+./grupo06-resources-api.yaml#/paths/~1api~1v1~1resources/get/parameters/6
+./grupo06-resources-api.yaml#/paths/~1api~1v1~1resources/get/parameters/7
+./grupo06-resources-api.yaml#/paths/~1api~1v1~1resources/get/responses/401
+./grupo06-resources-api.yaml#/paths/~1api~1v1~1resources/get/responses/403
+./grupo06-resources-api.yaml#/paths/~1api~1v1~1resources/get/responses/422
+./grupo06-resources-api.yaml#/paths/~1api~1v1~1resources/get/responses/503
+./grupo06-resources-api.yaml#/paths/~1api~1v1~1resources/post
+./grupo06-resources-api.yaml#/paths/~1api~1v1~1resources~1{resourceId}/delete
+./grupo06-resources-api.yaml#/paths/~1api~1v1~1resources~1{resourceId}/get/responses/401
+./grupo06-resources-api.yaml#/paths/~1api~1v1~1resources~1{resourceId}/get/responses/403
+./grupo06-resources-api.yaml#/paths/~1api~1v1~1resources~1{resourceId}/get/responses/404
+./grupo06-resources-api.yaml#/paths/~1api~1v1~1resources~1{resourceId}/get/responses/422
+./grupo06-resources-api.yaml#/paths/~1api~1v1~1resources~1{resourceId}/get/responses/503
+./grupo06-resources-api.yaml#/paths/~1api~1v1~1resources~1{resourceId}/parameters/0
+./grupo06-resources-api.yaml#/paths/~1api~1v1~1resources~1{resourceId}/patch
+./grupo06-resources-api.yaml#/paths/~1api~1v1~1resources~1{resourceId}/put
+./grupo06-resources-api.yaml#/paths/~1api~1v1~1resources~1{resourceId}~1occurrences
+./grupo06-resources-api.yaml#/paths/~1api~1v1~1resources~1{resourceId}~1occurrences~1{occurrenceId}
+./grupo07-professors-api.yaml#/components/schemas/Professor
+./grupo07-professors-api.yaml#/paths/~1api~1v1~1professors/get/parameters/0
+./grupo07-professors-api.yaml#/paths/~1api~1v1~1professors/get/responses/400
+./grupo07-professors-api.yaml#/paths/~1api~1v1~1professors/get/responses/401
+./grupo07-professors-api.yaml#/paths/~1api~1v1~1professors/get/responses/403
+./grupo07-professors-api.yaml#/paths/~1api~1v1~1professors/post
+./grupo07-professors-api.yaml#/paths/~1api~1v1~1professors~1{id}/delete
+./grupo07-professors-api.yaml#/paths/~1api~1v1~1professors~1{id}/get/responses/400
+./grupo07-professors-api.yaml#/paths/~1api~1v1~1professors~1{id}/get/responses/401
+./grupo07-professors-api.yaml#/paths/~1api~1v1~1professors~1{id}/get/responses/403
+./grupo07-professors-api.yaml#/paths/~1api~1v1~1professors~1{id}/get/responses/404
+./grupo07-professors-api.yaml#/paths/~1api~1v1~1professors~1{id}/parameters/0
+./grupo07-professors-api.yaml#/paths/~1api~1v1~1professors~1{id}/patch
+./grupo07-professors-api.yaml#/paths/~1api~1v1~1professors~1{id}/put
+./grupo07-professors-api.yaml#/paths/~1api~1v1~1professors~1{id}~1academic-degrees
+./grupo07-professors-api.yaml#/paths/~1api~1v1~1professors~1{id}~1academic-degrees~1{academicDegreeId}
+./grupo08-rooms-api.yaml#/components/schemas/Room
+./grupo08-rooms-api.yaml#/paths/~1api~1v1~1rooms/get/parameters/0
+./grupo08-rooms-api.yaml#/paths/~1api~1v1~1rooms/get/parameters/1
+./grupo08-rooms-api.yaml#/paths/~1api~1v1~1rooms/get/parameters/2
+./grupo08-rooms-api.yaml#/paths/~1api~1v1~1rooms/get/parameters/3
+./grupo08-rooms-api.yaml#/paths/~1api~1v1~1rooms/get/parameters/4
+./grupo08-rooms-api.yaml#/paths/~1api~1v1~1rooms/get/parameters/5
+./grupo08-rooms-api.yaml#/paths/~1api~1v1~1rooms/get/parameters/6
+./grupo08-rooms-api.yaml#/paths/~1api~1v1~1rooms/get/parameters/7
+./grupo08-rooms-api.yaml#/paths/~1api~1v1~1rooms/get/parameters/8
+./grupo08-rooms-api.yaml#/paths/~1api~1v1~1rooms/get/responses/200/headers/X-Total-Count
+./grupo08-rooms-api.yaml#/paths/~1api~1v1~1rooms/get/responses/400
+./grupo08-rooms-api.yaml#/paths/~1api~1v1~1rooms/get/responses/401
+./grupo08-rooms-api.yaml#/paths/~1api~1v1~1rooms/get/responses/403
+./grupo08-rooms-api.yaml#/paths/~1api~1v1~1rooms/get/responses/404
+./grupo08-rooms-api.yaml#/paths/~1api~1v1~1rooms/post
+./grupo08-rooms-api.yaml#/paths/~1api~1v1~1rooms~1{id}/delete
+./grupo08-rooms-api.yaml#/paths/~1api~1v1~1rooms~1{id}/get/responses/400
+./grupo08-rooms-api.yaml#/paths/~1api~1v1~1rooms~1{id}/get/responses/401
+./grupo08-rooms-api.yaml#/paths/~1api~1v1~1rooms~1{id}/get/responses/403
+./grupo08-rooms-api.yaml#/paths/~1api~1v1~1rooms~1{id}/get/responses/404
+./grupo08-rooms-api.yaml#/paths/~1api~1v1~1rooms~1{id}/parameters/0
+./grupo08-rooms-api.yaml#/paths/~1api~1v1~1rooms~1{id}/patch
+./grupo08-rooms-api.yaml#/paths/~1api~1v1~1rooms~1{id}/put
+./grupo08-rooms-api.yaml#/paths/~1api~1v1~1rooms~1{id}~1accessibility-features
+./grupo08-rooms-api.yaml#/paths/~1api~1v1~1rooms~1{id}~1accessibility-features~1{featureId}
+
+=== DOMAIN SECONDARIES (1-N) ===
+
+--- arruda-employees-api.yaml ---
+GET    /api/v1/employees  tags=['employees']  :: Lista os Employee endereçáveis
+POST   /api/v1/employees  tags=['employees']  :: Cria um Employee
+GET    /api/v1/employees/{id}  tags=['employees']  :: Lê um Employee
+PUT    /api/v1/employees/{id}  tags=['employees']  :: Substitui os atributos do Employee
+PATCH  /api/v1/employees/{id}  tags=['employees']  :: Atualiza só os campos enviados
+DELETE /api/v1/employees/{id}  tags=['employees']  :: Exclui logicamente o Employee
+GET    /api/v1/employees/{id}/dependents  tags=['dependents']  :: Lista os Dependent visíveis
+POST   /api/v1/employees/{id}/dependents  tags=['dependents']  :: Cria um Dependent
+GET    /api/v1/employees/{id}/dependents/{dependentId}  tags=['dependents']  :: Lê um Dependent
+PUT    /api/v1/employees/{id}/dependents/{dependentId}  tags=['dependents']  :: Substitui um Dependent
+PATCH  /api/v1/employees/{id}/dependents/{dependentId}  tags=['dependents']  :: Atualiza só os campos enviados do Dependent
+DELETE /api/v1/employees/{id}/dependents/{dependentId}  tags=['dependents']  :: Exclui logicamente um Dependent
+GET    /api/v1/health  tags=['operations']  :: Verifica se o Mongo responde
+GET    /metrics  tags=['operations']  :: Expõe a métrica employees_up
+
+--- grupo01-classes-api.yaml ---
+POST   /api/v1/classes  tags=['classes']  :: Criar Class
+GET    /api/v1/classes  tags=['classes']  :: Listar Classes (filtros simples/complexos)
+POST   /api/v1/classes/import  tags=['classes']  :: Importar Classes
+GET    /api/v1/classes/{classId}  tags=['classes']  :: Obter Class por id
+PUT    /api/v1/classes/{classId}  tags=['classes']  :: Atualizar Class (total)
+PATCH  /api/v1/classes/{classId}  tags=['classes']  :: Atualizar Class (parcial)
+DELETE /api/v1/classes/{classId}  tags=['classes']  :: Excluir Class (exclusão lógica)
+POST   /api/v1/classes/{classId}/reviews  tags=['reviews']  :: Criar Avaliação na Class
+GET    /api/v1/classes/{classId}/reviews  tags=['reviews']  :: Listar Avaliações da Class
+GET    /api/v1/classes/{classId}/reviews/{reviewId}  tags=['reviews']  :: Obter Avaliação por id
+PUT    /api/v1/classes/{classId}/reviews/{reviewId}  tags=['reviews']  :: Atualizar Avaliação (total)
+PATCH  /api/v1/classes/{classId}/reviews/{reviewId}  tags=['reviews']  :: Atualizar Avaliação (parcial)
+DELETE /api/v1/classes/{classId}/reviews/{reviewId}  tags=['reviews']  :: Excluir Avaliação (exclusão lógica)
+
+--- grupo02-lessons-api.yaml ---
+GET    /health  tags=['Lessons']  :: Saúde do processo
+POST   /lessons  tags=['Lessons']  :: Criar aula avulsa da turma
+GET    /lessons  tags=['Lessons']  :: Listar ou filtrar aulas
+POST   /lessons/generate  tags=['Lessons']  :: Gerar aulas a partir do esqueleto da turma
+GET    /lessons/{lessonId}  tags=['Lessons']  :: Consultar aula por ID
+PUT    /lessons/{lessonId}  tags=['Lessons']  :: Substituir campos editáveis da aula
+PATCH  /lessons/{lessonId}  tags=['Lessons']  :: Alterar parcialmente a aula
+DELETE /lessons/{lessonId}  tags=['Lessons']  :: Excluir aula e seus tópicos
+POST   /lessons/{lessonId}/topics  tags=['Lesson topics']  :: Adicionar tópico à aula
+GET    /lessons/{lessonId}/topics  tags=['Lesson topics']  :: Listar ou filtrar tópicos da aula
+GET    /lessons/{lessonId}/topics/{topicId}  tags=['Lesson topics']  :: Consultar tópico da aula
+PUT    /lessons/{lessonId}/topics/{topicId}  tags=['Lesson topics']  :: Substituir tópico da aula
+PATCH  /lessons/{lessonId}/topics/{topicId}  tags=['Lesson topics']  :: Alterar parcialmente o tópico
+DELETE /lessons/{lessonId}/topics/{topicId}  tags=['Lesson topics']  :: Excluir tópico da aula
+
+--- grupo03-reservations-api.yaml ---
+GET    /api/v1/health  tags=['infra']  :: Saúde do serviço (anônimo)
+GET    /api/v1/identidade/me  tags=['infra']  :: Identidade do usuário autenticado (Spine AD-4)
+POST   /api/v1/reservations  tags=['reservations']  :: Cria uma reserva de recursos para uma Lesson
+GET    /api/v1/reservations  tags=['reservations']  :: Lista reservas, com query simples ou complexa
+GET    /api/v1/reservations/ocupacao  tags=['occupancy']  :: Recursos ocupados numa data + faixa
+GET    /api/v1/reservations/{id}  tags=['reservations']  :: Busca uma reserva pelo id
+PUT    /api/v1/reservations/{id}  tags=['reservations']  :: Substitui a reserva (inclusive a lista de recursos)
+PATCH  /api/v1/reservations/{id}  tags=['reservations']  :: Altera parte da reserva (merge patch)
+DELETE /api/v1/reservations/{id}  tags=['reservations']  :: Exclui a reserva (exclusão lógica)
+POST   /api/v1/reservations/{id}/details  tags=['details']  :: Registra uma ocorrência na reserva
+GET    /api/v1/reservations/{id}/details  tags=['details']  :: Lista as ocorrências da reserva, com query simples ou complexa
+GET    /api/v1/reservations/{id}/details/{detailId}  tags=['details']  :: Busca uma ocorrência
+PUT    /api/v1/reservations/{id}/details/{detailId}  tags=['details']  :: Substitui a ocorrência
+PATCH  /api/v1/reservations/{id}/details/{detailId}  tags=['details']  :: Altera parte da ocorrência (ex.: marcar RESOLVIDA)
+DELETE /api/v1/reservations/{id}/details/{detailId}  tags=['details']  :: Exclui a ocorrência (exclusão lógica)
+
+--- grupo04-students-api.yaml ---
+POST   /api/v1/students  tags=['students']  :: Cria um estudante
+GET    /api/v1/students  tags=['students']  :: Lista estudantes (todos, query string simples ou complexa)
+GET    /api/v1/students/{id}  tags=['students']  :: Recupera um estudante pelo id
+PUT    /api/v1/students/{id}  tags=['students']  :: Atualização total do estudante
+PATCH  /api/v1/students/{id}  tags=['students']  :: Atualização parcial do estudante
+DELETE /api/v1/students/{id}  tags=['students']  :: Exclui o estudante e seus vínculos acadêmicos (exclusão lógica)
+POST   /api/v1/students/{id}/enrollments  tags=['enrollments']  :: Cria um vínculo acadêmico na collection do estudante
+GET    /api/v1/students/{id}/enrollments  tags=['enrollments']  :: Lista os vínculos acadêmicos do estudante (aceita filtros)
+GET    /api/v1/students/{id}/enrollments/{enrollmentId}  tags=['enrollments']  :: Recupera um vínculo acadêmico do estudante
+PUT    /api/v1/students/{id}/enrollments/{enrollmentId}  tags=['enrollments']  :: Atualização total do vínculo acadêmico
+PATCH  /api/v1/students/{id}/enrollments/{enrollmentId}  tags=['enrollments']  :: Atualização parcial do vínculo acadêmico
+DELETE /api/v1/students/{id}/enrollments/{enrollmentId}  tags=['enrollments']  :: Exclui o vínculo acadêmico (exclusão lógica)
+
+--- grupo05-courses-api.yaml ---
+POST   /courses  tags=['Courses']  :: Criar disciplina com referências
+GET    /courses  tags=['Courses']  :: Listar ou filtrar disciplinas
+GET    /courses/syllabus-items/{syllabusItemId}  tags=['Syllabus items']  :: Buscar item do plano pelo identificador
+GET    /courses/{courseId}  tags=['Courses']  :: Consultar disciplina por ID
+PUT    /courses/{courseId}  tags=['Courses']  :: Substituir campos escalares da disciplina
+PATCH  /courses/{courseId}  tags=['Courses']  :: Alterar parcialmente a disciplina
+DELETE /courses/{courseId}  tags=['Courses']  :: Excluir disciplina, referências e itens do plano (exclusão lógica)
+POST   /courses/{courseId}/bibliographic-references  tags=['Bibliographic references']  :: Adicionar referência à disciplina
+GET    /courses/{courseId}/bibliographic-references  tags=['Bibliographic references']  :: Listar ou filtrar referências da disciplina
+GET    /courses/{courseId}/bibliographic-references/{referenceId}  tags=['Bibliographic references']  :: Consultar referência da disciplina
+PUT    /courses/{courseId}/bibliographic-references/{referenceId}  tags=['Bibliographic references']  :: Substituir referência da disciplina
+PATCH  /courses/{courseId}/bibliographic-references/{referenceId}  tags=['Bibliographic references']  :: Alterar parcialmente a referência
+DELETE /courses/{courseId}/bibliographic-references/{referenceId}  tags=['Bibliographic references']  :: Excluir referência da disciplina (exclusão lógica)
+POST   /courses/{courseId}/syllabus-items  tags=['Syllabus items']  :: Adicionar item ao plano de ensino
+GET    /courses/{courseId}/syllabus-items  tags=['Syllabus items']  :: Listar ou filtrar itens do plano
+GET    /courses/{courseId}/syllabus-items/{syllabusItemId}  tags=['Syllabus items']  :: Consultar item do plano na disciplina
+PUT    /courses/{courseId}/syllabus-items/{syllabusItemId}  tags=['Syllabus items']  :: Substituir item do plano
+PATCH  /courses/{courseId}/syllabus-items/{syllabusItemId}  tags=['Syllabus items']  :: Alterar parcialmente o item do plano
+DELETE /courses/{courseId}/syllabus-items/{syllabusItemId}  tags=['Syllabus items']  :: Excluir item do plano (exclusão lógica)
+GET    /health  tags=['Courses']  :: Saúde do serviço
+
+--- grupo06-resources-api.yaml ---
+GET    /api/v1/health  tags=['Health']  :: Liveness probe with a database check
+GET    /api/v1/health/live  tags=['Health']  :: Process liveness probe
+GET    /api/v1/health/ready  tags=['Health']  :: Readiness probe
+GET    /api/v1/resources  tags=['Resources']  :: List resources
+POST   /api/v1/resources  tags=['Resources']  :: Create a resource
+GET    /api/v1/resources/{resourceId}  tags=['Resources']  :: Read a resource aggregate
+PUT    /api/v1/resources/{resourceId}  tags=['Resources']  :: Replace a resource
+PATCH  /api/v1/resources/{resourceId}  tags=['Resources']  :: Partially update a resource
+DELETE /api/v1/resources/{resourceId}  tags=['Resources']  :: Delete a resource
+POST   /api/v1/resources/{resourceId}/occurrences  tags=['Occurrences']  :: Record an occurrence
+GET    /api/v1/resources/{resourceId}/occurrences  tags=['Occurrences']  :: List occurrences of a resource
+GET    /api/v1/resources/{resourceId}/occurrences/{occurrenceId}  tags=['Occurrences']  :: Read one occurrence of a resource
+PUT    /api/v1/resources/{resourceId}/occurrences/{occurrenceId}  tags=['Occurrences']  :: Replace an OPEN occurrence
+PATCH  /api/v1/resources/{resourceId}/occurrences/{occurrenceId}  tags=['Occurrences']  :: Partially update or resolve an occurrence
+DELETE /api/v1/resources/{resourceId}/occurrences/{occurrenceId}  tags=['Occurrences']  :: Delete an occurrence
+
+--- grupo07-professors-api.yaml ---
+GET    /api/v1/health  tags=[]  :: health
+GET    /api/v1/professors  tags=[]  :: listProfessors
+POST   /api/v1/professors  tags=[]  :: createProfessor
+GET    /api/v1/professors/{id}  tags=[]  :: getProfessor
+PUT    /api/v1/professors/{id}  tags=[]  :: replaceProfessor
+PATCH  /api/v1/professors/{id}  tags=[]  :: patchProfessor
+DELETE /api/v1/professors/{id}  tags=[]  :: Delete a professor (soft delete)
+GET    /api/v1/professors/{id}/academic-degrees  tags=[]  :: listAcademicDegrees
+POST   /api/v1/professors/{id}/academic-degrees  tags=[]  :: createAcademicDegree
+GET    /api/v1/professors/{id}/academic-degrees/{academicDegreeId}  tags=[]  :: getAcademicDegree
+PUT    /api/v1/professors/{id}/academic-degrees/{academicDegreeId}  tags=[]  :: replaceAcademicDegree
+PATCH  /api/v1/professors/{id}/academic-degrees/{academicDegreeId}  tags=[]  :: patchAcademicDegree
+DELETE /api/v1/professors/{id}/academic-degrees/{academicDegreeId}  tags=[]  :: Delete an academic degree (soft delete)
+
+--- grupo08-rooms-api.yaml ---
+GET    /api/v1/health  tags=['rooms']  :: Saúde compatível com o actuator
+GET    /api/v1/rooms  tags=['rooms']  :: Recupera todas as salas ou as salas que atendem a uma query string
+POST   /api/v1/rooms  tags=['rooms']  :: Cria uma sala
+GET    /api/v1/rooms/{id}  tags=['rooms']  :: Recupera uma sala pelo id
+PUT    /api/v1/rooms/{id}  tags=['rooms']  :: Atualiza totalmente uma sala
+PATCH  /api/v1/rooms/{id}  tags=['rooms']  :: Atualiza parcialmente uma sala
+DELETE /api/v1/rooms/{id}  tags=['rooms']  :: Exclui uma sala
+GET    /api/v1/rooms/{id}/accessibility-features  tags=['accessibility-features']  :: Recupera as características de acessibilidade da sala, todas ou as que atendem a uma query string
+POST   /api/v1/rooms/{id}/accessibility-features  tags=['accessibility-features']  :: Cria uma característica de acessibilidade na sala
+GET    /api/v1/rooms/{id}/accessibility-features/{featureId}  tags=['accessibility-features']  :: Recupera uma característica de acessibilidade da sala pelo id
+PUT    /api/v1/rooms/{id}/accessibility-features/{featureId}  tags=['accessibility-features']  :: Atualiza totalmente uma característica de acessibilidade da sala
+PATCH  /api/v1/rooms/{id}/accessibility-features/{featureId}  tags=['accessibility-features']  :: Atualiza parcialmente uma característica de acessibilidade da sala
+DELETE /api/v1/rooms/{id}/accessibility-features/{featureId}  tags=['accessibility-features']  :: Exclui uma característica de acessibilidade da sala
