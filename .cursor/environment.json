@@ -1,0 +1,39 @@
+{
+  "name": "constrsw",
+  "user": "ubuntu",
+  "build": {
+    "dockerfile": "Dockerfile"
+  },
+  "repositoryDependencies": [
+    "github.com/pucrs-arruda/constrsw-2026-2-oauth",
+    "github.com/pucrs-arruda/constrsw-2026-2-classes",
+    "github.com/pucrs-arruda/constrsw-2026-2-lessons",
+    "github.com/pucrs-arruda/constrsw-2026-2-reservations",
+    "github.com/pucrs-arruda/constrsw-2026-2-students",
+    "github.com/pucrs-arruda/constrsw-2026-2-courses",
+    "github.com/pucrs-arruda/constrsw-2026-2-resources",
+    "github.com/pucrs-arruda/constrsw-2026-2-professors",
+    "github.com/pucrs-arruda/constrsw-2026-2-rooms",
+    "github.com/pucrs-arruda/constrsw-2026-2-employees",
+    "github.com/pucrs-arruda/constrsw-2026-2-bff",
+    "github.com/pucrs-arruda/constrsw-2026-2-frontend"
+  ],
+  "install": "bash .cursor/scripts/cloud-agent-install.sh",
+  "start": "bash .cursor/scripts/cloud-agent-start.sh",
+  "ports": [
+    { "name": "Frontend", "port": 8080 },
+    { "name": "BFF", "port": 8180 },
+    { "name": "Keycloak", "port": 8081 },
+    { "name": "OAuth", "port": 8181 },
+    { "name": "Classes", "port": 8182 },
+    { "name": "Courses", "port": 8183 },
+    { "name": "Employees", "port": 8184 },
+    { "name": "Lessons", "port": 8185 },
+    { "name": "Professors", "port": 8186 },
+    { "name": "Reservations", "port": 8187 },
+    { "name": "Resources", "port": 8188 },
+    { "name": "Rooms", "port": 8189 },
+    { "name": "Students", "port": 8190 },
+    { "name": "Prometheus", "port": 9090 }
+  ]
+}
