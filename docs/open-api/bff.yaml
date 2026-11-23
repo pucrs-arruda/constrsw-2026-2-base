@@ -1,0 +1,680 @@
+# Contrato OpenAPI 3.1 da BFF API (Closed CRAS).
+# As operações de proxy referenciam o OpenAPI do contexto em /docs/open-api.
+openapi: 3.1.0
+jsonSchemaDialect: https://json-schema.org/draft/2020-12/schema
+info:
+  title: BFF API
+  version: 1.0.0
+  summary: Backend for Frontend do Closed CRAS — proxy dos contextos e composição de leitura T3
+  description: |
+    Contrato público que o browser consome. A origem é a BFF (`http://localhost:8180`); os serviços de domínio não são chamados pelo browser.
+
+    Há dois tipos de operação:
+
+    - **Proxy.** POST, PUT, PATCH, DELETE e os GET sem observação T3 repetem o contrato do contexto. O caminho público é o mesmo path `/api/v1/...` documentado no OpenAPI daquele serviço (courses e lessons publicam o path sem o prefixo porque o server deles já inclui `/api/v1`). Status, corpo, filtros e erros são os do documento referenciado. Estas operações não acrescentam `classes` nem `reservations`.
+    - **Composição de leitura (observações T3).** Os GET da coleção e do item de students, courses, professors e rooms acrescentam `classes` do semestre em curso. Os GET da coleção e do item de resources acrescentam `reservations` futuras. GET de coleção secundária (matrículas, referências, ocorrências, titulações, recursos de acessibilidade e demais) permanece proxy.
+
+    Semestre em curso, calculado pela BFF no fuso America/Sao_Paulo: `year` é o ano civil atual; `semester` é 1 quando o mês é anterior a agosto e 2 quando o mês é agosto ou posterior.
+
+    Uma class entra na composição quando pertence a esse ano e semestre e ao vínculo do recurso: `studentIds` contém o estudante, `courseId` é a disciplina, `professorId` é o `_id` do professor, ou `roomId` é a sala. O critério de "em andamento", "matriculado", "conduzida" e "sediada" é esse filtro. Classes excluídas logicamente não entram, porque o serviço classes não as devolve.
+
+    Uma reservation é futura quando o resource está em `resourceIds` e o início da faixa é posterior ao instante atual no mesmo fuso. O início é a data `data` com o horário de início de `faixaId` no cânone de faixas do oauth. `status` não é filtrado.
+
+    Falha da consulta de composição responde `503` e não devolve o recurso pela metade. Em students, professors e rooms esse corpo é `application/problem+json` com `code` `BFF-DEPENDENCY`. Em courses e resources o `503` já está no contrato do contexto e é reutilizado também quando classes ou reservations não respondem. `GET /health` e `GET /metrics` de cada contexto não fazem parte desta API.
+  license:
+    name: Proprietary — PUCRS ConstrSW
+servers:
+  - url: http://localhost:8180
+    description: BFF no docker compose (BFF_EXTERNAL_API_PORT)
+tags:
+  - name: bff
+    description: Saúde do processo da BFF
+  - name: students
+    description: Proxy de students. GET da coleção e do item incluem as classes do semestre em curso.
+  - name: courses
+    description: Proxy de courses. GET da coleção e do item incluem as classes do semestre em curso.
+  - name: resources
+    description: Proxy de resources. GET da coleção e do item incluem as reservations futuras.
+  - name: professors
+    description: Proxy de professors. GET da coleção e do item incluem as classes do semestre em curso.
+  - name: rooms
+    description: Proxy de rooms. GET da coleção e do item incluem as classes do semestre em curso.
+  - name: classes
+    description: Proxy do serviço classes
+  - name: lessons
+    description: Proxy do serviço lessons
+  - name: reservations
+    description: Proxy do serviço reservations
+  - name: employees
+    description: Proxy do serviço employees
+security:
+  - bearerAuth: []
+paths:
+  /health:
+    get:
+      tags: [bff]
+      operationId: getBffHealth
+      summary: Saúde do processo da BFF
+      description: |
+        Anônimo. Não consulta os contextos. Indica apenas que o processo da BFF responde.
+      security: []
+      responses:
+        '200':
+          description: Processo no ar
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Health'
+  '/api/v1/students':
+    get:
+      tags: [students]
+      operationId: listStudents
+      summary: 'Lista estudantes e as classes do semestre em curso'
+      description: |
+        Mesmos filtros do GET de estudantes do serviço students.
+
+        Cada item inclui `classes`: classes em que o estudante está matriculado no semestre em curso. Entra a class cujo `studentIds` contém o id do estudante. Semestre em curso, no fuso America/Sao_Paulo: `year` é o ano civil atual; `semester` é 1 quando o mês é anterior a agosto e 2 quando o mês é agosto ou posterior. O cliente não envia `year` nem `semester`. Sem correspondência, `classes` é um array vazio.
+
+        Se o serviço classes não puder ser consultado, a resposta é 503 e o corpo de estudantes não é devolvido. POST, PUT, PATCH e DELETE deste caminho continuam o contrato do serviço students, sem `classes`.
+      parameters:
+        - $ref: './grupo04-students-api.yaml#/paths/~1api~1v1~1students/get/parameters/0'
+        - $ref: './grupo04-students-api.yaml#/paths/~1api~1v1~1students/get/parameters/1'
+        - $ref: './grupo04-students-api.yaml#/paths/~1api~1v1~1students/get/parameters/2'
+        - $ref: './grupo04-students-api.yaml#/paths/~1api~1v1~1students/get/parameters/3'
+        - $ref: './grupo04-students-api.yaml#/paths/~1api~1v1~1students/get/parameters/4'
+        - $ref: './grupo04-students-api.yaml#/paths/~1api~1v1~1students/get/parameters/5'
+      responses:
+        '200':
+          description: |
+            Leitura da BFF com a composição T3.
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/StudentViewList'
+        '400':
+          $ref: './grupo04-students-api.yaml#/paths/~1api~1v1~1students/get/responses/400'
+        '401':
+          $ref: './grupo04-students-api.yaml#/paths/~1api~1v1~1students/get/responses/401'
+        '403':
+          $ref: './grupo04-students-api.yaml#/paths/~1api~1v1~1students/get/responses/403'
+        '503':
+          $ref: '#/components/responses/CompositionUnavailable'
+    post:
+      $ref: './grupo04-students-api.yaml#/paths/~1api~1v1~1students/post'
+
+  '/api/v1/students/{id}':
+    parameters:
+      - $ref: './grupo04-students-api.yaml#/paths/~1api~1v1~1students~1{id}/parameters/0'
+    get:
+      tags: [students]
+      operationId: getStudent
+      summary: 'Recupera um estudante e as classes do semestre em curso'
+      description: |
+        Recupera o estudante pelo id, como no serviço students, e inclui `classes`: classes em que esse estudante está matriculado no semestre em curso (`studentIds` contém o id). Semestre em curso, no fuso America/Sao_Paulo: `year` é o ano civil atual; `semester` é 1 quando o mês é anterior a agosto e 2 quando o mês é agosto ou posterior. O cliente não envia `year` nem `semester`. Sem correspondência, `classes` é um array vazio.
+
+        404 quando o serviço students não encontra o id. 503 quando o serviço classes não puder ser consultado.
+      responses:
+        '200':
+          description: |
+            Leitura da BFF com a composição T3.
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/StudentView'
+        '400':
+          $ref: './grupo04-students-api.yaml#/paths/~1api~1v1~1students~1{id}/get/responses/400'
+        '401':
+          $ref: './grupo04-students-api.yaml#/paths/~1api~1v1~1students~1{id}/get/responses/401'
+        '403':
+          $ref: './grupo04-students-api.yaml#/paths/~1api~1v1~1students~1{id}/get/responses/403'
+        '404':
+          $ref: './grupo04-students-api.yaml#/paths/~1api~1v1~1students~1{id}/get/responses/404'
+        '503':
+          $ref: '#/components/responses/CompositionUnavailable'
+    put:
+      $ref: './grupo04-students-api.yaml#/paths/~1api~1v1~1students~1{id}/put'
+    patch:
+      $ref: './grupo04-students-api.yaml#/paths/~1api~1v1~1students~1{id}/patch'
+    delete:
+      $ref: './grupo04-students-api.yaml#/paths/~1api~1v1~1students~1{id}/delete'
+
+  '/api/v1/students/{id}/enrollments':
+    $ref: './grupo04-students-api.yaml#/paths/~1api~1v1~1students~1{id}~1enrollments'
+
+  '/api/v1/students/{id}/enrollments/{enrollmentId}':
+    $ref: './grupo04-students-api.yaml#/paths/~1api~1v1~1students~1{id}~1enrollments~1{enrollmentId}'
+
+  '/api/v1/courses':
+    get:
+      tags: [courses]
+      operationId: listCourses
+      summary: 'Lista disciplinas e as classes do semestre em curso'
+      description: |
+        Mesmos filtros do GET de disciplinas do serviço courses.
+
+        Cada item inclui `classes`: classes desse curso em andamento no semestre em curso (`courseId` igual ao id da disciplina). Semestre em curso, no fuso America/Sao_Paulo: `year` é o ano civil atual; `semester` é 1 quando o mês é anterior a agosto e 2 quando o mês é agosto ou posterior. O cliente não envia `year` nem `semester`. Sem correspondência, `classes` é um array vazio.
+
+        503 quando o serviço classes não puder ser consultado. As escritas deste caminho devolvem o corpo do serviço courses, sem `classes`.
+      parameters:
+        - $ref: './grupo05-courses-api.yaml#/paths/~1courses/get/parameters/0'
+        - $ref: './grupo05-courses-api.yaml#/paths/~1courses/get/parameters/1'
+        - $ref: './grupo05-courses-api.yaml#/paths/~1courses/get/parameters/2'
+      responses:
+        '200':
+          description: |
+            Leitura da BFF com a composição T3.
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/CourseViewList'
+        '400':
+          $ref: './grupo05-courses-api.yaml#/paths/~1courses/get/responses/400'
+        '401':
+          $ref: './grupo05-courses-api.yaml#/paths/~1courses/get/responses/401'
+        '403':
+          $ref: './grupo05-courses-api.yaml#/paths/~1courses/get/responses/403'
+        '404':
+          $ref: './grupo05-courses-api.yaml#/paths/~1courses/get/responses/404'
+        '503':
+          $ref: './grupo05-courses-api.yaml#/paths/~1courses/get/responses/503'
+    post:
+      $ref: './grupo05-courses-api.yaml#/paths/~1courses/post'
+
+  '/api/v1/courses/{courseId}':
+    parameters:
+      - $ref: './grupo05-courses-api.yaml#/paths/~1courses~1{courseId}/parameters/0'
+    get:
+      tags: [courses]
+      operationId: getCourse
+      summary: 'Recupera uma disciplina e as classes do semestre em curso'
+      description: |
+        Recupera a disciplina pelo id, como no serviço courses, e inclui `classes`: classes desse curso em andamento no semestre em curso (`courseId` igual ao id). Semestre em curso, no fuso America/Sao_Paulo: `year` é o ano civil atual; `semester` é 1 quando o mês é anterior a agosto e 2 quando o mês é agosto ou posterior. O cliente não envia `year` nem `semester`. Sem correspondência, `classes` é um array vazio.
+
+        404 quando o serviço courses não encontra o id. 503 quando o serviço classes não puder ser consultado.
+      responses:
+        '200':
+          description: |
+            Leitura da BFF com a composição T3.
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/CourseView'
+        '400':
+          $ref: './grupo05-courses-api.yaml#/paths/~1courses~1{courseId}/get/responses/400'
+        '401':
+          $ref: './grupo05-courses-api.yaml#/paths/~1courses~1{courseId}/get/responses/401'
+        '403':
+          $ref: './grupo05-courses-api.yaml#/paths/~1courses~1{courseId}/get/responses/403'
+        '404':
+          $ref: './grupo05-courses-api.yaml#/paths/~1courses~1{courseId}/get/responses/404'
+        '503':
+          $ref: './grupo05-courses-api.yaml#/paths/~1courses~1{courseId}/get/responses/503'
+    put:
+      $ref: './grupo05-courses-api.yaml#/paths/~1courses~1{courseId}/put'
+    patch:
+      $ref: './grupo05-courses-api.yaml#/paths/~1courses~1{courseId}/patch'
+    delete:
+      $ref: './grupo05-courses-api.yaml#/paths/~1courses~1{courseId}/delete'
+
+  '/api/v1/courses/{courseId}/bibliographic-references':
+    $ref: './grupo05-courses-api.yaml#/paths/~1courses~1{courseId}~1bibliographic-references'
+
+  '/api/v1/courses/{courseId}/bibliographic-references/{referenceId}':
+    $ref: './grupo05-courses-api.yaml#/paths/~1courses~1{courseId}~1bibliographic-references~1{referenceId}'
+
+  '/api/v1/courses/{courseId}/syllabus-items':
+    $ref: './grupo05-courses-api.yaml#/paths/~1courses~1{courseId}~1syllabus-items'
+
+  '/api/v1/courses/{courseId}/syllabus-items/{syllabusItemId}':
+    $ref: './grupo05-courses-api.yaml#/paths/~1courses~1{courseId}~1syllabus-items~1{syllabusItemId}'
+
+  '/api/v1/courses/syllabus-items/{syllabusItemId}':
+    $ref: './grupo05-courses-api.yaml#/paths/~1courses~1syllabus-items~1{syllabusItemId}'
+
+  '/api/v1/resources':
+    get:
+      tags: [resources]
+      operationId: listResources
+      summary: 'Lista resources e as reservations futuras'
+      description: |
+        Mesmos filtros do GET de resources do serviço resources.
+
+        Cada item inclui `reservations`: reservations futuras desse resource. Reservation futura: o id do resource está em `resourceIds` e o início da faixa (`data` mais o horário de início de `faixaId` no cânone de faixas do oauth) é posterior ao instante atual no fuso America/Sao_Paulo. A BFF não filtra `status`. Reservations com exclusão lógica não aparecem, porque o serviço reservations já as omite. Sem correspondência, `reservations` é um array vazio. Esta lista não embute `occurrences`; o GET por id é que devolve o agregado.
+
+        503 quando o serviço reservations não puder ser consultado. As escritas deste caminho devolvem o corpo do serviço resources, sem `reservations`.
+      parameters:
+        - $ref: './grupo06-resources-api.yaml#/paths/~1api~1v1~1resources/get/parameters/0'
+        - $ref: './grupo06-resources-api.yaml#/paths/~1api~1v1~1resources/get/parameters/1'
+        - $ref: './grupo06-resources-api.yaml#/paths/~1api~1v1~1resources/get/parameters/2'
+        - $ref: './grupo06-resources-api.yaml#/paths/~1api~1v1~1resources/get/parameters/3'
+        - $ref: './grupo06-resources-api.yaml#/paths/~1api~1v1~1resources/get/parameters/4'
+        - $ref: './grupo06-resources-api.yaml#/paths/~1api~1v1~1resources/get/parameters/5'
+        - $ref: './grupo06-resources-api.yaml#/paths/~1api~1v1~1resources/get/parameters/6'
+        - $ref: './grupo06-resources-api.yaml#/paths/~1api~1v1~1resources/get/parameters/7'
+      responses:
+        '200':
+          description: |
+            Leitura da BFF com a composição T3.
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ResourceViewList'
+        '401':
+          $ref: './grupo06-resources-api.yaml#/paths/~1api~1v1~1resources/get/responses/401'
+        '403':
+          $ref: './grupo06-resources-api.yaml#/paths/~1api~1v1~1resources/get/responses/403'
+        '422':
+          $ref: './grupo06-resources-api.yaml#/paths/~1api~1v1~1resources/get/responses/422'
+        '503':
+          $ref: './grupo06-resources-api.yaml#/paths/~1api~1v1~1resources/get/responses/503'
+    post:
+      $ref: './grupo06-resources-api.yaml#/paths/~1api~1v1~1resources/post'
+
+  '/api/v1/resources/{resourceId}':
+    parameters:
+      - $ref: './grupo06-resources-api.yaml#/paths/~1api~1v1~1resources~1{resourceId}/parameters/0'
+    get:
+      tags: [resources]
+      operationId: getResource
+      summary: 'Recupera um resource e as reservations futuras'
+      description: |
+        Recupera o agregado do serviço resources (o resource e as `occurrences`) e inclui `reservations`: reservations futuras desse resource. Reservation futura: o id do resource está em `resourceIds` e o início da faixa (`data` mais o horário de início de `faixaId` no cânone de faixas do oauth) é posterior ao instante atual no fuso America/Sao_Paulo. A BFF não filtra `status`. Reservations com exclusão lógica não aparecem, porque o serviço reservations já as omite. Sem correspondência, `reservations` é um array vazio.
+
+        404 quando o serviço resources não encontra o id. 503 quando o serviço reservations não puder ser consultado.
+      responses:
+        '200':
+          description: |
+            Leitura da BFF com a composição T3.
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ResourceAggregateView'
+        '401':
+          $ref: './grupo06-resources-api.yaml#/paths/~1api~1v1~1resources~1{resourceId}/get/responses/401'
+        '403':
+          $ref: './grupo06-resources-api.yaml#/paths/~1api~1v1~1resources~1{resourceId}/get/responses/403'
+        '404':
+          $ref: './grupo06-resources-api.yaml#/paths/~1api~1v1~1resources~1{resourceId}/get/responses/404'
+        '422':
+          $ref: './grupo06-resources-api.yaml#/paths/~1api~1v1~1resources~1{resourceId}/get/responses/422'
+        '503':
+          $ref: './grupo06-resources-api.yaml#/paths/~1api~1v1~1resources~1{resourceId}/get/responses/503'
+    put:
+      $ref: './grupo06-resources-api.yaml#/paths/~1api~1v1~1resources~1{resourceId}/put'
+    patch:
+      $ref: './grupo06-resources-api.yaml#/paths/~1api~1v1~1resources~1{resourceId}/patch'
+    delete:
+      $ref: './grupo06-resources-api.yaml#/paths/~1api~1v1~1resources~1{resourceId}/delete'
+
+  '/api/v1/resources/{resourceId}/occurrences':
+    $ref: './grupo06-resources-api.yaml#/paths/~1api~1v1~1resources~1{resourceId}~1occurrences'
+
+  '/api/v1/resources/{resourceId}/occurrences/{occurrenceId}':
+    $ref: './grupo06-resources-api.yaml#/paths/~1api~1v1~1resources~1{resourceId}~1occurrences~1{occurrenceId}'
+
+  '/api/v1/professors':
+    get:
+      tags: [professors]
+      operationId: listProfessors
+      summary: 'Lista professores e as classes do semestre em curso'
+      description: |
+        Mesmos filtros do GET de professores do serviço professors.
+
+        Cada item inclui `classes`: classes conduzidas por esse professor no semestre em curso (`professorId` igual ao `_id` do professor). Semestre em curso, no fuso America/Sao_Paulo: `year` é o ano civil atual; `semester` é 1 quando o mês é anterior a agosto e 2 quando o mês é agosto ou posterior. O cliente não envia `year` nem `semester`. Sem correspondência, `classes` é um array vazio.
+
+        503 quando o serviço classes não puder ser consultado. As escritas deste caminho devolvem o corpo do serviço professors, sem `classes`.
+      parameters:
+        - $ref: './grupo07-professors-api.yaml#/paths/~1api~1v1~1professors/get/parameters/0'
+      responses:
+        '200':
+          description: |
+            Leitura da BFF com a composição T3.
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ProfessorViewList'
+        '400':
+          $ref: './grupo07-professors-api.yaml#/paths/~1api~1v1~1professors/get/responses/400'
+        '401':
+          $ref: './grupo07-professors-api.yaml#/paths/~1api~1v1~1professors/get/responses/401'
+        '403':
+          $ref: './grupo07-professors-api.yaml#/paths/~1api~1v1~1professors/get/responses/403'
+        '503':
+          $ref: '#/components/responses/CompositionUnavailable'
+    post:
+      $ref: './grupo07-professors-api.yaml#/paths/~1api~1v1~1professors/post'
+
+  '/api/v1/professors/{id}':
+    parameters:
+      - $ref: './grupo07-professors-api.yaml#/paths/~1api~1v1~1professors~1{id}/parameters/0'
+    get:
+      tags: [professors]
+      operationId: getProfessor
+      summary: 'Recupera um professor e as classes do semestre em curso'
+      description: |
+        Recupera o professor pelo id, como no serviço professors, e inclui `classes`: classes conduzidas por ele no semestre em curso (`professorId` igual ao `_id`). Semestre em curso, no fuso America/Sao_Paulo: `year` é o ano civil atual; `semester` é 1 quando o mês é anterior a agosto e 2 quando o mês é agosto ou posterior. O cliente não envia `year` nem `semester`. Sem correspondência, `classes` é um array vazio.
+
+        404 quando o serviço professors não encontra o id. 503 quando o serviço classes não puder ser consultado.
+      responses:
+        '200':
+          description: |
+            Leitura da BFF com a composição T3.
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ProfessorView'
+        '400':
+          $ref: './grupo07-professors-api.yaml#/paths/~1api~1v1~1professors~1{id}/get/responses/400'
+        '401':
+          $ref: './grupo07-professors-api.yaml#/paths/~1api~1v1~1professors~1{id}/get/responses/401'
+        '403':
+          $ref: './grupo07-professors-api.yaml#/paths/~1api~1v1~1professors~1{id}/get/responses/403'
+        '404':
+          $ref: './grupo07-professors-api.yaml#/paths/~1api~1v1~1professors~1{id}/get/responses/404'
+        '503':
+          $ref: '#/components/responses/CompositionUnavailable'
+    put:
+      $ref: './grupo07-professors-api.yaml#/paths/~1api~1v1~1professors~1{id}/put'
+    patch:
+      $ref: './grupo07-professors-api.yaml#/paths/~1api~1v1~1professors~1{id}/patch'
+    delete:
+      $ref: './grupo07-professors-api.yaml#/paths/~1api~1v1~1professors~1{id}/delete'
+
+  '/api/v1/professors/{id}/academic-degrees':
+    $ref: './grupo07-professors-api.yaml#/paths/~1api~1v1~1professors~1{id}~1academic-degrees'
+
+  '/api/v1/professors/{id}/academic-degrees/{academicDegreeId}':
+    $ref: './grupo07-professors-api.yaml#/paths/~1api~1v1~1professors~1{id}~1academic-degrees~1{academicDegreeId}'
+
+  '/api/v1/rooms':
+    get:
+      tags: [rooms]
+      operationId: listRooms
+      summary: 'Lista salas e as classes do semestre em curso'
+      description: |
+        Mesmos filtros, ordenação e paginação do GET de salas do serviço rooms, inclusive o header `X-Total-Count` e o 404 quando nenhuma sala atende à consulta.
+
+        Cada sala inclui `classes`: classes sediadas nessa room no semestre em curso (`roomId` igual ao id da sala). Semestre em curso, no fuso America/Sao_Paulo: `year` é o ano civil atual; `semester` é 1 quando o mês é anterior a agosto e 2 quando o mês é agosto ou posterior. O cliente não envia `year` nem `semester`. Sem correspondência, `classes` é um array vazio.
+
+        503 quando o serviço classes não puder ser consultado. As escritas deste caminho devolvem o corpo do serviço rooms, sem `classes`.
+      parameters:
+        - $ref: './grupo08-rooms-api.yaml#/paths/~1api~1v1~1rooms/get/parameters/0'
+        - $ref: './grupo08-rooms-api.yaml#/paths/~1api~1v1~1rooms/get/parameters/1'
+        - $ref: './grupo08-rooms-api.yaml#/paths/~1api~1v1~1rooms/get/parameters/2'
+        - $ref: './grupo08-rooms-api.yaml#/paths/~1api~1v1~1rooms/get/parameters/3'
+        - $ref: './grupo08-rooms-api.yaml#/paths/~1api~1v1~1rooms/get/parameters/4'
+        - $ref: './grupo08-rooms-api.yaml#/paths/~1api~1v1~1rooms/get/parameters/5'
+        - $ref: './grupo08-rooms-api.yaml#/paths/~1api~1v1~1rooms/get/parameters/6'
+        - $ref: './grupo08-rooms-api.yaml#/paths/~1api~1v1~1rooms/get/parameters/7'
+        - $ref: './grupo08-rooms-api.yaml#/paths/~1api~1v1~1rooms/get/parameters/8'
+      responses:
+        '200':
+          description: |
+            Leitura da BFF com a composição T3.
+          headers:
+            X-Total-Count:
+              $ref: './grupo08-rooms-api.yaml#/paths/~1api~1v1~1rooms/get/responses/200/headers/X-Total-Count'
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/RoomViewList'
+        '400':
+          $ref: './grupo08-rooms-api.yaml#/paths/~1api~1v1~1rooms/get/responses/400'
+        '401':
+          $ref: './grupo08-rooms-api.yaml#/paths/~1api~1v1~1rooms/get/responses/401'
+        '403':
+          $ref: './grupo08-rooms-api.yaml#/paths/~1api~1v1~1rooms/get/responses/403'
+        '404':
+          $ref: './grupo08-rooms-api.yaml#/paths/~1api~1v1~1rooms/get/responses/404'
+        '503':
+          $ref: '#/components/responses/CompositionUnavailable'
+    post:
+      $ref: './grupo08-rooms-api.yaml#/paths/~1api~1v1~1rooms/post'
+
+  '/api/v1/rooms/{id}':
+    parameters:
+      - $ref: './grupo08-rooms-api.yaml#/paths/~1api~1v1~1rooms~1{id}/parameters/0'
+    get:
+      tags: [rooms]
+      operationId: getRoom
+      summary: 'Recupera uma sala e as classes do semestre em curso'
+      description: |
+        Recupera a sala pelo id, como no serviço rooms, e inclui `classes`: classes sediadas nessa room no semestre em curso (`roomId` igual ao id). Semestre em curso, no fuso America/Sao_Paulo: `year` é o ano civil atual; `semester` é 1 quando o mês é anterior a agosto e 2 quando o mês é agosto ou posterior. O cliente não envia `year` nem `semester`. Sem correspondência, `classes` é um array vazio.
+
+        404 quando o serviço rooms não encontra o id. 503 quando o serviço classes não puder ser consultado.
+      responses:
+        '200':
+          description: |
+            Leitura da BFF com a composição T3.
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/RoomView'
+        '400':
+          $ref: './grupo08-rooms-api.yaml#/paths/~1api~1v1~1rooms~1{id}/get/responses/400'
+        '401':
+          $ref: './grupo08-rooms-api.yaml#/paths/~1api~1v1~1rooms~1{id}/get/responses/401'
+        '403':
+          $ref: './grupo08-rooms-api.yaml#/paths/~1api~1v1~1rooms~1{id}/get/responses/403'
+        '404':
+          $ref: './grupo08-rooms-api.yaml#/paths/~1api~1v1~1rooms~1{id}/get/responses/404'
+        '503':
+          $ref: '#/components/responses/CompositionUnavailable'
+    put:
+      $ref: './grupo08-rooms-api.yaml#/paths/~1api~1v1~1rooms~1{id}/put'
+    patch:
+      $ref: './grupo08-rooms-api.yaml#/paths/~1api~1v1~1rooms~1{id}/patch'
+    delete:
+      $ref: './grupo08-rooms-api.yaml#/paths/~1api~1v1~1rooms~1{id}/delete'
+
+  '/api/v1/rooms/{id}/accessibility-features':
+    $ref: './grupo08-rooms-api.yaml#/paths/~1api~1v1~1rooms~1{id}~1accessibility-features'
+
+  '/api/v1/rooms/{id}/accessibility-features/{featureId}':
+    $ref: './grupo08-rooms-api.yaml#/paths/~1api~1v1~1rooms~1{id}~1accessibility-features~1{featureId}'
+
+  '/api/v1/classes':
+    $ref: './grupo01-classes-api.yaml#/paths/~1api~1v1~1classes'
+
+  '/api/v1/classes/import':
+    $ref: './grupo01-classes-api.yaml#/paths/~1api~1v1~1classes~1import'
+
+  '/api/v1/classes/{classId}':
+    $ref: './grupo01-classes-api.yaml#/paths/~1api~1v1~1classes~1{classId}'
+
+  '/api/v1/classes/{classId}/reviews':
+    $ref: './grupo01-classes-api.yaml#/paths/~1api~1v1~1classes~1{classId}~1reviews'
+
+  '/api/v1/classes/{classId}/reviews/{reviewId}':
+    $ref: './grupo01-classes-api.yaml#/paths/~1api~1v1~1classes~1{classId}~1reviews~1{reviewId}'
+
+  '/api/v1/lessons':
+    $ref: './grupo02-lessons-api.yaml#/paths/~1lessons'
+
+  '/api/v1/lessons/generate':
+    $ref: './grupo02-lessons-api.yaml#/paths/~1lessons~1generate'
+
+  '/api/v1/lessons/{lessonId}':
+    $ref: './grupo02-lessons-api.yaml#/paths/~1lessons~1{lessonId}'
+
+  '/api/v1/lessons/{lessonId}/topics':
+    $ref: './grupo02-lessons-api.yaml#/paths/~1lessons~1{lessonId}~1topics'
+
+  '/api/v1/lessons/{lessonId}/topics/{topicId}':
+    $ref: './grupo02-lessons-api.yaml#/paths/~1lessons~1{lessonId}~1topics~1{topicId}'
+
+  '/api/v1/reservations':
+    $ref: './grupo03-reservations-api.yaml#/paths/~1api~1v1~1reservations'
+
+  '/api/v1/reservations/ocupacao':
+    $ref: './grupo03-reservations-api.yaml#/paths/~1api~1v1~1reservations~1ocupacao'
+
+  '/api/v1/reservations/{id}':
+    $ref: './grupo03-reservations-api.yaml#/paths/~1api~1v1~1reservations~1{id}'
+
+  '/api/v1/reservations/{id}/details':
+    $ref: './grupo03-reservations-api.yaml#/paths/~1api~1v1~1reservations~1{id}~1details'
+
+  '/api/v1/reservations/{id}/details/{detailId}':
+    $ref: './grupo03-reservations-api.yaml#/paths/~1api~1v1~1reservations~1{id}~1details~1{detailId}'
+
+  '/api/v1/identidade/me':
+    $ref: './grupo03-reservations-api.yaml#/paths/~1api~1v1~1identidade~1me'
+
+  '/api/v1/employees':
+    $ref: './arruda-employees-api.yaml#/paths/~1api~1v1~1employees'
+
+  '/api/v1/employees/{id}':
+    $ref: './arruda-employees-api.yaml#/paths/~1api~1v1~1employees~1{id}'
+
+  '/api/v1/employees/{id}/dependents':
+    $ref: './arruda-employees-api.yaml#/paths/~1api~1v1~1employees~1{id}~1dependents'
+
+  '/api/v1/employees/{id}/dependents/{dependentId}':
+    $ref: './arruda-employees-api.yaml#/paths/~1api~1v1~1employees~1{id}~1dependents~1{dependentId}'
+
+components:
+  securitySchemes:
+    bearerAuth:
+      type: http
+      scheme: bearer
+      bearerFormat: JWT
+      description: |
+        JWT do usuário obtido em `POST http://localhost:8181/login` (API oauth). A BFF propaga `Authorization: Bearer` aos contextos.
+  schemas:
+    Health:
+      type: object
+      additionalProperties: false
+      required: [status]
+      properties:
+        status:
+          const: UP
+    Problem:
+      type: object
+      description: Problema RFC 9457 quando a composição com classes ou reservations falha.
+      additionalProperties: false
+      required: [type, title, status, detail, code]
+      properties:
+        type:
+          type: string
+          format: uri
+        title:
+          type: string
+        status:
+          type: integer
+          minimum: 400
+          maximum: 599
+        detail:
+          type: string
+        instance:
+          type: string
+          format: uri-reference
+        code:
+          type: string
+          const: BFF-DEPENDENCY
+    CurrentSemesterClasses:
+      type: array
+      description: |
+        Classes do semestre em curso devolvidas pelo serviço classes. Array vazio quando não há turma no vínculo.
+      items:
+        $ref: './grupo01-classes-api.yaml#/components/schemas/Class'
+    FutureReservations:
+      type: array
+      description: |
+        Reservations futuras do resource devolvidas pelo serviço reservations. Array vazio quando não há reserva futura.
+      items:
+        $ref: './grupo03-reservations-api.yaml#/components/schemas/Reservation'
+    StudentView:
+      title: StudentView
+      description: |
+        Student do serviço students mais `classes` do semestre em curso. `classes` é normativo nesta BFF, ainda que o schema de domínio feche `additionalProperties`.
+      allOf:
+        - $ref: './grupo04-students-api.yaml#/components/schemas/Student'
+        - type: object
+          required: [classes]
+          properties:
+            classes:
+              $ref: '#/components/schemas/CurrentSemesterClasses'
+    StudentViewList:
+      type: array
+      items:
+        $ref: '#/components/schemas/StudentView'
+    CourseView:
+      title: CourseView
+      description: |
+        Course do serviço courses mais `classes` do semestre em curso. `classes` é normativo nesta BFF, ainda que o schema de domínio feche `additionalProperties`.
+      allOf:
+        - $ref: './grupo05-courses-api.yaml#/components/schemas/Course'
+        - type: object
+          required: [classes]
+          properties:
+            classes:
+              $ref: '#/components/schemas/CurrentSemesterClasses'
+    CourseViewList:
+      type: array
+      items:
+        $ref: '#/components/schemas/CourseView'
+    ResourceView:
+      title: ResourceView
+      description: |
+        Resource do serviço resources mais `reservations` futuras. `reservations` é normativo nesta BFF, ainda que o schema de domínio feche `additionalProperties`.
+      allOf:
+        - $ref: './grupo06-resources-api.yaml#/components/schemas/Resource'
+        - type: object
+          required: [reservations]
+          properties:
+            reservations:
+              $ref: '#/components/schemas/FutureReservations'
+    ResourceViewList:
+      type: array
+      items:
+        $ref: '#/components/schemas/ResourceView'
+    ResourceAggregateView:
+      title: ResourceAggregateView
+      description: |
+        Agregado do serviço resources (`occurrences` inclusas) mais `reservations` futuras. `reservations` é normativo nesta BFF, ainda que o schema de domínio feche `additionalProperties`.
+      allOf:
+        - $ref: './grupo06-resources-api.yaml#/components/schemas/ResourceAggregate'
+        - type: object
+          required: [reservations]
+          properties:
+            reservations:
+              $ref: '#/components/schemas/FutureReservations'
+    ProfessorView:
+      title: ProfessorView
+      description: |
+        Professor do serviço professors mais `classes` do semestre em curso. O vínculo usa `_id`. `classes` é normativo nesta BFF, ainda que o schema de domínio feche `additionalProperties`.
+      allOf:
+        - $ref: './grupo07-professors-api.yaml#/components/schemas/Professor'
+        - type: object
+          required: [classes]
+          properties:
+            classes:
+              $ref: '#/components/schemas/CurrentSemesterClasses'
+    ProfessorViewList:
+      type: array
+      items:
+        $ref: '#/components/schemas/ProfessorView'
+    RoomView:
+      title: RoomView
+      description: |
+        Room do serviço rooms mais `classes` do semestre em curso. `classes` é normativo nesta BFF, ainda que o schema de domínio feche `additionalProperties`.
+      allOf:
+        - $ref: './grupo08-rooms-api.yaml#/components/schemas/Room'
+        - type: object
+          required: [classes]
+          properties:
+            classes:
+              $ref: '#/components/schemas/CurrentSemesterClasses'
+    RoomViewList:
+      type: array
+      items:
+        $ref: '#/components/schemas/RoomView'
+  responses:
+    CompositionUnavailable:
+      description: |
+        O serviço usado na composição (classes ou reservations) não respondeu. O recurso principal não é devolvido pela metade.
+      content:
+        application/problem+json:
+          schema:
+            $ref: '#/components/schemas/Problem'
