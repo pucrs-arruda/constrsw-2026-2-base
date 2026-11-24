@@ -2,6 +2,8 @@
 name: Closed CRAS
 status: final
 sources:
+  - "{planning_artifacts}/../specs/spec-closed-cras/SPEC.md"
+  - "{planning_artifacts}/../specs/spec-closed-cras/capability-map.md"
   - "docs/open-api/bff.yaml"
   - "docs/open-api/*.yaml"
   - "backend/oauth/README.md"
@@ -14,42 +16,48 @@ updated: 2026-11-24
 
 # Closed CRAS — Experience Spine
 
-UI web única Closed CRAS, ConstrSW PUCRS 2026/2. Identidade visual em `DESIGN.md`. Autenticação só via `backend/oauth`; dados só via BFF. Sem Keycloak no browser. Sem chamar os nove serviços de domínio direto do browser. Sem Angular neste spine.
+Companion UX do **SPEC-closed-cras** (CAP-10/11/12 + Constraints). UI web única Closed CRAS, ConstrSW PUCRS 2026/2. Identidade visual em `DESIGN.md` (tokens prevalecem sobre tema Material default). Autenticação só via `backend/oauth`; dados só via BFF. Sem Keycloak no browser. Sem chamar os nove serviços de domínio direto do browser.
+
+**Autoridade:** SPEC vence em conflito de produto/stack; este spine vence em IA, fluxos e microcopy; `DESIGN.md` vence em tokens; Figma `FTSWNiR5rQHXqDizXFJYqp` é composição de referência (spines vencem o mockup).
 
 ## Foundation
 
-Form-factor: **uma** UI web responsiva (compact, medium e expanded; ver Responsive & Platform), desenhada a partir do desktop. Tokens e anatomia: `DESIGN.md`.
+Form-factor: **uma** SPA web responsiva (compact, medium e expanded; ver Responsive & Platform), desenhada a partir do desktop. Tokens e anatomia: `DESIGN.md`.
 
-**Autenticação (vigente):**
+**Stack de UI (SPEC Constraints / CAP-12 / AD-8):** Angular **22.x** + **Angular Material** (Material Design 3) + Angular CDK + SCSS + design tokens. Frontend cruzado: cada grupo implementa superfícies de domínio alheio (OQ-1). Sem React/Vite/TanStack Query como stack da SPA. Sem `keycloak-js`.
+
+**UI system de implementação:** chrome/dados/forms mapeiam a Angular Material — `mat-toolbar`, `mat-sidenav`, `mat-nav-list`, `mat-table`, `mat-form-field`, `mat-chip` / `mat-chip-set`, `mat-tab-group`, `mat-dialog`, `mat-snack-bar`, `mat-progress-bar` (skeleton). Customização só via tema oficial / tokens SCSS de `DESIGN.md` — sem seletores frágeis em classes internas MDC.
+
+**Autenticação (CAP-11 + Assumptions SPEC):**
 1. `POST {oauth}/login` com `multipart/form-data` (`username`, `password`) e credentials.
 2. Sucesso `201`: a sessão habilita chamadas à BFF com `Authorization: Bearer <access_token>`; refresh via `POST /refresh`; logout `POST /logout`.
-3. Sem mockar Keycloak no browser; sem `keycloak-js`.
+3. Sem mockar Keycloak no browser; sem `keycloak-js`. Cookie httpOnly do oauth/BFF pode coexistir no transporte; a UI usa Bearer nas requests BFF.
 
-**Dados:** proxy + composição T3 da BFF (`docs/open-api/bff.yaml`). `GET /health` da BFF **não** é tela. `GET /api/v1/identidade/me` alimenta a área do usuário no cabeçalho.
+**Dados (CAP-10):** proxy + composição T3 da BFF (`docs/open-api/bff.yaml`). `GET /health` da BFF **não** é tela. `GET /api/v1/identidade/me` alimenta a área do usuário no cabeçalho. UI não faz join das nove OpenAPIs de domínio; FR-19/FR-31 = composição **cliente** sobre proxies BFF (sem read-model BFF dedicado).
 
-V1 claro apenas. Sem modo offline. Sem implementação Angular neste artefato.
+V1 claro apenas. Sem modo offline. Código Angular vive em `frontend/` (compose sobe a SPA com o envelope lab — AD-7 / OV-9).
 
 ## Information Architecture
 
-Língua da UI: **português do Brasil**. Paths/tags do OpenAPI permanecem em inglês no contrato; rótulos principais em português; ids técnicos (`faixaId`, etc.) só como apoio.
+Língua da UI: **português do Brasil**. Paths/tags do OpenAPI permanecem em inglês no contrato; rótulos principais em português; ids técnicos (`faixaId`, etc.) só como apoio. Traceability CAP ↔ UX: `capability-map.md`.
 
-| ID | Superfície | Chega de | Propósito | BFF / OAuth |
-|---|---|---|---|---|
-| UX-LOGIN | Login | URL fria / sessão expirada | Autenticar | `POST {oauth}/login` (+ refresh/logout) |
-| UX-HOME | Home / app-shell | Login ok | Shell + menu; landing autenticada | `GET /api/v1/identidade/me` |
-| UX-EMPLOYEES | Funcionários | Menu | Lista + detalhe + dependents | `/api/v1/employees` |
-| UX-PROFESSORS | Professores | Menu | Lista + detalhe + academic-degrees + **Turmas do semestre em curso** (`classes` do GET BFF; `professorId`) | `/api/v1/professors` |
-| UX-STUDENTS | Alunos | Menu | Cadastro (Novo aluno) + lista + detalhe + AcademicAffiliation 1–N + **Turmas matriculadas no semestre em curso** (`classes` do GET BFF; `studentIds`) | `/api/v1/students` |
-| UX-ROOMS | Salas de Aula | Menu | Lista + detalhe + accessibility-features + **Turmas do semestre** (`classes` T3; `roomId`) | `/api/v1/rooms` |
-| UX-RESOURCES | Recursos | Menu | Lista + detalhe + occurrences + **reservations futuras** (T3) | `/api/v1/resources` |
-| UX-COURSES | Disciplinas | Menu | Lista + detalhe + bibliographic-references + syllabus-items + **Turmas do semestre** (`classes` T3; `courseId`) | `/api/v1/courses` |
-| UX-CLASSES | Turmas | Menu | Lista + detalhe com **2 abas** (Alunos \| Aulas) | `/api/v1/classes` (+ reviews/import) |
-| UX-CLASS-ENROLLMENTS | Turma · Alunos matriculados | Detalhe turma | Associa Students **já cadastrados** à Class (`studentIds`); sem criar Student aqui | `/api/v1/classes` + lista students |
-| UX-CLASS-LESSONS | Turma · Aulas | Detalhe turma | Lista + **CRUD** de Lesson da turma (gerar/criar/editar/excluir + tópicos) | `/api/v1/lessons` |
-| UX-LESSON-RESERVATIONS | Aula · Reservas | Detalhe da aula (a partir da lista de Aulas) | Lista + **CRUD** de Reservation daquela Lesson | `/api/v1/reservations` |
-| UX-OCCUPANCY | Ocupação | Menu | Recursos ocupados em **data + faixa** (FR-29); **não nominativo** de Student | `GET /api/v1/reservations/ocupacao?data=&faixaId=` |
-| UX-PROFESSOR-VIEW | Plano + roster | Menu | Leitura composta plano + roster (FR-31) — **cliente** junta courses + classes (sem endpoint BFF dedicado) | proxy `/courses`, `/classes` |
-| UX-STUDENT-READ | Minhas aulas | Menu | Sala efetiva / tópico / avaliação + plano (FR-19) — **cliente** junta lessons + `classes` do student (sem endpoint BFF dedicado) | proxy `/lessons`, `/students`, `/courses` |
+| ID | Superfície | CAP | Chega de | Propósito | BFF / OAuth |
+|---|---|---|---|---|---|
+| UX-LOGIN | Login | CAP-11, CAP-12 | URL fria / sessão expirada | Autenticar | `POST {oauth}/login` (+ refresh/logout) |
+| UX-HOME | Home / app-shell | CAP-12 | Login ok | Shell + menu; landing autenticada | `GET /api/v1/identidade/me` |
+| UX-EMPLOYEES | Funcionários | CAP-1 | Menu | Lista + detalhe + dependents | `/api/v1/employees` |
+| UX-PROFESSORS | Professores | CAP-2 | Menu | Lista + detalhe + academic-degrees + **Turmas do semestre em curso** (`classes` do GET BFF; `professorId`) | `/api/v1/professors` |
+| UX-STUDENTS | Alunos | CAP-3 | Menu | Cadastro (Novo aluno) + lista + detalhe + AcademicAffiliation 1–N + **Turmas matriculadas no semestre em curso** (`classes` do GET BFF; `studentIds`) | `/api/v1/students` |
+| UX-ROOMS | Salas de Aula | CAP-7, CAP-10 | Menu | Lista + detalhe + accessibility-features + **Turmas do semestre** (`classes` T3; `roomId`) | `/api/v1/rooms` |
+| UX-RESOURCES | Recursos | CAP-7, CAP-10 | Menu | Lista + detalhe + occurrences + **reservations futuras** (T3) | `/api/v1/resources` |
+| UX-COURSES | Disciplinas | CAP-4, CAP-10 | Menu | Lista + detalhe + bibliographic-references + syllabus-items + **Turmas do semestre** (`classes` T3; `courseId`) | `/api/v1/courses` |
+| UX-CLASSES | Turmas | CAP-5 | Menu | Lista + detalhe com **2 abas** (Alunos \| Aulas) | `/api/v1/classes` (+ reviews/import) |
+| UX-CLASS-ENROLLMENTS | Turma · Alunos matriculados | CAP-5, CAP-3 | Detalhe turma | Associa Students **já cadastrados** à Class (`studentIds`); sem criar Student aqui | `/api/v1/classes` + lista students |
+| UX-CLASS-LESSONS | Turma · Aulas | CAP-6 | Detalhe turma | Lista + **CRUD** de Lesson da turma (gerar/criar/editar/excluir + tópicos) | `/api/v1/lessons` |
+| UX-LESSON-RESERVATIONS | Aula · Reservas | CAP-8 | Detalhe da aula (a partir da lista de Aulas) | Lista + **CRUD** de Reservation daquela Lesson | `/api/v1/reservations` |
+| UX-OCCUPANCY | Ocupação | CAP-10 (FR-29) | Menu | Recursos ocupados em **data + faixa**; **não nominativo** de Student | `GET /api/v1/reservations/ocupacao?data=&faixaId=` |
+| UX-PROFESSOR-VIEW | Plano + roster | CAP-10 (FR-31) | Menu | Leitura composta plano + roster — **cliente** junta courses + classes (sem endpoint BFF dedicado) | proxy `/courses`, `/classes` |
+| UX-STUDENT-READ | Minhas aulas | CAP-6 (FR-19) | Menu | Sala efetiva / tópico / avaliação + plano — **cliente** junta lessons + `classes` do student (sem endpoint BFF dedicado) | proxy `/lessons`, `/students`, `/courses` |
 
 **Menu hambúrguer (ordem fixa; item ativo marcado; &lt;1024px = folha; Esc fecha):**
 1. Funcionários → `/api/v1/employees`
@@ -102,21 +110,23 @@ Microcopy em pt-BR. Postura de marca (Cuidador / Criador / Cientista; jeito PUCR
 
 ## Component Patterns
 
-| Component | Onde | Regras |
-|---|---|---|
-| app-shell | Autenticadas | Hambúrguer esq.; Closed CRAS; usuário + **Sair** (`POST /logout` → UX-LOGIN). |
-| hamburger-nav | Autenticadas | Ordem fixa: Funcionários, Professores, Alunos, Salas de Aula, Recursos, Disciplinas, Turmas, Ocupação, Plano + roster, Minhas aulas. Ativo marcado. Folha &lt;1024px; Esc fecha. |
-| page-header | Cada contexto | Título pt-BR da superfície + caption de propósito. |
-| login-panel | UX-LOGIN | Submit → `POST /login`. `201` → Bearer + Home. `401` banner sem enumerar conta. `503`/rede → “Identidade indisponível.” |
-| data-table | Listas | Linha abre detalhe. Sem infinite scroll. |
-| master-detail-panel | Detalhes | Secundária 1–N só da principal selecionada. |
-| class-tabs | Detalhe turma | Alunos matriculados \| Aulas. (Reservas vivem no detalhe da Aula.) |
-| lesson-reservations | Detalhe aula | Tabela de reservations da Lesson + Nova reserva / editar / cancelar. |
-| faixa-picker | Aulas / reservas / ocupação | Códigos canônicos; sem time picker livre. |
-| refusal-banner | Escritas / login 401 | `role="alert"`; prosa travada. |
-| identity-banner | Login 503; BFF 503 composição | Mensagem institucional, sem nomear microsserviço. |
-| confirm-dialog | Destructive | Um por vez; nomeia objeto e efeito. |
-| skeleton-block | Cold load | Chrome visível; corpo skeleton. |
+Padrões de experiência ↔ Angular Material (CAP-12). Tokens de `DESIGN.md` prevalecem sobre o tema Material default.
+
+| Component | Angular Material | Onde | Regras |
+|---|---|---|---|
+| app-shell | `mat-toolbar` + layout | Autenticadas | Hambúrguer esq.; Closed CRAS; usuário + **Sair** (`POST /logout` → UX-LOGIN). |
+| hamburger-nav | `mat-sidenav` + `mat-nav-list` | Autenticadas | Ordem fixa: Funcionários, Professores, Alunos, Salas de Aula, Recursos, Disciplinas, Turmas, Ocupação, Plano + roster, Minhas aulas. Ativo marcado. Folha &lt;1024px; Esc fecha. |
+| page-header | tipografia + `mat-chip` (contexto) | Cada contexto | Título pt-BR da superfície + caption de propósito. |
+| login-panel | `mat-form-field` + `mat-button` | UX-LOGIN | Submit → `POST /login`. `201` → Bearer + Home. `401` banner sem enumerar conta. `503`/rede → “Identidade indisponível.” |
+| data-table | `mat-table` (+ CDK) | Listas | Linha abre detalhe. Sem infinite scroll. |
+| master-detail-panel | layout + `mat-card` opcional | Detalhes | Secundária 1–N só da principal selecionada. |
+| class-tabs | `mat-tab-group` | Detalhe turma | Alunos matriculados \| Aulas. (Reservas vivem no detalhe da Aula.) |
+| lesson-reservations | `mat-table` + actions | Detalhe aula | Tabela de reservations da Lesson + Nova reserva / editar / cancelar. |
+| faixa-picker | `mat-select` / chips | Aulas / reservas / ocupação | Códigos canônicos A–E, F–N, P; sem time picker livre (Constraints SPEC). |
+| refusal-banner | `mat-snack-bar` ou banner inline | Escritas / login 401 | `role="alert"`; prosa travada; `code` = id do FR quando o BFF devolver problem+json. |
+| identity-banner | banner inline | Login 503; BFF 503 composição | Mensagem institucional, sem nomear microsserviço (`BFF-DEPENDENCY` onde aplicável). |
+| confirm-dialog | `mat-dialog` | Destructive | Um por vez; nomeia objeto e efeito. |
+| skeleton-block | `mat-progress-bar` / placeholders | Cold load | Chrome visível; corpo skeleton. |
 
 ## State Patterns
 
@@ -138,7 +148,7 @@ Microcopy em pt-BR. Postura de marca (Cuidador / Criador / Cientista; jeito PUCR
 - `Enter` — submete form; abre linha na tabela.
 - `Esc` — fecha dialog e folha do menu; não descarta form sujo sem secondary.
 - Foco visível: anel `{colors.ring}`.
-- **Banido:** Keycloak no browser; chamar nove APIs no browser; drag-and-drop da grade; infinite scroll; time picker livre; Lessons/Reservations no menu de topo.
+- **Banido:** Keycloak / `keycloak-js` no browser; chamar nove OpenAPIs no browser; React/Vite como stack da SPA; drag-and-drop da grade; infinite scroll; time picker livre; Lessons/Reservations no menu de topo; CSS frágil em classes internas MDC.
 
 ## Accessibility Floor
 
@@ -151,7 +161,7 @@ Microcopy em pt-BR. Postura de marca (Cuidador / Criador / Cientista; jeito PUCR
 
 ## Responsive & Platform
 
-Uma única UI web, **responsiva de 360px a 1440px+**. Todas as 22 superfícies funcionam em todas as classes; nenhuma tarefa é "só desktop". Classes de janela seguem a nomenclatura M3 (compact / medium / expanded), mantendo o pivô de navegação em **1024px** já decidido neste spine (o M3 padrão usa 840px).
+Uma única SPA Angular, **responsiva de 360px a 1440px+**. Todas as superfícies do inventário (UX-LOGIN…UX-STUDENT-READ) funcionam em todas as classes; nenhuma tarefa é "só desktop". Classes de janela seguem a nomenclatura M3 (compact / medium / expanded), mantendo o pivô de navegação em **1024px** já decidido neste spine (o M3 padrão usa 840px).
 
 | Classe | Largura | Frames de referência | Navegação | Conteúdo |
 |---|---|---|---|---|
@@ -185,11 +195,11 @@ Uma única UI web, **responsiva de 360px a 1440px+**. Todas as 22 superfícies f
 
 ## Inspiration & Anti-patterns
 
-- **Levantar:** DNA PUCRS (acolher + clareza + rigor); inventário BFF completo; Turma como hub de Aulas/Reservas.
+- **Levantar:** DNA PUCRS (acolher + clareza + rigor); inventário BFF completo; Turma como hub de Aulas/Reservas; SPA Angular + Material com tokens DESIGN.md (CAP-12).
 - **Rejeitado:** identidade “instrumento sem marca PUCRS” do spine 2026-08-24.
 - **Rejeitado:** menu com Lessons e Reservations no topo; chrome em inglês.
-- **Rejeitado:** Keycloak / keycloak-js no browser; nove OpenAPIs no browser.
-- **Rejeitado:** GET /health como tela; Angular nesta rodada.
+- **Rejeitado:** Keycloak / keycloak-js no browser; nove OpenAPIs no browser; seletor de microsserviço na UI.
+- **Rejeitado:** GET /health como tela; customização Angular Material via seletores MDC frágeis; stack SPA fora de Angular 22 + Material.
 
 ## Key Flows
 
@@ -226,5 +236,6 @@ Uma única UI web, **responsiva de 360px a 1440px+**. Todas as 22 superfícies f
 
 | ID | Status | Efeito |
 |---|---|---|
-| Persistência do Bearer | `[ASSUMPTION]` | Memória de sessão da SPA (não `localStorage` longo); cookie httpOnly do oauth pode coexistir — implementação no frontend. |
-| OQ-1 partição nove grupos | Aberto no PRD | Não bloqueia inventário BFF deste spine. |
+| Persistência do Bearer | `[ASSUMPTION]` alinhada ao SPEC | Memória de sessão da SPA (não `localStorage` longo); cookie httpOnly do oauth pode coexistir — implementação no `frontend/` Angular. |
+| OQ-1 partição nove grupos | Aberto no SPEC/PRD | Emparelhamento grupo↔superfície EXPERIENCE; não bloqueia scaffold Angular nem inventário BFF. |
+| OQ-PRD-1 | Aberto no SPEC | PRD ainda seed-only para Student; SPEC+este spine+Figma = cadastro UI + associação na turma. |
