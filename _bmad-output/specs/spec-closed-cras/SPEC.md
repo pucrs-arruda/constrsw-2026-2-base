@@ -7,8 +7,8 @@ companions:
   - ../../planning-artifacts/prds/prd-constrsw-2026-2-2026-08-19/prd.md
   - ../../planning-artifacts/prds/prd-constrsw-2026-2-2026-08-19/addendum.md
   - ../../planning-artifacts/architecture/architecture-constrsw-2026-2-2026-08-24/ARCHITECTURE-SPINE.md
-  - ../../planning-artifacts/ux-designs/ux-constrsw-2026-2-2026-08-24/EXPERIENCE.md
-  - ../../planning-artifacts/ux-designs/ux-constrsw-2026-2-2026-08-24/DESIGN.md
+  - ../../planning-artifacts/ux-designs/ux-constrsw-2026-2-2026-11-23/EXPERIENCE.md
+  - ../../planning-artifacts/ux-designs/ux-constrsw-2026-2-2026-11-23/DESIGN.md
 sources:
   - C:/Users/EduardoArruda/Documents/Pessoal/src/pucrs-arruda/constrsw/constrsw-2026-1/architecture-insights.md
   - C:/Users/EduardoArruda/Documents/Pessoal/src/pucrs-arruda/constrsw/constrsw-2026-1/data-model/README.md
@@ -69,8 +69,8 @@ sources:
   - **success:** UI não chama o IdP (`keycloak-js` proibido); papéis literais `funcionario`|`coordenador`|`professor`|`student`; claims com IDs opacos; escritura obedece NFR-CTR-2; credencial recusada = 401 sem enumerar conta; create Employee não provisiona usuário no Keycloak. O serviço `employees` desta entrega não publica `GET /identidade/me`; os demais contextos seguem este capability.
 
 - **CAP-12**
-  - **intent:** Uma SPA por papel (UX-LOGIN/HOME + UX-S1–S9) com frontend cruzado: cada grupo implementa telas de domínio alheio usando tokens de DESIGN.md.
-  - **success:** Sem seletor de microsserviço; grupo não implementa telas do próprio backend; Student/Professor/Coordenador/Funcionário completam UJ-1–UJ-4 na UI (SM-3, SM-4); emparelhamento grupo↔UX-S* = OQ-1; dados só via BFF.
+  - **intent:** Uma SPA Angular + Material (shell UX-LOGIN/HOME + superfícies de domínio do companion EXPERIENCE 2026-11-23) com frontend cruzado: cada grupo implementa telas de domínio alheio usando tokens de DESIGN.md.
+  - **success:** Sem seletor de microsserviço; grupo não implementa telas do próprio backend; personas UJ-1–UJ-4 completam jornadas na UI (SM-3, SM-4); emparelhamento grupo↔superfície EXPERIENCE = OQ-1; dados só via BFF; Figma `FTSWNiR5rQHXqDizXFJYqp` é composição de referência (spines vencem em conflito).
 
 ## Constraints
 
@@ -101,7 +101,7 @@ Em laboratório (compose), as quatro personas completam UJ-1–UJ-4 na UI sem es
 
 ## Assumptions
 
-- Login de laboratório: Direct Access Grant no client confidencial `bff`; cookies httpOnly no BFF (AD-4).
+- Login de laboratório: Direct Access Grant no client confidencial `bff` (AD-4). Companion EXPERIENCE 2026-11-23: UI usa Bearer após `POST {oauth}/login` (+ refresh/logout); cookie httpOnly no BFF permanece opção de transporte se o BFF assim expuser.
 - BFF em NestJS 12.x (não Spring) — composição TypeScript.
 - E-mail de Employee, quando presente, é único.
 - `Class.studentIds` chega no mesmo seed/import que Student (FR-9).
@@ -112,7 +112,8 @@ Em laboratório (compose), as quatro personas completam UJ-1–UJ-4 na UI sem es
 
 ## Open Questions
 
-- **OQ-1.** Qual grupo implementa qual UX-S* (restrição: não o próprio domínio de backend)? Dono: turma/docente. Bloqueia emparelhamento de implementação de telas, não o restante deste SPEC.
+- **OQ-1.** Qual grupo implementa qual superfície EXPERIENCE (UX-EMPLOYEES…UX-CLASSES / abas; restrição: não o próprio domínio de backend)? Dono: turma/docente. Bloqueia emparelhamento de implementação de telas, não o restante deste SPEC.
 - **OQ-3.** LessonTopic: `syllabusItemId` obrigatório, enunciado extra obrigatório, ou pelo menos um dos dois? Default de demo acima até fechar.
 - **OQ-ARCH-1.** Qual contexto usa Mongo vs PostgreSQL no cold-start? Default: escolha por grupo no README do submódulo; compose sempre sobe ambos. Dono: bootstrap da malha / grupos.
 - **OQ-ARCH-2.** Enriquecimento de display name Employee na vista Professor fica no BFF (default) ou no OpenAPI de `professors`? Default de demo: BFF.
+- **OQ-UX-1.** CAP-3 / non-goal proíbem tela de alta de Student; EXPERIENCE 2026-11-23 e Figma expõem UX-STUDENTS (lista+detalhe). Qual vence na implementação? Dono: produto/UX.

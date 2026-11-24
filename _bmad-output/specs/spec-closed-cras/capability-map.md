@@ -1,23 +1,23 @@
 # Capability map — CAP ↔ FR ↔ AD ↔ UX
 
-Traceability do kernel SPEC para PRD, Architecture Spine e EXPERIENCE. IDs CAP são estáveis; não renumerar.
+Traceability do kernel SPEC para PRD, Architecture Spine e EXPERIENCE **2026-11-23**. IDs CAP são estáveis; não renumerar. IDs de superfície UX canônicos = companion EXPERIENCE (UX-LOGIN, UX-HOME, UX-EMPLOYEES…UX-CLASS-*).
 
 ## Matriz
 
-| CAP | Intent (curto) | FR | AD | UX | SM |
+| CAP | Intent (curto) | FR | AD | UX (EXPERIENCE 2026-11-23) | SM |
 | --- | --- | --- | --- | --- | --- |
-| CAP-1 | Employee + Dependent + FR-1a | FR-1, FR-1a, FR-2, FR-3 | AD-1, AD-2 | UX-S1 | SM-1, SM-4 |
-| CAP-2 | Professor is-a + AcademicDegree | FR-4, FR-5, FR-6 | AD-1, AD-2, AD-3 | UX-S2 | SM-1, SM-4 |
-| CAP-3 | Student seed + AcademicAffiliation | FR-7, FR-8, FR-9 | AD-2, AD-7, AD-12 | — (sem alta UI); consumo UX-S9 | SM-4 |
-| CAP-4 | Course + SyllabusItem / plano | FR-10, FR-11, FR-12 | AD-2 | UX-S5 | SM-4 |
-| CAP-5 | Abrir Class + gerar Lesson | FR-13, FR-14, FR-15, FR-16 | AD-5, AD-9, OV-10 | UX-S6 | SM-2, SM-5 |
-| CAP-6 | Lesson + sala efetiva + leitura Student | FR-17, FR-18, FR-19 | AD-5, AD-6 | UX-S7 (zona Lesson), UX-S9 | SM-2, SM-3 |
-| CAP-7 | Room + Resource mestres | FR-20, FR-21, FR-22 | AD-2 | UX-S3 | SM-4 |
-| CAP-8 | Reservation + linhas + cancelar | FR-23, FR-24, FR-30 | AD-5 | UX-S7 (zona Reservation) | SM-5 |
+| CAP-1 | Employee + Dependent + FR-1a | FR-1, FR-1a, FR-2, FR-3 | AD-1, AD-2 | UX-EMPLOYEES | SM-1, SM-4 |
+| CAP-2 | Professor is-a + AcademicDegree | FR-4, FR-5, FR-6 | AD-1, AD-2, AD-3 | UX-PROFESSORS | SM-1, SM-4 |
+| CAP-3 | Student seed + AcademicAffiliation | FR-7, FR-8, FR-9 | AD-2, AD-7, AD-12 | Sem alta UI no kernel; EXPERIENCE lista UX-STUDENTS → **OQ-UX-1**; consumo leitura via CAP-6/10 | SM-4 |
+| CAP-4 | Course + SyllabusItem / plano | FR-10, FR-11, FR-12 | AD-2 | UX-COURSES | SM-4 |
+| CAP-5 | Abrir Class + gerar Lesson | FR-13, FR-14, FR-15, FR-16 | AD-5, AD-9, OV-10 | UX-CLASSES; gerar em UX-CLASS-LESSONS | SM-2, SM-5 |
+| CAP-6 | Lesson + sala efetiva + leitura Student | FR-17, FR-18, FR-19 | AD-5, AD-6 | UX-CLASS-LESSONS; FR-19 sem frame dedicado no Figma (lacuna de mock) | SM-2, SM-3 |
+| CAP-7 | Room + Resource mestres | FR-20, FR-21, FR-22 | AD-2 | UX-ROOMS + UX-RESOURCES | SM-4 |
+| CAP-8 | Reservation + linhas + cancelar | FR-23, FR-24, FR-30 | AD-5 | UX-CLASS-RESERVATIONS | SM-5 |
 | CAP-9 | OpenAPI contract-first | FR-25 | AD-2, AD-3, AD-11 | — (contrato) | SM-4 |
-| CAP-10 | BFF proxy + composição + ocupação + vistas | FR-26, FR-29, FR-31 | AD-6, AD-10, OV-10 | UX-S4, UX-S8, UX-S9 | SM-3, SM-4 |
+| CAP-10 | BFF proxy + composição + ocupação + vistas | FR-26, FR-29, FR-31 | AD-6, AD-10, OV-10 | Composição em listas (ex. Alunos 503); FR-29/31 sem superfície dedicada no EXPERIENCE — capability permanece | SM-3, SM-4 |
 | CAP-11 | oauth/Keycloak + resource-server | FR-27 | AD-4 | UX-LOGIN | SM-3, SM-4 |
-| CAP-12 | UI única + frontend cruzado | FR-28 | AD-8 | UX-LOGIN, UX-HOME, UX-S1–S9 | SM-3, SM-4 |
+| CAP-12 | UI única + frontend cruzado | FR-28 | AD-8 | UX-LOGIN, UX-HOME, UX-EMPLOYEES…UX-CLASSES (+ abas) | SM-3, SM-4 |
 
 ## NFRs cobertos no kernel (Constraints / Success)
 
@@ -39,23 +39,38 @@ Traceability do kernel SPEC para PRD, Architecture Spine e EXPERIENCE. IDs CAP s
 | Seed/fixtures | Constraints; CAP-3 | AD-12 |
 | Observabilidade | Constraints envelope | AD-7 |
 
-## Superfícies UX (inventário)
+## Superfícies UX (inventário EXPERIENCE 2026-11-23)
 
-| Superfície | CAP primário | Papel |
+| Superfície | CAP primário | Notas |
 | --- | --- | --- |
 | UX-LOGIN | CAP-11, CAP-12 | Todos |
-| UX-HOME | CAP-12 | Todos |
-| UX-S1 | CAP-1 | Funcionário |
-| UX-S2 | CAP-2 | Funcionário |
-| UX-S3 | CAP-7 | Funcionário |
-| UX-S4 | CAP-10 (FR-29) | Funcionário |
-| UX-S5 | CAP-4 | Coordenador |
-| UX-S6 | CAP-5 | Coordenador |
-| UX-S7 | CAP-6 + CAP-8 | Professor |
-| UX-S8 | CAP-10 (FR-31) | Professor |
-| UX-S9 | CAP-6 (FR-19) | Student |
+| UX-HOME | CAP-12 | Shell + menu domínio |
+| UX-EMPLOYEES | CAP-1 | Lista + detalhe + dependents |
+| UX-PROFESSORS | CAP-2 | Lista + detalhe + titulações |
+| UX-STUDENTS | CAP-3 (tensão) | Lista + detalhe no Figma; alta UI = **OQ-UX-1** |
+| UX-ROOMS | CAP-7 | Lista + detalhe + accessibility |
+| UX-RESOURCES | CAP-7 | Lista + detalhe + ocorrências |
+| UX-COURSES | CAP-4 | Lista + detalhe + plano |
+| UX-CLASSES | CAP-5 | Lista + detalhe |
+| UX-CLASS-ENROLLMENTS | CAP-5 / CAP-10 | Aba Alunos matriculados |
+| UX-CLASS-LESSONS | CAP-6 | Aba Aulas |
+| UX-CLASS-RESERVATIONS | CAP-8 | Aba Reservas |
 
-Emparelhamento grupo↔UX-S* permanece **OQ-1** (não resolvido neste SPEC).
+Composição Figma: [Closed CRAS frontend PUCRS](https://www.figma.com/design/FTSWNiR5rQHXqDizXFJYqp). Emparelhamento grupo↔superfície = **OQ-1**.
+
+## Ponte legada UX-S* → EXPERIENCE (somente rastreio UJ)
+
+| Legado (PRD / SPEC antigo) | Superfície vigente |
+| --- | --- |
+| UX-S1 | UX-EMPLOYEES |
+| UX-S2 | UX-PROFESSORS |
+| UX-S3 | UX-ROOMS + UX-RESOURCES |
+| UX-S4 (ocupação FR-29) | Sem frame EXPERIENCE; CAP-10 permanece |
+| UX-S5 | UX-COURSES |
+| UX-S6 | UX-CLASSES (+ gerar em UX-CLASS-LESSONS) |
+| UX-S7 | UX-CLASS-LESSONS + UX-CLASS-RESERVATIONS |
+| UX-S8 (vista Professor FR-31) | Sem frame dedicado; parcial via abas da turma |
+| UX-S9 (leitura Student FR-19) | Sem frame dedicado; CAP-6/10 permanece |
 
 ## Jornadas → capabilities
 
