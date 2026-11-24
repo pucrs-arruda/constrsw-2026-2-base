@@ -8,7 +8,7 @@ Matriz dos nove bounded contexts (equidade ConstrSW) e referências cross-servic
 | --- | --- | --- | --- |
 | `employees` | Employee | Dependent | Cadastro-mestre desta entrega (spec-employees, 2026-11-16). Não é dono de Room/Resource/Professor |
 | `professors` | Professor | AcademicDegree | is-a Employee via `employeeId` 1–1; não copia nome/e-mail; store PG ou Mongo irrelevante à identidade |
-| `students` | Student | AcademicAffiliation | Identidade recebida (seed); sem tela de alta |
+| `students` | Student | AcademicAffiliation | Cadastro na UI (UX-STUDENTS); associação a Class só por id existente |
 | `courses` | Course | SyllabusItem | `kind`: conteúdo \| bibliografia \| critério; plano datado |
 | `rooms` | Room | AccessibilityFeature | Prédio = texto; capacidade obrigatória |
 | `resources` | Resource | InventoryItem | ≠ Room; `estado` v1: disponível \| indisponível |
@@ -24,7 +24,7 @@ IDs alheios são **atributos**, não terceira classe do par. `professorId` ≠ `
 | --- | --- | --- |
 | `professors` → `employees` (ativo, is-a) | negocial | `professors` |
 | `classes` → Course/Professor/Room/Student; GET ocupação; FR-1a | negocial | `classes` |
-| `classes` → `POST /v1/lessons/gerar` | negocial | `classes` → `lessons` |
+| `classes` → `POST /api/v1/lessons/generate` (via BFF / escritor) | negocial | `classes` → `lessons` |
 | `lessons` deriva `salaEfetivaId`; merge conflito nos escritores | negocial | `lessons` / `reservations` / `classes` |
 | Class+Lessons, ocupação FR-29, Student FR-19, plano+roster FR-31 | visualização | BFF read-model |
 | Proxy CRUD de domínio | passthrough | BFF (sem regra FR) |
@@ -36,7 +36,7 @@ Na dúvida de mutação/invariante → domínio; na dúvida de join só para tel
 | De | Consome (IDs / GET) | Não pode |
 | --- | --- | --- |
 | `professors` | `employees` (`employeeId`) | Copiar nome/e-mail; existir sem Employee ativo; identidade store=Employee |
-| `classes` | Course, Professor(s), Room, Student IDs; GET `employees.ativo`; GET ocupação lessons/reservations na abertura | Copiar cadastro; criar Lesson direto (usa `POST /v1/lessons/gerar`); embutir Lesson completa no agregado |
+| `classes` | Course, Professor(s), Room, Student IDs; GET `employees.ativo`; GET ocupação lessons/reservations na abertura | Copiar cadastro; criar Lesson direto (usa `POST /api/v1/lessons/generate`); embutir Lesson completa no agregado |
 | `lessons` | Class; Room pela sala efetiva; GET linhas SALA em reservations | Persistir sala efetiva como fato independente da regra AD-5; editar data/`faixaId`; embutir Room no OpenAPI de domínio “para a tela” |
 | `reservations` | Lesson?, Room, Resource, Professor; GET ocupação; GET `employees.ativo` | Segurar sala padrão; segunda linha SALA na mesma Lesson; vazar roster |
 | BFF | Todos os nove (proxy + composição) + Keycloak (login) | Persistir agregado; recalcular sala efetiva; validar FR negocial; CORS nos contextos |
@@ -90,4 +90,4 @@ Diagrama completo e regras: companion adotado `ARCHITECTURE-SPINE.md` (AD-1).
 | --- | --- |
 | `backend/oauth` | Catálogo IdP sobre Keycloak: realm, faixas, roles-scopes, fragmento OpenAPI identity-gateway, adapters de referência |
 | `backend/bff` | Login browser, cookie, proxy + read-models, módulo `ocupacao` (FR-29); resilience AD-10 |
-| `frontend` | SPA Angular única; shell + UX-S*; implementação cruzada (OQ-1); tokens DESIGN.md |
+| `frontend` | SPA Angular única; shell + superfícies EXPERIENCE 2026-11-23; implementação cruzada (OQ-1); tokens DESIGN.md |

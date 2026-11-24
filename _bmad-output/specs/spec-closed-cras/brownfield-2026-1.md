@@ -21,7 +21,7 @@ Referência operacional da edição anterior (Close Cras / ConstrSW 2026/1). Inf
 
 | 2026-1 | Por que rejeitar | Autoridade 2026-2 |
 | --- | --- | --- |
-| Student CRUD + academicHistory / notas / frequências | Non-goal; Student é recebido | CAP-3; PRD §7 |
+| Student academicHistory / notas / frequências | Non-goal; cadastro Student + associação a turma são in-scope (CAP-3/5) | CAP-3; CAP-5 |
 | Professor com mesmo UUID que Employee (identidade de store) | Is-a é só `employeeId` 1–1; store não define identidade | CAP-2; AD-3; non-goal identidade Mongo=Employee |
 | Materials aninhados em Course/Lesson | Modelo de plano é SyllabusItem + LessonTopic | CAP-4, CAP-6 |
 | Dependents no modelo de 2026-1 como identidade a copiar | A entrega `employees` de 2026-11-16 adota Dependent do JSON Schema atual; não copiar o agregado de 2026-1. | CAP-1; `domain-pairs.md`; spec-employees |
