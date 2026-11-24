@@ -9,7 +9,7 @@ sources:
   - "https://portal.pucrs.br/wp-content/uploads/2025/02/2025_02_18-portal-sobre_a_pucrs-guias_de_comunicacao-01-dna.pdf"
   - "{planning_artifacts}/ux-designs/ux-constrsw-2026-2-2026-08-24/EXPERIENCE.md"
   - "https://www.figma.com/design/FTSWNiR5rQHXqDizXFJYqp"
-updated: 2026-11-23
+updated: 2026-11-24
 ---
 
 # Closed CRAS — Experience Spine
@@ -18,7 +18,7 @@ UI web única Closed CRAS, ConstrSW PUCRS 2026/2. Identidade visual em `DESIGN.m
 
 ## Foundation
 
-Form-factor: **uma** UI web desktop-first. Tokens e anatomia: `DESIGN.md`.
+Form-factor: **uma** UI web responsiva (compact, medium e expanded; ver Responsive & Platform), desenhada a partir do desktop. Tokens e anatomia: `DESIGN.md`.
 
 **Autenticação (vigente):**
 1. `POST {oauth}/login` com `multipart/form-data` (`username`, `password`) e credentials.
@@ -61,7 +61,7 @@ Lessons e Reservations **não** são itens de topo; entram pelo detalhe da Turma
 
 Cada contexto de topo: **lista + detalhe/master-detail** cobrindo POST/PUT/PATCH/DELETE e secundárias 1–N do OpenAPI referenciado pela BFF.
 
-→ Composição: [Figma — Closed CRAS frontend PUCRS](https://www.figma.com/design/FTSWNiR5rQHXqDizXFJYqp) (22 frames). Spines vencem em conflito com mockups.
+→ Composição: [Figma — Closed CRAS frontend PUCRS](https://www.figma.com/design/FTSWNiR5rQHXqDizXFJYqp) (22 frames expanded). Referência responsiva compact/medium: [mockups/closed-cras-responsivo.html](mockups/closed-cras-responsivo.html). Plano de frames responsivos no Figma: [.working/figma-frame-map.md](.working/figma-frame-map.md). Spines vencem em conflito com mockups.
 
 ## Voice and Tone
 
@@ -126,11 +126,37 @@ Microcopy em pt-BR. Postura de marca (Cuidador / Criador / Cientista; jeito PUCR
 
 ## Responsive & Platform
 
-| Breakpoint | Comportamento |
-|---|---|
-| ≥ 1024px | Nav lateral `{spacing.sidebar}`; master-detail duas colunas. |
-| &lt; 1024px | Nav em folha; Esc fecha; master-detail empilha. |
-| &lt; 768px | Mesmo padrão; cadastro denso não é o recorte de demo no telefone. |
+Uma única UI web, **responsiva de 360px a 1440px+**. Todas as 22 superfícies funcionam em todas as classes; nenhuma tarefa é "só desktop". Classes de janela seguem a nomenclatura M3 (compact / medium / expanded), mantendo o pivô de navegação em **1024px** já decidido neste spine (o M3 padrão usa 840px).
+
+| Classe | Largura | Frames de referência | Navegação | Conteúdo |
+|---|---|---|---|---|
+| Compact | 360–599px | 360 × 800 | Folha modal (drawer) com scrim; Esc / toque no scrim / item escolhido fecham | 1 coluna; padding `{spacing.page-compact}` |
+| Medium | 600–1023px | 768 × 1024 | Folha modal, igual compact | 1 coluna; padding `{spacing.page}` |
+| Expanded | ≥ 1024px | 1280 × 800 (vigente) | Drawer fixo `{spacing.sidebar}` | Master-detail em 2 colunas a partir de 1280px; padding `{spacing.page}` |
+
+**Comportamento por componente:**
+
+| Componente | Expanded | Medium | Compact |
+|---|---|---|---|
+| app-shell | Hambúrguer + marca + caption + nome do usuário + avatar + **Sair** | Igual expanded | Caption e nome do usuário somem; ficam hambúrguer, marca, avatar e **Sair** (nunca escondido em menu) |
+| page-header | Título + caption + CTA primário à direita | Igual expanded | Título e caption quebram linha; CTA primário desce para a toolbar |
+| toolbar (busca + CTA) | Busca 320px + CTA à direita | Busca fill + CTA à direita | Busca em linha inteira; CTA filled em linha inteira logo abaixo. **Sem FAB** |
+| data-table | Todas as colunas a partir de 1280px (entre 1024–1279px, como medium) + `TableRowActions` (Abrir · Editar · Excluir) | Colunas de prioridade baixa ocultas; `TableRowActions` mantidas | Vira **lista**: item de 2 linhas (identificador + 1–2 atributos) e botão "Mais ações" (Editar · Excluir). Toque no item = Abrir. Sem scroll horizontal |
+| master-detail-panel | Principal à esquerda, secundária à direita (≥1280px); empilhado entre 1024–1279px | Empilhado: principal, depois secundária | Empilhado; link "← Voltar para {lista}" acima do título; secundária como lista |
+| class-tabs | Abas fixas | Abas fixas | Abas roláveis horizontalmente; aba ativa sempre visível |
+| chips de contexto (período, sala, vagas) | Uma linha | Quebram linha | Quebram linha |
+| formulários / edição | Dialog 560px, 2 colunas quando couber | Dialog 560px, 1 coluna | Dialog em tela cheia, 1 coluna, ações fixas no rodapé |
+| confirm-dialog | 400px centrado | 400px centrado | Largura da tela − 48px; botões empilham se não couberem |
+| login-panel | Split: painel de marca à esquerda, card à direita | Faixa de marca no topo + card centrado (máx. 440px) | Faixa de marca compacta + card sem elevação em largura total |
+| refusal-banner / identity-banner | Linha única com ação à direita | Igual expanded | Texto quebra; ação desce para baixo do texto |
+| occupancy-grid / faixa-picker | Grade completa | Grade completa | **Única exceção** ao "sem scroll horizontal": a grade rola na horizontal com a coluna de faixas fixa |
+
+**Regras transversais:**
+
+- Alvo de toque ≥ 48px em compact e medium (o botão visual continua 40dp; a área de toque cresce).
+- Mudar de classe não perde estado: filtro, aba ativa, seleção e formulário sujo são preservados.
+- A folha de navegação, ao fechar, devolve o foco ao hambúrguer.
+- Zoom de 200% em 1280px deve cair no layout medium sem perda de conteúdo (WCAG 1.4.10 Reflow).
 
 ## Inspiration & Anti-patterns
 

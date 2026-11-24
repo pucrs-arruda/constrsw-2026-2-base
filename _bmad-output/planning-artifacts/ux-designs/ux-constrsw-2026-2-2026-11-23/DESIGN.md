@@ -10,7 +10,7 @@ sources:
   - "https://portal.pucrs.br/wp-content/uploads/2025/02/2025_02_18-portal-sobre_a_pucrs-guias_de_comunicacao-01-dna.pdf"
   - "https://m3.material.io/"
   - "https://www.figma.com/design/FTSWNiR5rQHXqDizXFJYqp"
-updated: 2026-11-23
+updated: 2026-11-24
 figma: https://www.figma.com/design/FTSWNiR5rQHXqDizXFJYqp
 uiSystem: Material Design 3
 colors:
@@ -111,8 +111,11 @@ spacing:
   '6': 32px
   '7': 48px
   gutter: 24px
+  gutter-compact: 16px
   page: 24px
+  page-compact: 16px
   sidebar: 280px
+  touch-target: 48px
 components:
   app-shell:
     background: '{colors.surface}'
@@ -163,6 +166,19 @@ components:
     header-height: 48px
     row-background: '{colors.surface-container-lowest}'
     border: '{colors.outline}'
+  list-item-compact:
+    height: 72px
+    background: '{colors.surface-container-lowest}'
+    headline: '{typography.title}'
+    supporting: '{typography.body}'
+    supporting-foreground: '{colors.on-surface-variant}'
+    divider: '{colors.outline-variant}'
+  icon-button:
+    size: 40px
+    touch-target: '{spacing.touch-target}'
+    icon-size: 24px
+    radius: '{rounded.full}'
+    foreground: '{colors.on-surface-variant}'
   table-row-actions:
     height: 40px
     open: '{colors.primary}'
@@ -273,7 +289,15 @@ Anti-esqueleto: login com painel geométrico + faixa tertiary; zebra + selected 
 
 ## Layout & Spacing
 
-Grade 8dp. Desktop-first. Lista | detalhe ≥1024px. Nav drawer 280px; folha &lt;1024px com scrim. Densidade comfortable.
+Grade 8dp. Densidade comfortable. Responsivo de 360px a 1440px+; comportamento por componente em `EXPERIENCE.md` → Responsive & Platform.
+
+| Classe | Largura | Frame Figma | Padding de página | Navegação | Master-detail |
+|---|---|---|---|---|---|
+| Compact | 360–599 | 360 × 800 | `{spacing.page-compact}` (16) | Folha modal 280px, scrim | Empilhado |
+| Medium | 600–1023 | 768 × 1024 | `{spacing.page}` (24) | Folha modal 280px, scrim | Empilhado |
+| Expanded | ≥ 1024 | 1280 × 800 | `{spacing.page}` (24) | Drawer fixo `{spacing.sidebar}` | 2 colunas a partir de 1280 |
+
+Métricas M3 que **não** mudam entre classes: app bar 64dp, botões 40dp, text field 56dp, ícone 24dp. Em compact e medium, ícones e itens tocáveis ganham área de toque `{spacing.touch-target}` sem crescer visualmente. Tipografia não escala por classe; títulos quebram linha em vez de encolher.
 
 ## Elevation & Depth
 
@@ -290,7 +314,9 @@ Text fields `{rounded.sm}` (4). Cards/panels `{rounded.lg}` (12). Buttons M3 `{r
 - **Button/Filled · Outlined · Text · Destructive** — altura **40dp**; padding H 24 (text 12); shape full; label-large. Fill width só quando o parent exige (login).
 - **TextField/Outlined** — input 56dp; label above 12 SemiBold.
 - **data-table** — row 52; coluna Ações com `TableRowActions` (três text buttons 40dp).
-- **table-row-actions** — Abrir (primary) · Editar (on-surface) · Excluir (error). Nunca filled na linha.
+- **table-row-actions** — Abrir (primary) · Editar (on-surface) · Excluir (error). Nunca filled na linha. Em compact viram `icon-button` "Mais ações" (⋮) com menu Editar · Excluir; Abrir = toque no item.
+- **list-item-compact** — substitui a linha da `data-table` em compact: 72dp, identificador em `{typography.title}`, 1–2 atributos em `{typography.body}` `on-surface-variant`, divisor `outline-variant`, chips (ex.: «Com avaliação» gold) à direita.
+- **icon-button** — 40dp visual, toque 48dp, ícone 24dp; usado no hambúrguer e em "Mais ações".
 - **master-detail-panel** — cards surface; secundária com título + count; Adicionar = Outlined 40dp.
 - **login-panel** — split brand primary + card elev-2; Entrar = Filled fill 40dp.
 - **class-tabs / banners / chips** — anatomia M3; banners com dot + prosa pt-BR.
@@ -308,3 +334,6 @@ Biblioteca Figma: Lib 5 — M3 Buttons; Lib 6 — M3 Metrics; Lib 7 — Paleta P
 | Surface hierarchy + faixa tertiary + zebra | Esqueleto cinza flat / cards consumer / purple glow |
 | Gold só em warning / «Com avaliação» | Gold em nav, app bar ou CTA |
 | Captions de propósito em pt-BR | Path OpenAPI como rótulo principal |
+| Tabela vira lista de 2 linhas em compact | Tabela com scroll horizontal no telefone |
+| CTA primário em linha inteira na toolbar compact | FAB ou CTA escondido em menu |
+| Manter 40dp e crescer só a área de toque | Botões de 48dp visuais só no mobile |

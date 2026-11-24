@@ -44,5 +44,34 @@ Menu hambúrguer (ordem fixa): Funcionários → Professores → Alunos → Sala
 | Lib 6 | M3 Metrics | `21:1125` |
 | Lib 7 | Paleta PUCRS (chips Tertiary/Gold/Primary/Secondary) | `23:620` |
 
+## Responsive frames (página Responsivo, 2026-11-24)
+
+Variantes editáveis (auto-layout + instances). Larguras: compact **360**, medium **768**. Spines vencem.
+
+| # | Frame | node id |
+|---|---|---|
+| R01C | Login — repouso (compact) | `37:615` |
+| R01M | Login — repouso (medium) | `37:637` |
+| R02C | Login — credencial recusada (compact) | `37:659` |
+| R03C | Home — folha do menu (compact) | `37:684` |
+| R03M | Home — folha do menu (medium) | `37:734` |
+| R04C | Salas — lista (compact) | `37:786` |
+| R04M | Salas — lista (medium) | `37:910` |
+| R05C | Salas — detalhe (compact) | `39:792` |
+| R05M | Salas — detalhe (medium) | `39:875` |
+| R06C | Funcionários — detalhe (compact) | `39:960` |
+| R07C | Turma — aba Aulas (compact) | `39:1021` |
+| R07M | Turma — aba Aulas (medium) | `39:1122` |
+| R08C | Turma — aba Reservas (compact) | `39:1208` |
+| R09C | BFF 503 composição (compact) | `39:1321` |
+| R10C | Edição — dialog tela cheia (compact) | `39:1349` |
+| R10M | Edição — dialog 560 (medium) | `39:1380` |
+
+Componentes novos na página Components: `IconButton/MoreActions` `35:652`, `ListItem/Compact` `35:688` (Meta Nenhuma/Tertiary/Gold), `AppBar/Compact` `35:689`.
+
+As demais superfícies (Funcionários/Professores/Alunos/Recursos/Disciplinas/Turmas lista e detalhe) seguem o padrão de R04/R05 a partir das spines e não ganham frame próprio.
+
+Componentes novos para a Lib: `ListItem/Compact` (72dp), `IconButton/MoreActions` (40dp, toque 48dp), `AppBar/Compact` (sem caption nem nome), `Dialog/FullScreen`.
+
 Deep link: `https://www.figma.com/design/FTSWNiR5rQHXqDizXFJYqp?node-id={id-with-hyphen}`  
 Example: https://www.figma.com/design/FTSWNiR5rQHXqDizXFJYqp?node-id=2-2

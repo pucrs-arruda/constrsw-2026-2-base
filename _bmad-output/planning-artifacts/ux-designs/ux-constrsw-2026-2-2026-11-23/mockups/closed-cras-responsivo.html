@@ -1,0 +1,823 @@
+<!doctype html>
+<html lang="pt-BR">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Closed CRAS — referência responsiva</title>
+<!--
+  Referência visual das classes compact / medium / expanded.
+  Spines (DESIGN.md, EXPERIENCE.md) vencem em conflito.
+  Rotas: #/login  #/login?erro=401  #/home?nav=open  #/salas  #/salas?dialog=nova
+         #/salas/b201  #/turmas/se-a?aba=aulas|alunos|reservas  #/alunos?erro=503
+-->
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link href="https://fonts.googleapis.com/css2?family=Source+Code+Pro:wght@500&family=Source+Sans+3:wght@400;600;700&display=swap" rel="stylesheet">
+<link href="https://fonts.googleapis.com/css2?family=Material+Symbols+Outlined:opsz,wght,FILL,GRAD@24,400,0,0&display=block" rel="stylesheet">
+<style>
+  :root {
+    --background: #F5F8FC;
+    --on-surface: #0A2540;
+    --on-surface-variant: #4A5568;
+    --primary: #0066B3;
+    --on-primary: #FFFFFF;
+    --primary-container: #D0E5F4;
+    --on-primary-container: #00386B;
+    --secondary: #0A2540;
+    --tertiary: #6DCDF6;
+    --tertiary-container: #E5F6FD;
+    --on-tertiary-container: #063A55;
+    --gold: #C4A035;
+    --gold-container: #F7EBC7;
+    --on-gold-container: #4A3A00;
+    --outline: #C5D0DE;
+    --outline-variant: #E8EEF5;
+    --surface-lowest: #FFFFFF;
+    --surface-low: #EEF3F8;
+    --surface-container: #E4EBF3;
+    --surface-high: #D8E2EC;
+    --error: #B1101A;
+    --error-container: #FDECEC;
+    --occ-free: #E7F3EC;
+    --occ-taken: #E8EEF5;
+    --occ-exception: #E5F6FD;
+    --page: 24px;
+    --gutter: 24px;
+    --sidebar: 280px;
+    --touch: 48px;
+    --font: 'Source Sans 3', system-ui, sans-serif;
+    --mono: 'Source Code Pro', ui-monospace, monospace;
+  }
+  @media (max-width: 599px) {
+    :root { --page: 16px; --gutter: 16px; }
+  }
+
+  * { box-sizing: border-box; }
+  html, body { margin: 0; height: 100%; }
+  body {
+    font: 400 14px/20px var(--font);
+    color: var(--on-surface);
+    background: var(--background);
+    -webkit-font-smoothing: antialiased;
+  }
+  h1, h2, h3, p { margin: 0; }
+  button { font: inherit; color: inherit; }
+  .ms {
+    font-family: 'Material Symbols Outlined';
+    font-size: 24px; line-height: 1; font-weight: normal;
+    display: inline-block; width: 24px; overflow: hidden;
+    -webkit-font-feature-settings: 'liga'; font-feature-settings: 'liga';
+  }
+  .mono { font-family: var(--mono); font-size: 13px; }
+  .sr-only { position: absolute; width: 1px; height: 1px; overflow: hidden; clip: rect(0 0 0 0); }
+  :focus-visible { outline: 2px solid var(--primary); outline-offset: 2px; }
+  [tabindex="-1"]:focus { outline: none; }
+
+  /* ---------- Buttons (M3, 40dp visual) ---------- */
+  .btn {
+    height: 40px; padding: 0 24px; border-radius: 20px; border: 0;
+    font-weight: 600; display: inline-flex; align-items: center; justify-content: center; gap: 8px;
+    cursor: pointer; white-space: nowrap; position: relative; background: none; text-decoration: none;
+  }
+  .btn .ms { font-size: 18px; width: 18px; }
+  .btn-filled { background: var(--primary); color: var(--on-primary); }
+  .btn-outlined { border: 1px solid var(--outline); color: var(--primary); background: var(--surface-lowest); }
+  .btn-text { padding: 0 12px; color: var(--primary); }
+  .btn-text.neutral { color: var(--on-surface); }
+  .btn-text.danger { color: var(--error); }
+  .icon-btn {
+    width: 40px; height: 40px; border-radius: 20px; border: 0; background: none; cursor: pointer;
+    display: inline-flex; align-items: center; justify-content: center; color: var(--on-surface-variant);
+    position: relative; flex: none;
+  }
+  .icon-btn:hover, .btn-text:hover { background: rgba(0,102,179,.08); }
+  /* Área de toque 48 sem crescer o visual (compact e medium) */
+  @media (max-width: 1023px) {
+    .icon-btn::after, .btn::after { content: ''; position: absolute; inset: -4px; }
+  }
+
+  /* ---------- App bar ---------- */
+  .appbar {
+    height: 64px; background: var(--surface-lowest); display: flex; align-items: center; gap: 12px;
+    padding: 0 8px 0 12px; box-shadow: 0 1px 2px rgba(10,37,64,.12); position: sticky; top: 0; z-index: 20;
+  }
+  .appbar-stripe { height: 4px; background: var(--tertiary); position: sticky; top: 64px; z-index: 20; }
+  .brand { display: flex; align-items: center; gap: 12px; min-width: 0; }
+  .brand-mark {
+    width: 40px; height: 40px; border-radius: 12px; background: var(--primary-container);
+    display: grid; place-items: center; flex: none;
+  }
+  .brand-mark span { width: 20px; height: 20px; border-radius: 6px; background: var(--primary); display: block; transform: rotate(45deg); }
+  .brand-name { font-weight: 700; font-size: 18px; line-height: 22px; color: var(--primary); white-space: nowrap; }
+  .brand-caption { font-size: 12px; line-height: 16px; color: var(--on-surface-variant); }
+  .appbar-spacer { flex: 1; }
+  .user { display: flex; align-items: center; gap: 8px; }
+  .user-name { font-weight: 600; white-space: nowrap; }
+  .user-role { color: var(--on-surface-variant); }
+  .avatar {
+    width: 32px; height: 32px; border-radius: 16px; background: var(--secondary); color: #fff;
+    display: grid; place-items: center; font-weight: 600; font-size: 13px; flex: none;
+  }
+  @media (max-width: 599px) {
+    .brand-caption, .user-name { display: none; }
+    .appbar { gap: 8px; padding-left: 8px; }
+    .brand { gap: 8px; }
+  }
+
+  /* ---------- Shell ---------- */
+  .shell { display: flex; min-height: calc(100vh - 68px); }
+  .drawer {
+    width: var(--sidebar); flex: none; background: var(--surface-lowest);
+    border-right: 1px solid var(--outline-variant); padding: 12px;
+  }
+  .drawer-head { display: none; align-items: center; justify-content: space-between; padding: 4px 4px 8px 16px; }
+  .drawer-label { font-size: 12px; font-weight: 600; color: var(--on-surface-variant); padding: 12px 16px 8px; text-transform: uppercase; letter-spacing: .04em; }
+  .nav-item {
+    height: 56px; display: flex; align-items: center; gap: 12px; padding: 0 16px; border-radius: 28px;
+    color: var(--on-surface); text-decoration: none; font-weight: 600; position: relative;
+  }
+  .nav-item .ms { color: var(--on-surface-variant); }
+  .nav-item:hover { background: var(--surface-low); }
+  .nav-item[aria-current="page"] { background: var(--primary-container); color: var(--on-primary-container); }
+  .nav-item[aria-current="page"] .ms { color: var(--primary); }
+  .nav-item[aria-current="page"]::before {
+    content: ''; position: absolute; left: 0; top: 16px; bottom: 16px; width: 4px; border-radius: 2px; background: var(--primary);
+  }
+  .scrim { display: none; }
+  main { flex: 1; min-width: 0; padding: var(--page); }
+
+  @media (max-width: 1023px) {
+    .drawer {
+      position: fixed; top: 0; bottom: 0; left: 0; z-index: 40; transform: translateX(-100%);
+      transition: transform .2s ease, visibility .2s; border-radius: 0 16px 16px 0; visibility: hidden;
+      overflow-y: auto;
+    }
+    .drawer-head { display: flex; }
+    body.nav-open .drawer {
+      transform: none; visibility: visible; transition: transform .2s ease; box-shadow: 0 8px 24px rgba(10,37,64,.24);
+    }
+    body.nav-open .scrim { display: block; position: fixed; inset: 0; background: rgba(10,37,64,.4); z-index: 30; }
+  }
+  @media (min-width: 1024px) {
+    .drawer { position: sticky; top: 68px; height: calc(100vh - 68px); }
+  }
+
+  /* ---------- Page header + toolbar ---------- */
+  .back { display: inline-flex; align-items: center; gap: 4px; margin: -8px 0 8px -12px; }
+  .page-header { display: flex; align-items: flex-start; gap: 16px; margin-bottom: 16px; }
+  .page-header > div { flex: 1; min-width: 0; }
+  .page-title { font-size: 24px; line-height: 32px; font-weight: 700; color: var(--secondary); }
+  .page-caption { color: var(--on-surface-variant); margin-top: 4px; }
+  .toolbar {
+    display: flex; align-items: center; gap: 12px; background: var(--surface-low); border-radius: 12px;
+    padding: 12px; margin-bottom: 16px;
+  }
+  .search {
+    height: 40px; width: 320px; max-width: 100%; border: 1px solid var(--outline); border-radius: 20px;
+    background: var(--surface-lowest); display: flex; align-items: center; gap: 8px; padding: 0 16px; color: var(--on-surface-variant);
+  }
+  .search input { border: 0; outline: 0; font: inherit; flex: 1; min-width: 0; background: none; color: var(--on-surface); }
+  .toolbar .grow { flex: 1; }
+  .header-cta { display: inline-flex; }
+  .toolbar-cta { display: none; }
+  @media (max-width: 1023px) { .search { flex: 1; width: auto; } .toolbar .grow { display: none; } }
+  @media (max-width: 599px) {
+    .header-cta { display: none; }
+    .toolbar { flex-direction: column; align-items: stretch; }
+    .toolbar-cta { display: inline-flex; }
+    .toolbar .btn { width: 100%; }
+    .toolbar .chip { align-self: flex-start; }
+  }
+
+  /* ---------- Chips ---------- */
+  .chips { display: flex; flex-wrap: wrap; gap: 8px; margin-top: 12px; }
+  .chip {
+    height: 32px; padding: 0 12px; border-radius: 8px; display: inline-flex; align-items: center; gap: 6px;
+    font-weight: 600; font-size: 13px; background: var(--surface-container); color: var(--on-surface); white-space: nowrap;
+  }
+  .chip.tertiary { background: var(--tertiary-container); color: var(--on-tertiary-container); }
+  .chip.primary { background: var(--primary-container); color: var(--on-primary-container); }
+  .chip.gold { background: var(--gold-container); color: var(--on-gold-container); }
+  .chip.small { height: 24px; font-size: 12px; padding: 0 8px; }
+
+  /* ---------- Data table → lista compact ---------- */
+  .card { background: var(--surface-lowest); border: 1px solid var(--outline); border-radius: 12px; overflow: hidden; }
+  table { width: 100%; border-collapse: collapse; }
+  th {
+    height: 48px; text-align: left; padding: 0 16px; background: var(--surface-container);
+    font-size: 12px; font-weight: 600; color: var(--on-surface-variant); text-transform: uppercase; letter-spacing: .03em;
+  }
+  td { height: 52px; padding: 0 16px; border-top: 1px solid var(--outline-variant); }
+  tbody tr:nth-child(even) td { background: #FAFCFE; }
+  tbody tr.selected td { background: var(--primary-container); }
+  tbody tr { cursor: pointer; }
+  tbody tr:hover td { background: var(--surface-low); }
+  td.actions, th.actions { text-align: right; white-space: nowrap; width: 1%; }
+  td.actions .btn { height: 40px; }
+  .num { font-variant-numeric: tabular-nums; }
+  @media (max-width: 1279px) { .col-low { display: none; } }
+  .list { display: none; list-style: none; margin: 0; padding: 0; }
+  .list li {
+    min-height: 72px; display: flex; align-items: center; gap: 12px; padding: 8px 4px 8px 16px;
+    border-top: 1px solid var(--outline-variant); cursor: pointer;
+  }
+  .list li:first-child { border-top: 0; }
+  .list .li-body { flex: 1; min-width: 0; }
+  .list .li-title { font-size: 16px; line-height: 24px; font-weight: 600; }
+  .list .li-sub { color: var(--on-surface-variant); white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
+  @media (max-width: 599px) {
+    .card table:not(.occ) { display: none; }
+    .list { display: block; }
+  }
+
+  /* ---------- Master-detail ---------- */
+  .md { display: grid; gap: var(--gutter); grid-template-columns: 1fr; align-items: start; }
+  @media (min-width: 1280px) { .md { grid-template-columns: minmax(0, 5fr) minmax(0, 6fr); } }
+  .panel { background: var(--surface-lowest); border: 1px solid var(--outline); border-radius: 12px; }
+  .panel-head {
+    display: flex; align-items: center; gap: 8px; padding: 16px; border-bottom: 1px solid var(--outline-variant);
+  }
+  .panel-head h2 { font-size: 16px; line-height: 24px; font-weight: 600; flex: 1; }
+  .panel.secondary { border-left: 4px solid var(--tertiary); }
+  .panel.secondary .panel-head { background: var(--primary-container); border-radius: 8px 12px 0 0; }
+  .fields { display: grid; grid-template-columns: repeat(2, minmax(0, 1fr)); gap: 16px 24px; padding: 16px; }
+  .field-label { font-size: 12px; font-weight: 600; color: var(--on-surface-variant); }
+  .field-value { font-size: 16px; line-height: 24px; }
+  @media (max-width: 599px) { .fields { grid-template-columns: 1fr; } }
+  .panel-actions { display: flex; flex-wrap: wrap; gap: 8px; padding: 0 16px 16px; }
+  .panel-foot { padding: 12px 16px 16px; }
+  @media (max-width: 599px) { .panel-foot .btn { width: 100%; } }
+
+  /* ---------- Tabs ---------- */
+  .tabs {
+    display: flex; border-bottom: 1px solid var(--outline); margin: 16px 0; overflow-x: auto; scrollbar-width: none;
+  }
+  .tabs::-webkit-scrollbar { display: none; }
+  .tab {
+    height: 48px; padding: 0 20px; border: 0; background: none; font-weight: 600; color: var(--on-surface-variant);
+    cursor: pointer; white-space: nowrap; position: relative; text-decoration: none; display: inline-flex; align-items: center;
+  }
+  .tab[aria-selected="true"] { color: var(--primary); }
+  .tab[aria-selected="true"]::after {
+    content: ''; position: absolute; left: 12px; right: 12px; bottom: 0; height: 3px; border-radius: 3px 3px 0 0; background: var(--primary);
+  }
+
+  /* ---------- Occupancy grid ---------- */
+  .grid-wrap { overflow-x: auto; }
+  .occ { border-collapse: separate; border-spacing: 4px; min-width: 640px; }
+  .occ th, .occ td { height: 40px; border: 0; border-radius: 8px; text-align: center; padding: 0 8px; font-size: 13px; }
+  .occ th { background: none; height: 32px; }
+  .occ th.row-head {
+    position: sticky; left: 0; background: var(--surface-lowest); text-align: left; z-index: 1;
+    font-family: var(--mono); color: var(--on-surface); text-transform: none;
+  }
+  .occ td.free { background: var(--occ-free); color: #1B6B4A; }
+  .occ td.taken { background: var(--occ-taken); color: var(--on-surface-variant); }
+  .occ td.exc { background: var(--occ-exception); color: var(--on-tertiary-container); font-weight: 600; box-shadow: inset 0 0 0 1px var(--tertiary); }
+  .legend { display: flex; flex-wrap: wrap; gap: 8px 16px; padding: 12px 16px; color: var(--on-surface-variant); font-size: 12px; }
+  .legend i { display: inline-block; width: 12px; height: 12px; border-radius: 3px; vertical-align: -1px; margin-right: 6px; }
+
+  /* ---------- Banners ---------- */
+  .banner {
+    display: flex; align-items: center; gap: 12px; padding: 12px 16px; border-radius: 8px; border: 1px solid; margin-bottom: 16px;
+  }
+  .banner .dot { width: 8px; height: 8px; border-radius: 4px; flex: none; background: currentColor; }
+  .banner p { flex: 1; color: var(--on-surface); }
+  .banner strong { display: block; }
+  .banner.error { background: var(--error-container); border-color: var(--error); color: var(--error); }
+  .banner.identity { background: var(--primary-container); border-color: var(--primary); color: var(--primary); }
+  @media (max-width: 599px) {
+    .banner { flex-wrap: wrap; align-items: flex-start; }
+    .banner .dot { margin-top: 6px; }
+    .banner p { flex-basis: calc(100% - 20px); }
+    .banner .btn { margin-left: 8px; }
+  }
+
+  .empty {
+    text-align: center; padding: 48px 24px; position: relative; overflow: hidden;
+  }
+  .empty .geo { width: 96px; height: 96px; margin: 0 auto 16px; position: relative; }
+  .empty .geo span { position: absolute; border-radius: 16px; }
+  .empty .geo span:nth-child(1) { inset: 0 24px 24px 0; background: var(--primary-container); }
+  .empty .geo span:nth-child(2) { inset: 32px 0 0 32px; background: var(--tertiary-container); border: 2px solid var(--tertiary); }
+  .empty h2 { font-size: 16px; line-height: 24px; font-weight: 600; }
+  .empty p { color: var(--on-surface-variant); margin: 4px auto 16px; max-width: 360px; }
+
+  /* ---------- Dialog ---------- */
+  .dialog-scrim { position: fixed; inset: 0; background: rgba(10,37,64,.4); z-index: 50; display: grid; place-items: center; padding: 24px; }
+  .dialog {
+    background: var(--surface-lowest); border-radius: 28px; width: 560px; max-width: 100%; max-height: 100%;
+    display: flex; flex-direction: column; box-shadow: 0 8px 24px rgba(10,37,64,.24);
+  }
+  .dialog-head { display: flex; align-items: center; gap: 8px; padding: 24px 24px 16px; }
+  .dialog-head h2 { font-size: 24px; line-height: 32px; font-weight: 700; flex: 1; }
+  .dialog-head .icon-btn { display: none; }
+  .dialog-body { padding: 0 24px; overflow-y: auto; display: grid; grid-template-columns: 1fr 1fr; gap: 16px; }
+  .dialog-body .full { grid-column: 1 / -1; }
+  .dialog-foot { display: flex; justify-content: flex-end; gap: 8px; padding: 24px; }
+  .tf label { display: block; font-size: 12px; font-weight: 600; color: var(--on-surface-variant); margin-bottom: 4px; }
+  .tf input, .tf select {
+    width: 100%; height: 56px; border: 1px solid var(--outline); border-radius: 4px; padding: 0 16px; font: inherit; font-size: 16px;
+    background: var(--surface-lowest); color: var(--on-surface);
+  }
+  @media (max-width: 1023px) { .dialog-body { grid-template-columns: 1fr; } }
+  @media (max-width: 599px) {
+    .dialog-scrim { padding: 0; }
+    .dialog { width: 100%; height: 100%; border-radius: 0; }
+    .dialog-head { padding: 8px 16px 8px 8px; border-bottom: 1px solid var(--outline-variant); }
+    .dialog-head h2 { font-size: 20px; line-height: 28px; }
+    .dialog-head .icon-btn { display: inline-flex; }
+    .dialog-body { padding: 16px; flex: 1; align-content: start; }
+    .dialog-foot { border-top: 1px solid var(--outline-variant); padding: 12px 16px; }
+    .dialog-foot .btn { flex: 1; }
+  }
+
+  /* ---------- Login ---------- */
+  .login { min-height: 100vh; display: grid; grid-template-columns: 1fr 1fr; }
+  .login-brand {
+    background: var(--primary); color: #fff; padding: 48px; position: relative; overflow: hidden;
+    display: flex; flex-direction: column; justify-content: flex-end;
+  }
+  .login-brand .shape { position: absolute; border-radius: 32px; }
+  .login-brand .s1 { width: 280px; height: 280px; right: -60px; top: -60px; background: rgba(255,255,255,.08); transform: rotate(20deg); }
+  .login-brand .s2 { width: 160px; height: 160px; right: 120px; top: 140px; background: var(--tertiary); opacity: .9; transform: rotate(45deg); border-radius: 24px; }
+  .login-brand .s3 { width: 96px; height: 96px; left: 48px; top: 64px; border: 3px solid rgba(255,255,255,.4); transform: rotate(12deg); border-radius: 20px; }
+  .login-brand .name { font-size: 32px; line-height: 40px; font-weight: 700; position: relative; }
+  .login-brand .cap { opacity: .85; margin-top: 4px; position: relative; font-size: 16px; }
+  .login-brand .stripe { height: 4px; width: 64px; background: var(--tertiary); border-radius: 2px; margin-bottom: 16px; position: relative; }
+  .login-main { display: grid; place-items: center; padding: 24px; background: var(--background); }
+  .login-card {
+    width: 100%; max-width: 440px; background: var(--surface-lowest); border-radius: 12px; padding: 32px;
+    box-shadow: 0 4px 16px rgba(10,37,64,.12);
+  }
+  .login-card h1 { font-size: 24px; line-height: 32px; font-weight: 700; color: var(--secondary); }
+  .login-card .sub { color: var(--on-surface-variant); margin: 4px 0 24px; }
+  .login-card .tf { margin-bottom: 16px; }
+  .login-card .btn { width: 100%; margin-top: 8px; }
+  .login-foot { text-align: center; color: var(--on-surface-variant); font-size: 12px; margin-top: 16px; }
+  @media (max-width: 1023px) {
+    .login { grid-template-columns: 1fr; grid-template-rows: auto 1fr; }
+    .login-brand { padding: 32px var(--page); min-height: 180px; }
+    .login-brand .s2 { right: 40px; top: 24px; width: 112px; height: 112px; }
+    .login-brand .s3 { display: none; }
+    .login-main { align-items: start; padding-top: 32px; }
+  }
+  @media (max-width: 599px) {
+    .login-brand { min-height: 128px; padding: 24px 16px; }
+    .login-brand .name { font-size: 24px; line-height: 32px; }
+    .login-brand .cap { font-size: 14px; }
+    .login-brand .s1 { width: 160px; height: 160px; right: -40px; top: -60px; }
+    .login-brand .s2 { width: 64px; height: 64px; right: 32px; top: 24px; }
+    .login-main { padding: 0; background: var(--surface-lowest); }
+    .login-card { max-width: none; border-radius: 0; box-shadow: none; padding: 24px 16px; }
+  }
+
+  .menu {
+    position: absolute; right: 8px; margin-top: 4px; background: var(--surface-lowest); border-radius: 8px;
+    box-shadow: 0 4px 16px rgba(10,37,64,.2); padding: 8px 0; z-index: 10; min-width: 160px;
+  }
+  .menu button { display: flex; gap: 12px; align-items: center; width: 100%; height: 48px; padding: 0 16px; border: 0; background: none; cursor: pointer; }
+  .menu button.danger { color: var(--error); }
+  .rel { position: relative; }
+</style>
+</head>
+<body>
+<div id="app"></div>
+<script>
+const NAV = [
+  ['funcionarios', 'Funcionários', 'badge'],
+  ['professores', 'Professores', 'school'],
+  ['alunos', 'Alunos', 'person'],
+  ['salas', 'Salas de Aula', 'meeting_room'],
+  ['recursos', 'Recursos', 'inventory_2'],
+  ['disciplinas', 'Disciplinas', 'menu_book'],
+  ['turmas', 'Turmas', 'groups'],
+];
+
+const SALAS = [
+  { id: 'b201', codigo: 'B201', predio: 'Prédio 32', cap: 40, andar: '2º', turmas: 3, acess: 3 },
+  { id: 'a105', codigo: 'A105', predio: 'Prédio 30', cap: 30, andar: '1º', turmas: 2, acess: 1 },
+  { id: 'lab', codigo: 'Lab Soft', predio: 'Prédio 32', cap: 24, andar: '3º', turmas: 1, acess: 2 },
+  { id: 'c310', codigo: 'C310', predio: 'Prédio 15', cap: 60, andar: '3º', turmas: 4, acess: 0 },
+  { id: 'aud', codigo: 'Auditório 15', predio: 'Prédio 15', cap: 120, andar: 'Térreo', turmas: 2, acess: 4 },
+];
+
+const AULAS = [
+  { data: '05/03', faixa: 'JK', topico: 'Apresentação da disciplina', sala: 'B201', aval: false },
+  { data: '12/03', faixa: 'JK', topico: 'Requisitos', sala: 'B201', aval: false },
+  { data: '19/03', faixa: 'JK', topico: 'Arquitetura', sala: 'Lab Soft', exc: true, aval: false },
+  { data: '26/03', faixa: 'JK', topico: 'Prova 1', sala: 'Auditório 15', exc: true, aval: true },
+  { data: '02/04', faixa: 'JK', topico: 'Microsserviços', sala: 'Remoto', aval: false },
+];
+
+const MATRICULAS = [
+  { mat: '23104512', nome: 'Ana Beatriz Rocha', curso: 'Eng. de Software', situacao: 'Ativa' },
+  { mat: '23109877', nome: 'Bruno Carvalho', curso: 'Ciência da Computação', situacao: 'Ativa' },
+  { mat: '22201134', nome: 'Carla Menezes', curso: 'Eng. de Software', situacao: 'Trancada' },
+  { mat: '24100231', nome: 'Diego Martins', curso: 'Sistemas de Informação', situacao: 'Ativa' },
+];
+
+const esc = s => String(s).replace(/[&<>"]/g, c => ({ '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;' }[c]));
+const icon = n => `<span class="ms" aria-hidden="true">${n}</span>`;
+
+function parseRoute() {
+  const raw = location.hash.replace(/^#/, '') || '/salas';
+  const [path, qs] = raw.split('?');
+  return { parts: path.split('/').filter(Boolean), q: new URLSearchParams(qs || '') };
+}
+
+function appBar() {
+  return `
+  <header class="appbar">
+    <button class="icon-btn" id="menu-btn" aria-label="Abrir menu" aria-controls="drawer">${icon('menu')}</button>
+    <div class="brand">
+      <div class="brand-mark" aria-hidden="true"><span></span></div>
+      <div><div class="brand-name">Closed CRAS</div><div class="brand-caption">PUCRS · ConstrSW</div></div>
+    </div>
+    <div class="appbar-spacer"></div>
+    <div class="user">
+      <span class="user-name">Marina Silva <span class="user-role">· Professora</span></span>
+      <span class="avatar" aria-label="Marina Silva">MS</span>
+    </div>
+    <button class="btn btn-text">Sair</button>
+  </header>
+  <div class="appbar-stripe" aria-hidden="true"></div>`;
+}
+
+function drawer(active) {
+  return `
+  <div class="scrim" id="scrim"></div>
+  <nav class="drawer" id="drawer" aria-label="Navegação principal">
+    <div class="drawer-head">
+      <div class="brand-name">Closed CRAS</div>
+      <button class="icon-btn" id="close-nav" aria-label="Fechar menu">${icon('close')}</button>
+    </div>
+    <div class="drawer-label">Cadastros</div>
+    ${NAV.map(([id, label, ic]) => `
+      <a class="nav-item" href="#/${id}" ${id === active ? 'aria-current="page"' : ''}>${icon(ic)}${label}</a>`).join('')}
+  </nav>`;
+}
+
+function shell(active, content) {
+  return appBar() + `<div class="shell">${drawer(active)}<main id="main">${content}</main></div>`;
+}
+
+function salasPage(q) {
+  const rows = SALAS.map((s, i) => `
+    <tr class="${i === 0 ? 'selected' : ''}" data-href="#/salas/${s.id}">
+      <td><strong>${esc(s.codigo)}</strong></td>
+      <td>${esc(s.predio)}</td>
+      <td class="num">${s.cap}</td>
+      <td class="col-low">${esc(s.andar)}</td>
+      <td class="col-low num">${s.turmas}</td>
+      <td class="actions">
+        <a class="btn btn-text" href="#/salas/${s.id}">Abrir</a>
+        <button class="btn btn-text neutral">Editar</button>
+        <button class="btn btn-text danger">Excluir</button>
+      </td>
+    </tr>`).join('');
+  const items = SALAS.map(s => `
+    <li data-href="#/salas/${s.id}">
+      <div class="li-body">
+        <div class="li-title">${esc(s.codigo)}</div>
+        <div class="li-sub">${esc(s.predio)} · ${s.cap} lugares · ${esc(s.andar)} andar</div>
+      </div>
+      ${s.acess ? `<span class="chip tertiary small">${s.acess} acess.</span>` : ''}
+      <button class="icon-btn" aria-label="Mais ações para ${esc(s.codigo)}">${icon('more_vert')}</button>
+    </li>`).join('');
+  return `
+    <div class="page-header">
+      <div>
+        <h1 class="page-title" tabindex="-1">Salas de Aula</h1>
+        <p class="page-caption">Espaços físicos, capacidade e recursos de acessibilidade.</p>
+      </div>
+      <button class="btn btn-filled header-cta" data-dialog="nova">${icon('add')}Nova sala</button>
+    </div>
+    <div class="toolbar">
+      <label class="search">${icon('search')}<input placeholder="Buscar por código ou prédio" aria-label="Buscar salas"></label>
+      <div class="grow"></div>
+      <span class="chip primary">${SALAS.length} salas</span>
+      <button class="btn btn-filled toolbar-cta" data-dialog="nova">${icon('add')}Nova sala</button>
+    </div>
+    <div class="card">
+      <table>
+        <thead><tr>
+          <th>Código</th><th>Prédio</th><th>Capacidade</th><th class="col-low">Andar</th>
+          <th class="col-low">Turmas no semestre</th><th class="actions">Ações</th>
+        </tr></thead>
+        <tbody>${rows}</tbody>
+      </table>
+      <ul class="list">${items}</ul>
+    </div>
+    ${q.get('dialog') === 'nova' ? dialogNovaSala() : ''}`;
+}
+
+function dialogNovaSala() {
+  return `
+  <div class="dialog-scrim">
+    <div class="dialog" role="dialog" aria-modal="true" aria-labelledby="dlg-title">
+      <div class="dialog-head">
+        <a class="icon-btn" href="#/salas" aria-label="Fechar">${icon('close')}</a>
+        <h2 id="dlg-title">Nova sala</h2>
+      </div>
+      <div class="dialog-body">
+        <div class="tf"><label for="f1">Código</label><input id="f1" value="D402"></div>
+        <div class="tf"><label for="f2">Prédio</label><select id="f2"><option>Prédio 32</option></select></div>
+        <div class="tf"><label for="f3">Capacidade</label><input id="f3" value="45" inputmode="numeric"></div>
+        <div class="tf"><label for="f4">Andar</label><input id="f4" value="4º"></div>
+        <div class="tf full"><label for="f5">Observações</label><input id="f5" placeholder="Opcional"></div>
+      </div>
+      <div class="dialog-foot">
+        <a class="btn btn-text" href="#/salas">Cancelar</a>
+        <button class="btn btn-filled">Salvar</button>
+      </div>
+    </div>
+  </div>`;
+}
+
+function salaDetalhe() {
+  const feats = [
+    ['Rampa de acesso', 'Entrada principal, sem degrau'],
+    ['Piso tátil', 'Corredor até a porta'],
+    ['Mesa adaptada', '2 unidades, fileira da frente'],
+  ];
+  return `
+    <a class="btn btn-text back" href="#/salas">${icon('arrow_back')}Voltar para Salas de Aula</a>
+    <div class="page-header">
+      <div>
+        <h1 class="page-title" tabindex="-1">Sala B201</h1>
+        <p class="page-caption">Prédio 32 · 2º andar</p>
+        <div class="chips"><span class="chip primary">40 lugares</span><span class="chip tertiary">3 turmas em 2026/2</span></div>
+      </div>
+    </div>
+    <div class="md">
+      <section class="panel">
+        <div class="panel-head"><h2>Dados da sala</h2></div>
+        <div class="fields">
+          <div><div class="field-label">Código</div><div class="field-value">B201</div></div>
+          <div><div class="field-label">Prédio</div><div class="field-value">Prédio 32</div></div>
+          <div><div class="field-label">Andar</div><div class="field-value">2º</div></div>
+          <div><div class="field-label">Capacidade</div><div class="field-value">40 lugares</div></div>
+        </div>
+        <div class="panel-actions">
+          <button class="btn btn-outlined">Editar sala</button>
+          <button class="btn btn-text danger">Excluir sala</button>
+        </div>
+      </section>
+      <section class="panel secondary">
+        <div class="panel-head"><h2>Recursos de acessibilidade</h2><span class="chip tertiary small">${feats.length}</span></div>
+        <ul class="list" style="display:block">
+          ${feats.map(([n, d]) => `
+            <li>
+              <div class="li-body"><div class="li-title">${n}</div><div class="li-sub">${d}</div></div>
+              <button class="icon-btn" aria-label="Mais ações para ${n}">${icon('more_vert')}</button>
+            </li>`).join('')}
+        </ul>
+        <div class="panel-foot"><button class="btn btn-outlined">${icon('add')}Adicionar recurso</button></div>
+      </section>
+    </div>`;
+}
+
+function turmaPage(q) {
+  const aba = q.get('aba') || 'aulas';
+  const tab = (id, label) =>
+    `<a class="tab" role="tab" href="#/turmas/se-a?aba=${id}" aria-selected="${aba === id}">${label}</a>`;
+  let body = '';
+  if (aba === 'aulas') {
+    body = `
+    <div class="toolbar">
+      <label class="search">${icon('search')}<input placeholder="Buscar tópico" aria-label="Buscar aulas"></label>
+      <div class="grow"></div>
+      <button class="btn btn-filled toolbar-cta" style="display:inline-flex">${icon('event_repeat')}Gerar aulas</button>
+    </div>
+    <div class="card">
+      <table>
+        <thead><tr><th>Data</th><th>Faixa</th><th>Tópicos</th><th class="col-low">Sala efetiva</th><th>Avaliação</th><th class="actions">Ações</th></tr></thead>
+        <tbody>${AULAS.map(a => `
+          <tr>
+            <td class="num">${a.data}</td><td class="mono">${a.faixa}</td><td>${esc(a.topico)}</td>
+            <td class="col-low"><span class="chip small ${a.exc ? 'tertiary' : ''}">${esc(a.sala)}</span></td>
+            <td>${a.aval ? '<span class="chip gold small">Com avaliação</span>' : '—'}</td>
+            <td class="actions"><button class="btn btn-text">Abrir</button><button class="btn btn-text neutral">Editar</button><button class="btn btn-text danger">Excluir</button></td>
+          </tr>`).join('')}
+        </tbody>
+      </table>
+      <ul class="list">${AULAS.map(a => `
+        <li>
+          <div class="li-body">
+            <div class="li-title">${a.data} · <span class="mono">Faixa ${a.faixa}</span></div>
+            <div class="li-sub">${esc(a.topico)} · ${a.sala === 'Remoto' ? 'Remoto' : 'Sala efetiva ' + esc(a.sala)}</div>
+          </div>
+          ${a.aval ? '<span class="chip gold small">Com avaliação</span>' : ''}
+          <button class="icon-btn" aria-label="Mais ações">${icon('more_vert')}</button>
+        </li>`).join('')}
+      </ul>
+    </div>`;
+  } else if (aba === 'alunos') {
+    body = `
+    <div class="toolbar">
+      <label class="search">${icon('search')}<input placeholder="Buscar aluno ou matrícula" aria-label="Buscar alunos"></label>
+      <div class="grow"></div>
+      <span class="chip primary">${MATRICULAS.length} de 40 vagas</span>
+    </div>
+    <div class="card">
+      <table>
+        <thead><tr><th>Matrícula</th><th>Nome</th><th class="col-low">Curso</th><th>Situação</th><th class="actions">Ações</th></tr></thead>
+        <tbody>${MATRICULAS.map(m => `
+          <tr><td class="mono">${m.mat}</td><td>${esc(m.nome)}</td><td class="col-low">${esc(m.curso)}</td>
+          <td><span class="chip small ${m.situacao === 'Ativa' ? 'primary' : ''}">${m.situacao}</span></td>
+          <td class="actions"><button class="btn btn-text">Abrir</button><button class="btn btn-text danger">Desvincular</button></td></tr>`).join('')}
+        </tbody>
+      </table>
+      <ul class="list">${MATRICULAS.map(m => `
+        <li><div class="li-body"><div class="li-title">${esc(m.nome)}</div><div class="li-sub"><span class="mono">${m.mat}</span> · ${esc(m.curso)}</div></div>
+        <span class="chip small ${m.situacao === 'Ativa' ? 'primary' : ''}">${m.situacao}</span>
+        <button class="icon-btn" aria-label="Mais ações">${icon('more_vert')}</button></li>`).join('')}
+      </ul>
+    </div>`;
+  } else {
+    const dias = ['Seg', 'Ter', 'Qua', 'Qui', 'Sex', 'Sáb'];
+    const faixas = ['AB', 'CD', 'EF', 'GH', 'JK', 'LM', 'NP'];
+    const cell = (f, d) => {
+      if (f === 'JK' && d === 'Qua') return '<td class="exc">SE-A · Lab Soft</td>';
+      if (f === 'JK' && d === 'Seg') return '<td class="taken">SE-A</td>';
+      if ((f + d).length % 3 === 0) return '<td class="taken">Ocupada</td>';
+      return '<td class="free">Livre</td>';
+    };
+    body = `
+    <div class="toolbar">
+      <span class="chip tertiary">${icon('calendar_month')}Semana 10/03 – 15/03</span>
+      <div class="grow"></div>
+      <button class="btn btn-filled toolbar-cta" style="display:inline-flex">${icon('add')}Nova reserva</button>
+    </div>
+    <div class="card">
+      <div class="grid-wrap">
+        <table class="occ" aria-label="Ocupação da sala B201 por faixa">
+          <thead><tr><th class="row-head">Faixa</th>${dias.map(d => `<th>${d}</th>`).join('')}</tr></thead>
+          <tbody>${faixas.map(f => `<tr><th class="row-head">${f}</th>${dias.map(d => cell(f, d)).join('')}</tr>`).join('')}</tbody>
+        </table>
+      </div>
+      <div class="legend">
+        <span><i style="background:var(--occ-free)"></i>Livre</span>
+        <span><i style="background:var(--occ-taken)"></i>Ocupada</span>
+        <span><i style="background:var(--occ-exception);box-shadow:inset 0 0 0 1px var(--tertiary)"></i>Exceção de sala</span>
+      </div>
+    </div>`;
+  }
+  return `
+    <a class="btn btn-text back" href="#/turmas">${icon('arrow_back')}Voltar para Turmas</a>
+    <div class="page-header">
+      <div>
+        <h1 class="page-title" tabindex="-1">Turma SE-A — Engenharia de Software</h1>
+        <p class="page-caption">Hub da turma: alunos matriculados, aulas e reservas do período.</p>
+        <div class="chips">
+          <span class="chip primary">Período 2026/2</span>
+          <span class="chip">Sala padrão B201</span>
+          <span class="chip">40 vagas</span>
+          <span class="chip tertiary">Prof. Marina Silva</span>
+        </div>
+      </div>
+    </div>
+    <div class="tabs" role="tablist">${tab('alunos', 'Alunos matriculados')}${tab('aulas', 'Aulas')}${tab('reservas', 'Reservas')}</div>
+    ${body}`;
+}
+
+function alunosErro() {
+  return `
+    <div class="page-header">
+      <div>
+        <h1 class="page-title" tabindex="-1">Alunos</h1>
+        <p class="page-caption">Cadastro de alunos com as turmas do semestre.</p>
+      </div>
+      <button class="btn btn-filled header-cta">${icon('add')}Novo aluno</button>
+    </div>
+    <div class="banner identity" role="alert">
+      <span class="dot"></span>
+      <p><strong>Serviço de composição indisponível.</strong>A lista de alunos com turmas não pôde ser montada agora. Nenhum dado parcial é exibido.</p>
+      <button class="btn btn-text">Tentar novamente</button>
+    </div>
+    <div class="card empty">
+      <div class="geo" aria-hidden="true"><span></span><span></span></div>
+      <h2>Lista indisponível no momento</h2>
+      <p>Assim que o serviço voltar, os alunos e suas turmas aparecem aqui.</p>
+    </div>`;
+}
+
+function placeholder(label) {
+  return `
+    <div class="page-header"><div><h1 class="page-title" tabindex="-1">${label}</h1>
+    <p class="page-caption">Segue o padrão lista + detalhe de Salas de Aula.</p></div></div>
+    <div class="card empty"><div class="geo" aria-hidden="true"><span></span><span></span></div>
+    <h2>Use Salas de Aula ou Turmas como referência</h2><p>Esta referência responsiva cobre as telas-chave; as demais seguem as spines.</p></div>`;
+}
+
+function homePage() {
+  return `
+    <div class="page-header"><div><h1 class="page-title" tabindex="-1">Olá, Marina</h1>
+    <p class="page-caption">Escolha um cadastro no menu para começar.</p></div></div>
+    <div class="card empty"><div class="geo" aria-hidden="true"><span></span><span></span></div>
+    <h2>Closed CRAS</h2><p>Funcionários, professores, alunos, salas, recursos, disciplinas e turmas em um só lugar.</p>
+    <button class="btn btn-filled" id="home-menu">${icon('menu')}Abrir menu</button></div>`;
+}
+
+function loginPage(q) {
+  const erro = q.get('erro');
+  const banner = erro === '401'
+    ? `<div class="banner error" role="alert"><span class="dot"></span><p>Não foi possível entrar. Verifique usuário e senha.</p></div>`
+    : erro === '503'
+    ? `<div class="banner identity" role="alert"><span class="dot"></span><p>Identidade indisponível. Tente novamente em instantes.</p></div>`
+    : '';
+  return `
+  <div class="login">
+    <div class="login-brand">
+      <span class="shape s1"></span><span class="shape s2"></span><span class="shape s3"></span>
+      <div class="stripe"></div>
+      <div class="name">Closed CRAS</div>
+      <div class="cap">PUCRS · Construção de Software</div>
+    </div>
+    <div class="login-main">
+      <form class="login-card" onsubmit="location.hash='#/home';return false">
+        <h1 tabindex="-1">Entrar</h1>
+        <p class="sub">Use sua conta institucional.</p>
+        ${banner}
+        <div class="tf"><label for="u">Usuário</label><input id="u" autocomplete="username" value="marina.silva"></div>
+        <div class="tf"><label for="p">Senha</label><input id="p" type="password" autocomplete="current-password" value="••••••••"></div>
+        <button class="btn btn-filled" type="submit">Entrar</button>
+        <p class="login-foot">Problemas para acessar? Procure a secretaria do curso.</p>
+      </form>
+    </div>
+  </div>`;
+}
+
+function render() {
+  const { parts, q } = parseRoute();
+  const app = document.getElementById('app');
+  const [section, id] = parts;
+  document.body.classList.remove('nav-open');
+  if (section === 'login') {
+    app.innerHTML = loginPage(q);
+  } else {
+    let content;
+    if (section === 'salas' && id) content = salaDetalhe();
+    else if (section === 'salas') content = salasPage(q);
+    else if (section === 'turmas') content = turmaPage(q);
+    else if (section === 'alunos' && q.get('erro') === '503') content = alunosErro();
+    else if (section === 'home') content = homePage();
+    else content = placeholder((NAV.find(n => n[0] === section) || [, 'Closed CRAS'])[1]);
+    app.innerHTML = shell(section, content);
+    if (q.get('nav') === 'open') openNav();
+  }
+  wire();
+  const h1 = app.querySelector('h1');
+  if (h1) h1.focus({ preventScroll: true });
+}
+
+function openNav() {
+  document.body.classList.add('nav-open');
+  const first = document.querySelector('#drawer .nav-item');
+  if (first && matchMedia('(max-width: 1023px)').matches) first.focus();
+}
+function closeNav() {
+  if (!document.body.classList.contains('nav-open')) return;
+  document.body.classList.remove('nav-open');
+  document.getElementById('menu-btn')?.focus();
+}
+
+function wire() {
+  document.getElementById('menu-btn')?.addEventListener('click', () => {
+    if (matchMedia('(max-width: 1023px)').matches) openNav();
+  });
+  document.getElementById('home-menu')?.addEventListener('click', openNav);
+  document.getElementById('close-nav')?.addEventListener('click', closeNav);
+  document.getElementById('scrim')?.addEventListener('click', closeNav);
+  document.querySelectorAll('[data-href]').forEach(el => el.addEventListener('click', e => {
+    if (e.target.closest('button, a')) return;
+    location.hash = el.dataset.href;
+  }));
+  document.querySelectorAll('[data-dialog]').forEach(el => el.addEventListener('click', () => {
+    location.hash = '#/salas?dialog=' + el.dataset.dialog;
+  }));
+  document.querySelectorAll('.list .icon-btn[aria-label^="Mais ações"]').forEach(btn => btn.addEventListener('click', e => {
+    e.stopPropagation();
+    document.querySelectorAll('.menu').forEach(m => m.remove());
+    const li = btn.closest('li');
+    li.classList.add('rel');
+    li.insertAdjacentHTML('beforeend',
+      `<div class="menu" role="menu"><button role="menuitem">${icon('edit')}Editar</button><button role="menuitem" class="danger">${icon('delete')}Excluir</button></div>`);
+    li.querySelector('.menu button').focus();
+  }));
+}
+
+document.addEventListener('keydown', e => {
+  if (e.key !== 'Escape') return;
+  if (document.querySelector('.menu')) { document.querySelectorAll('.menu').forEach(m => m.remove()); return; }
+  if (document.querySelector('.dialog-scrim')) { location.hash = '#/salas'; return; }
+  closeNav();
+});
+document.addEventListener('click', e => {
+  if (!e.target.closest('.menu, .icon-btn')) document.querySelectorAll('.menu').forEach(m => m.remove());
+});
+window.addEventListener('hashchange', render);
+render();
+</script>
+</body>
+</html>
