@@ -39,29 +39,35 @@ Língua da UI: **português do Brasil**. Paths/tags do OpenAPI permanecem em ing
 | UX-HOME | Home / app-shell | Login ok | Shell + menu; landing autenticada | `GET /api/v1/identidade/me` |
 | UX-EMPLOYEES | Funcionários | Menu | Lista + detalhe + dependents | `/api/v1/employees` |
 | UX-PROFESSORS | Professores | Menu | Lista + detalhe + academic-degrees | `/api/v1/professors` |
-| UX-STUDENTS | Alunos | Menu | Lista (GET com classes do semestre) + detalhe + enrollments | `/api/v1/students` |
+| UX-STUDENTS | Alunos | Menu | **Consulta seed/import** (GET + detalhe + enrollments); **sem alta/edição/exclusão** (CAP-3) | `/api/v1/students` |
 | UX-ROOMS | Salas de Aula | Menu | Lista + detalhe + accessibility-features | `/api/v1/rooms` |
 | UX-RESOURCES | Recursos | Menu | Lista (GET com reservations futuras) + detalhe + occurrences | `/api/v1/resources` |
 | UX-COURSES | Disciplinas | Menu | Lista (GET com classes do semestre) + detalhe + bibliographic-references + syllabus-items | `/api/v1/courses` |
 | UX-CLASSES | Turmas | Menu | Lista + detalhe com 3 abas | `/api/v1/classes` (+ reviews/import) |
 | UX-CLASS-ENROLLMENTS | Turma · Alunos matriculados | Detalhe turma | Roster / vínculos da turma | composição classes + students |
 | UX-CLASS-LESSONS | Turma · Aulas | Detalhe turma | Lessons filtradas pela turma; generate/topics | `/api/v1/lessons` |
-| UX-CLASS-RESERVATIONS | Turma · Reservas | Detalhe turma | Reservations ligadas à turma; details/ocupação | `/api/v1/reservations` |
+| UX-CLASS-RESERVATIONS | Turma · Reservas | Detalhe turma | Reservations ligadas à turma | `/api/v1/reservations` |
+| UX-OCCUPANCY | Ocupação | Menu | Grade agendada data+faixa; Livre/Tomado/Exceção; **não nominativo** (FR-29) | BFF módulo `ocupacao` |
+| UX-PROFESSOR-VIEW | Plano + roster | Menu | Leitura composta plano publicado + roster da Class (FR-31) | BFF composição |
+| UX-STUDENT-READ | Minhas aulas | Menu | Sala efetiva / tópico / avaliação + plano leitura (FR-19); nunca local mentiroso | BFF lessons (+ plano) |
 
 **Menu hambúrguer (ordem fixa; item ativo marcado; &lt;1024px = folha; Esc fecha):**
 1. Funcionários → `/api/v1/employees`
 2. Professores → `/api/v1/professors`
-3. Alunos → `/api/v1/students`
+3. Alunos → `/api/v1/students` (somente consulta)
 4. Salas de Aula → `/api/v1/rooms`
 5. Recursos → `/api/v1/resources`
 6. Disciplinas → `/api/v1/courses`
 7. Turmas → `/api/v1/classes`
+8. Ocupação → BFF `ocupacao` (FR-29)
+9. Plano + roster → BFF composição (FR-31)
+10. Minhas aulas → BFF lessons (FR-19)
 
-Lessons e Reservations **não** são itens de topo; entram pelo detalhe da Turma.
+Lessons e Reservations de **escrita** **não** são itens de topo; entram pelo detalhe da Turma. Ocupação / Plano+roster / Minhas aulas são superfícies de **leitura SPEC** no menu.
 
-Cada contexto de topo: **lista + detalhe/master-detail** cobrindo POST/PUT/PATCH/DELETE e secundárias 1–N do OpenAPI referenciado pela BFF.
+Cada contexto de domínio (exceto Alunos): **lista + detalhe/master-detail** cobrindo POST/PUT/PATCH/DELETE e secundárias 1–N do OpenAPI. **Alunos:** leitura apenas.
 
-→ Composição: [Figma — Closed CRAS frontend PUCRS](https://www.figma.com/design/FTSWNiR5rQHXqDizXFJYqp) (22 frames expanded). Referência responsiva compact/medium: [mockups/closed-cras-responsivo.html](mockups/closed-cras-responsivo.html). Plano de frames responsivos no Figma: [.working/figma-frame-map.md](.working/figma-frame-map.md). Spines vencem em conflito com mockups.
+→ Composição: [Figma — Closed CRAS frontend PUCRS](https://www.figma.com/design/FTSWNiR5rQHXqDizXFJYqp) (25 frames expanded). Referência responsiva compact/medium: [mockups/closed-cras-responsivo.html](mockups/closed-cras-responsivo.html). Plano de frames responsivos no Figma: [.working/figma-frame-map.md](.working/figma-frame-map.md). Spines vencem em conflito com mockups.
 
 ## Voice and Tone
 
@@ -81,7 +87,7 @@ Microcopy em pt-BR. Postura de marca (Cuidador / Criador / Cientista; jeito PUCR
 | Component | Onde | Regras |
 |---|---|---|
 | app-shell | Autenticadas | Hambúrguer esq.; Closed CRAS; usuário + **Sair** (`POST /logout` → UX-LOGIN). |
-| hamburger-nav | Autenticadas | Ordem fixa: Funcionários, Professores, Alunos, Salas de Aula, Recursos, Disciplinas, Turmas. Ativo marcado. Folha &lt;1024px; Esc fecha. |
+| hamburger-nav | Autenticadas | Ordem fixa: Funcionários, Professores, Alunos, Salas de Aula, Recursos, Disciplinas, Turmas, Ocupação, Plano + roster, Minhas aulas. Ativo marcado. Folha &lt;1024px; Esc fecha. |
 | page-header | Cada contexto | Título pt-BR da superfície + caption de propósito. |
 | login-panel | UX-LOGIN | Submit → `POST /login`. `201` → Bearer + Home. `401` banner sem enumerar conta. `503`/rede → “Identidade indisponível.” |
 | data-table | Listas | Linha abre detalhe. Sem infinite scroll. |

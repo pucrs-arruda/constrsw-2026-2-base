@@ -116,4 +116,3 @@ Em laboratório (compose), as quatro personas completam UJ-1–UJ-4 na UI sem es
 - **OQ-3.** LessonTopic: `syllabusItemId` obrigatório, enunciado extra obrigatório, ou pelo menos um dos dois? Default de demo acima até fechar.
 - **OQ-ARCH-1.** Qual contexto usa Mongo vs PostgreSQL no cold-start? Default: escolha por grupo no README do submódulo; compose sempre sobe ambos. Dono: bootstrap da malha / grupos.
 - **OQ-ARCH-2.** Enriquecimento de display name Employee na vista Professor fica no BFF (default) ou no OpenAPI de `professors`? Default de demo: BFF.
-- **OQ-UX-1.** CAP-3 / non-goal proíbem tela de alta de Student; EXPERIENCE 2026-11-23 e Figma expõem UX-STUDENTS (lista+detalhe). Qual vence na implementação? Dono: produto/UX.
