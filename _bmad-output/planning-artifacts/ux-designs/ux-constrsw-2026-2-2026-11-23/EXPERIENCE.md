@@ -161,6 +161,8 @@ Padrões de experiência ↔ Angular Material (CAP-12). Tokens de `DESIGN.md` pr
 
 ## Responsive & Platform
 
+**Gate de implementação (CAP-12):** o frontend **não** está pronto para merge de superfície alguma sem passar compact **e** medium **e** expanded. Isso inclui scaffold/shell, Login, Home, todos os contextos de menu, **UX-CLASS-LESSONS** (Aulas dentro de Turma) e **UX-LESSON-RESERVATIONS** (Reservas dentro de Aula).
+
 Uma única SPA Angular, **responsiva de 360px a 1440px+**. Todas as superfícies do inventário (UX-LOGIN…UX-STUDENT-READ) funcionam em todas as classes; nenhuma tarefa é "só desktop". Classes de janela seguem a nomenclatura M3 (compact / medium / expanded), mantendo o pivô de navegação em **1024px** já decidido neste spine (o M3 padrão usa 840px).
 
 | Classe | Largura | Frames de referência | Navegação | Conteúdo |
@@ -193,6 +195,14 @@ Uma única SPA Angular, **responsiva de 360px a 1440px+**. Todas as superfícies
 - A folha de navegação, ao fechar, devolve o foco ao hambúrguer.
 - Zoom de 200% em 1280px deve cair no layout medium sem perda de conteúdo (WCAG 1.4.10 Reflow).
 
+**Definition of Done (cada story de UI):**
+
+1. Given viewport 360px / 768px / 1280px, When a superfície é usada, Then layout e ações seguem a tabela *Comportamento por componente* (sem overflow horizontal exceto faixa-picker/ocupação).
+2. Given compact, When a data-table é exibida, Then vira lista de 2 linhas + “Mais ações”; sem scroll horizontal da tabela.
+3. Given compact ou medium, When o menu abre, Then é folha modal com scrim; Esc/scrim/item fecham; foco volta ao hambúrguer.
+4. Given formulário de criação/edição em compact, When abre, Then é dialog em tela cheia com ações no rodapé.
+5. Evidência: screenshot ou teste de viewport nas três classes (referência: `mockups/closed-cras-responsivo.html` + Figma Responsivo; spines vencem).
+
 ## Inspiration & Anti-patterns
 
 - **Levantar:** DNA PUCRS (acolher + clareza + rigor); inventário BFF completo; Turma como hub de Aulas/Reservas; SPA Angular + Material com tokens DESIGN.md (CAP-12).
@@ -200,6 +210,7 @@ Uma única SPA Angular, **responsiva de 360px a 1440px+**. Todas as superfícies
 - **Rejeitado:** menu com Lessons e Reservations no topo; chrome em inglês.
 - **Rejeitado:** Keycloak / keycloak-js no browser; nove OpenAPIs no browser; seletor de microsserviço na UI.
 - **Rejeitado:** GET /health como tela; customização Angular Material via seletores MDC frágeis; stack SPA fora de Angular 22 + Material.
+- **Rejeitado:** UI só expanded/desktop; tabelas com scroll horizontal (exceto ocupação/faixas); FAB; story sem ACs compact/medium/expanded.
 
 ## Key Flows
 
