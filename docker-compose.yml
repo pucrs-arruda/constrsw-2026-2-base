@@ -600,6 +600,8 @@ services:
       - JWT_ISSUER=${BFF_JWT_ISSUER}
       - JWT_AUDIENCE=${BFF_JWT_AUDIENCE}
       - JWT_CLIENT_AUDIENCE=${BFF_JWT_CLIENT_AUDIENCE}
+      - BFF_ORIGIN=${BFF_ORIGIN}
+      - SESSION_COOKIE_NAME=${BFF_SESSION_COOKIE_NAME}
       - CLASSES_BASE_URL=${BFF_CLASSES_BASE_URL}
       - COURSES_BASE_URL=${BFF_COURSES_BASE_URL}
       - EMPLOYEES_BASE_URL=${BFF_EMPLOYEES_BASE_URL}
@@ -608,6 +610,7 @@ services:
       - RESERVATIONS_BASE_URL=${BFF_RESERVATIONS_BASE_URL}
       - RESOURCES_BASE_URL=${BFF_RESOURCES_BASE_URL}
       - ROOMS_BASE_URL=${BFF_ROOMS_BASE_URL}
+      - STUDENTS_BASE_URL=${BFF_STUDENTS_BASE_URL}
       - BFF_HTTP_TIMEOUT_MS=${BFF_HTTP_TIMEOUT_MS}
       - BFF_HTTP_RETRIES=${BFF_HTTP_RETRIES}
       - BFF_CIRCUIT_BREAKER_TIMEOUT_MS=${BFF_CIRCUIT_BREAKER_TIMEOUT_MS}
@@ -629,12 +632,22 @@ services:
     depends_on:
       oauth:
         condition: service_healthy
+      classes:
+        condition: service_healthy
+      courses:
+        condition: service_healthy
       employees:
         condition: service_healthy
       professors:
         condition: service_healthy
+      reservations:
+        condition: service_healthy
       resources:
         condition: service_started
+      rooms:
+        condition: service_healthy
+      students:
+        condition: service_healthy
       otel-collector:
         condition: service_started
     healthcheck:
