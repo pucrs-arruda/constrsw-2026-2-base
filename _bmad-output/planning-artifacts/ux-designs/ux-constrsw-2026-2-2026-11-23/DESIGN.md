@@ -1,6 +1,6 @@
 ---
 name: Closed CRAS
-description: Identidade visual Closed CRAS — DNA PUCRS + Material Design 3 estrito — ConstrSW 2026/2.
+description: Identidade visual Closed CRAS — DNA PUCRS + Material Design 3 / Angular Material (SPEC CAP-12) — ConstrSW 2026/2.
 status: final
 sources:
   - "docs/open-api/bff.yaml"
@@ -242,30 +242,32 @@ components:
 
 # Closed CRAS — Design Spine
 
-Identidade visual da UI web única Closed CRAS. **UI system: Material Design 3** ([m3.material.io](https://m3.material.io/)), com tokens de marca PUCRS. Comportamento em `EXPERIENCE.md`.
+Identidade visual da SPA Angular Closed CRAS (SPEC CAP-12 / Constraints). **UI system: Material Design 3** via **Angular Material** ([m3.material.io](https://m3.material.io/)), com tokens de marca PUCRS. **Tokens deste arquivo prevalecem** sobre o tema Material default. Comportamento e mapa `mat-*` em `EXPERIENCE.md`.
 
 ## Brand & Style
 
-Closed CRAS herda a personalidade PUCRS (Cuidador / Criador / Cientista) e a anatomia **estrita** do Material Design 3. O azul institucional `#0066B3` mapeia para M3 **primary**. Accent `#6DCDF6` permanece semântico (sala efetiva), não secondary de marketing.
+Closed CRAS herda a personalidade PUCRS (Cuidador / Criador / Cientista) e a anatomia **estrita** do Material Design 3. O azul institucional `#0066B3` mapeia para M3 / Angular Material **primary**. Accent `#6DCDF6` permanece semântico (sala efetiva), não secondary de marketing.
 
 Nome na chrome: **Closed CRAS** + caption `PUCRS · ConstrSW`. UI em português do Brasil.
 
-## UI system: Material Design 3
+## UI system: Material Design 3 + Angular Material
 
-Métricas travadas (desktop admin):
+Implementação alvo: **Angular 22.x + Angular Material (M3) + CDK + SCSS + design tokens**. Mockups Figma espelham componentes nativos (`mat-toolbar`, `mat-sidenav`, `mat-table`, `mat-form-field`, `mat-chip`, `mat-dialog`, etc.) via tema/tokens — sem hacks de seletor.
 
-| Elemento | Valor |
-|---|---|
-| App bar | 64dp |
-| Nav item | 56dp |
-| Ícone nav | 24dp |
-| Button filled / outlined / text | **40dp** (único) |
-| Text field outlined | 56dp |
-| Table header / row | 48dp / 52dp |
-| Content padding | 24dp |
-| Toolbar → tabela gap | 16dp |
+Métricas travadas (desktop admin), compatíveis com densidade Angular Material:
 
-Proibido: botão one-off, altura ≠ 40dp em filled/outlined/text, FAB, nav com ícone 16px, app bar 56 misturado com 64.
+| Elemento | Valor | Angular Material |
+|---|---|---|
+| App bar | 64dp | `mat-toolbar` |
+| Nav item | 56dp | `mat-nav-list` / `mat-list-item` |
+| Ícone nav | 24dp | `mat-icon` |
+| Button filled / outlined / text | **40dp** (único) | `mat-button` / `mat-flat-button` / `mat-stroked-button` |
+| Search field outlined | 56dp | `mat-form-field` appearance outline |
+| Table header / row | 48dp / 52dp | `mat-table` |
+| Content padding | 24dp | layout |
+| Toolbar → tabela gap | 16dp | layout |
+
+Proibido: botão one-off, altura ≠ 40dp em filled/outlined/text, FAB, nav com ícone 16px, app bar 56 misturado com 64, CSS que perfure view encapsulation do Material (`.mdc-*`).
 
 ## Colors
 
