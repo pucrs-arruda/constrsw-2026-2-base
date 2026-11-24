@@ -9,7 +9,7 @@ Profundidade que não cabe no corpo do PRD: mecanismo, grade, pares/atributos v1
 - **Keycloak** é o provedor de identidade da disciplina. Cada um dos nove grupos implementa um **REST API gateway** para o Keycloak no próprio serviço (papéis/escopos do domínio). A UI não usa adaptador JS direto ao Keycloak — fala com o gateway. `[ASSUMPTION]` alinhada a FR-27.
 - Módulo `oauth` compartilhado: Keycloak + contratos de papéis/escopos. Sem grupo dono exclusivo; todos plugam.
 - Direção de protocolo: OIDC (pesquisa RNP/BAITA). Detalhe OIDC vs SAML/CAFe de produção é da arquitetura, não deste PRD. Federação CAFe/BAITA está fora da v1.
-- BFF: composição/rotas para a UI não explodir join nem contaminar contextos. Cada grupo incorpora o **próprio** domínio no BFF; telas de domínio alheio — ver **Telas v1**.
+- BFF: composição/rotas para a UI não explodir join nem contaminar contextos. Cada grupo incorpora o **próprio** domínio no BFF e a UX do **próprio** serviço no frontend — ver **Telas v1**.
 - Sem hardware, sem sensores no caminho crítico, sem app nativo.
 
 ## Grade de faixas (cânone)
@@ -68,28 +68,30 @@ Sala efetiva = linha SALA da Reservation da aula, senão `Class.roomId`; aula re
 
 Carga de Student: `[ASSUMPTION]` artefato JSON (não CSV) no seed/import; idempotente por `id`. Recusa roster cujo `studentId` não exista (FR-7).
 
-## Telas v1 (frontend cruzado)
+## Telas v1 (UX do próprio serviço)
 
-Cada grupo pluga o **próprio** domínio no BFF e as telas de **outro** domínio no frontend. Efeito: quem implementa a UI de Class é cliente do contrato de `classes` (e, via BFF, de Course/Professor/Room) — não pode inventar `pessoa` nem ignorar sala padrão vs sala efetiva. Emparelhamento grupo↔telas = OQ-1.
+Cada grupo pluga o **próprio** domínio no BFF e a UX do **próprio** serviço no frontend. Shell (UX-LOGIN, UX-HOME) e UX-EMPLOYEES ficam com o **Prof. Arruda**. Quem implementa a UI de Class continua cliente do contrato via BFF (Course/Professor/Room) — não inventa `pessoa` nem ignora sala padrão vs sala efetiva. **OQ-1 fechada (2026-11-24).**
 
-| Superfície | Persona | O que mostra / faz |
-|---|---|---|
-| Employee + Dependent | Funcionário | Cadastrar/editar identidade e dependentes |
-| Professor + AcademicDegree | Funcionário | Criar papel docente sobre Employee existente |
-| Room + AccessibilityFeature; Resource + InventoryItem | Funcionário | Cadastro-mestre de espaço e recurso |
-| Ocupação por data + faixa | Funcionário | Sala efetiva / Resource agendados (FR-29) |
-| Course + plano de ensino | Coordenador | Publicar SyllabusItem datado |
-| Abrir Class + esqueleto | Coordenador | Sala padrão, vagas, gerar Lesson |
-| Ajustar Lesson + Reservation | Professor | Tópicos, flags, Resource feliz, Room exceção, cancelar |
-| Plano + roster da Class | Professor | Leitura via BFF (FR-31) |
-| Onde / o quê / avaliação + plano | Student | Sala efetiva; nunca local mentiroso (FR-19) |
+| Superfície EXPERIENCE | Dono | Persona | O que mostra / faz |
+|---|---|---|---|
+| UX-LOGIN, UX-HOME | Prof. Arruda | — | Shell compartilhado |
+| UX-EMPLOYEES | Prof. Arruda | Funcionário | Employee + Dependent |
+| UX-PROFESSORS (+ UX-PROFESSOR-VIEW) | Grupo 07 | Funcionário / Professor | Professor + AcademicDegree; plano + roster (FR-31) |
+| UX-STUDENTS (+ UX-STUDENT-READ) | Grupo 04 | Funcionário / Student | Student + AcademicAffiliation; minhas aulas (FR-19) |
+| UX-ROOMS | Grupo 08 | Funcionário | Room + AccessibilityFeature |
+| UX-RESOURCES | Grupo 06 | Funcionário | Resource + InventoryItem |
+| UX-OCCUPANCY | Grupo 03 | Funcionário | Ocupação por data + faixa (FR-29) |
+| UX-COURSES | Grupo 05 | Coordenador | Course + plano de ensino |
+| UX-CLASSES (+ UX-CLASS-ENROLLMENTS) | Grupo 01 | Coordenador | Abrir Class + roster |
+| UX-CLASS-LESSONS | Grupo 02 | Professor | CRUD Lesson / tópicos |
+| UX-LESSON-RESERVATIONS | Grupo 03 | Professor | CRUD Reservation da aula |
 
 ## Alternativas rejeitadas
 
 | Alternativa | Por que não |
 |---|---|
 | Nove CRUDs com `pessoa` em cada um | Combate registros vs alocação e a LGPD |
-| Cada grupo implementa as *próprias* telas | Rejeitado: frontend cruzado (decisão 2026-08-19) |
+| Frontend cruzado (telas de domínio alheio) | Revertido 2026-11-24: cada grupo implementa a UX do próprio serviço; shell + employees = Prof. Arruda |
 | Um grupo dono do Keycloak; os outros só “usam login” | Rejeitado: todos implementam gateway REST |
 | Adaptador JS da UI direto no Keycloak | Rejeitado: gateway REST |
 | Ser o SIGAA/TOTVS da disciplina | Não é o recorte |
@@ -112,7 +114,7 @@ Nomes: **Closed CRAS** (travado 2026-08-24). Nome de trabalho no brief: Malha. D
 - Sem rubrica oficial de nota da disciplina no repositório.
 - Capacidade vs código de bombeiros é municipal; v1 = atributos obrigatórios, não motor de alvará.
 - Sem SIS ao vivo.
-- Emparelhamento frontend cruzado (OQ-1) ainda sem dono.
+- ~~Emparelhamento frontend (OQ-1)~~ fechada 2026-11-24 (UX do próprio serviço).
 - Feriados não excluídos da geração de Lesson na v1.
 - Ocupação da v1 é **agendada**; ocupação real/no-show estacionada.
 

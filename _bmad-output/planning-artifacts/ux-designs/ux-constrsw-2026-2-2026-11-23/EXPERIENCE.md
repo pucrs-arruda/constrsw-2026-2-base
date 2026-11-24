@@ -24,7 +24,7 @@ Companion UX do **SPEC-closed-cras** (CAP-10/11/12 + Constraints). UI web única
 
 Form-factor: **uma** SPA web responsiva (compact, medium e expanded; ver Responsive & Platform), desenhada a partir do desktop. Tokens e anatomia: `DESIGN.md`.
 
-**Stack de UI (SPEC Constraints / CAP-12 / AD-8):** Angular **22.x** + **Angular Material** (Material Design 3) + Angular CDK + SCSS + design tokens. Frontend cruzado: cada grupo implementa superfícies de domínio alheio (OQ-1). Sem React/Vite/TanStack Query como stack da SPA. Sem `keycloak-js`.
+**Stack de UI (SPEC Constraints / CAP-12 / AD-8):** Angular **22.x** + **Angular Material** (Material Design 3) + Angular CDK + SCSS + design tokens. Partição de implementação (OQ-1 fechada): Prof. Arruda → UX-LOGIN, UX-HOME, UX-EMPLOYEES; cada grupo → UX do **próprio** serviço. Sem React/Vite/TanStack Query como stack da SPA. Sem `keycloak-js`.
 
 **UI system de implementação:** chrome/dados/forms mapeiam a Angular Material — `mat-toolbar`, `mat-sidenav`, `mat-nav-list`, `mat-table`, `mat-form-field`, `mat-chip` / `mat-chip-set`, `mat-tab-group`, `mat-dialog`, `mat-snack-bar`, `mat-progress-bar` (skeleton). Customização só via tema oficial / tokens SCSS de `DESIGN.md` — sem seletores frágeis em classes internas MDC.
 
@@ -41,23 +41,23 @@ V1 claro apenas. Sem modo offline. Código Angular vive em `frontend/` (compose 
 
 Língua da UI: **português do Brasil**. Paths/tags do OpenAPI permanecem em inglês no contrato; rótulos principais em português; ids técnicos (`faixaId`, etc.) só como apoio. Traceability CAP ↔ UX: `capability-map.md`.
 
-| ID | Superfície | CAP | Chega de | Propósito | BFF / OAuth |
-|---|---|---|---|---|---|
-| UX-LOGIN | Login | CAP-11, CAP-12 | URL fria / sessão expirada | Autenticar | `POST {oauth}/login` (+ refresh/logout) |
-| UX-HOME | Home / app-shell | CAP-12 | Login ok | Shell + menu; landing autenticada | `GET /api/v1/identidade/me` |
-| UX-EMPLOYEES | Funcionários | CAP-1 | Menu | Lista + detalhe + dependents | `/api/v1/employees` |
-| UX-PROFESSORS | Professores | CAP-2 | Menu | Lista + detalhe + academic-degrees + **Turmas do semestre em curso** (`classes` do GET BFF; `professorId`) | `/api/v1/professors` |
-| UX-STUDENTS | Alunos | CAP-3 | Menu | Cadastro (Novo aluno) + lista + detalhe + AcademicAffiliation 1–N + **Turmas matriculadas no semestre em curso** (`classes` do GET BFF; `studentIds`) | `/api/v1/students` |
-| UX-ROOMS | Salas de Aula | CAP-7, CAP-10 | Menu | Lista + detalhe + accessibility-features + **Turmas do semestre** (`classes` T3; `roomId`) | `/api/v1/rooms` |
-| UX-RESOURCES | Recursos | CAP-7, CAP-10 | Menu | Lista + detalhe + occurrences + **reservations futuras** (T3) | `/api/v1/resources` |
-| UX-COURSES | Disciplinas | CAP-4, CAP-10 | Menu | Lista + detalhe + bibliographic-references + syllabus-items + **Turmas do semestre** (`classes` T3; `courseId`) | `/api/v1/courses` |
-| UX-CLASSES | Turmas | CAP-5 | Menu | Lista + detalhe com **2 abas** (Alunos \| Aulas) | `/api/v1/classes` (+ reviews/import) |
-| UX-CLASS-ENROLLMENTS | Turma · Alunos matriculados | CAP-5, CAP-3 | Detalhe turma | Associa Students **já cadastrados** à Class (`studentIds`); sem criar Student aqui | `/api/v1/classes` + lista students |
-| UX-CLASS-LESSONS | Turma · Aulas | CAP-6 | Detalhe turma | Lista + **CRUD** de Lesson da turma (gerar/criar/editar/excluir + tópicos) | `/api/v1/lessons` |
-| UX-LESSON-RESERVATIONS | Aula · Reservas | CAP-8 | Detalhe da aula (a partir da lista de Aulas) | Lista + **CRUD** de Reservation daquela Lesson | `/api/v1/reservations` |
-| UX-OCCUPANCY | Ocupação | CAP-10 (FR-29) | Menu | Recursos ocupados em **data + faixa**; **não nominativo** de Student | `GET /api/v1/reservations/ocupacao?data=&faixaId=` |
-| UX-PROFESSOR-VIEW | Plano + roster | CAP-10 (FR-31) | Menu | Leitura composta plano + roster — **cliente** junta courses + classes (sem endpoint BFF dedicado) | proxy `/courses`, `/classes` |
-| UX-STUDENT-READ | Minhas aulas | CAP-6 (FR-19) | Menu | Sala efetiva / tópico / avaliação + plano — **cliente** junta lessons + `classes` do student (sem endpoint BFF dedicado) | proxy `/lessons`, `/students`, `/courses` |
+| ID | Superfície | CAP | Dono | Chega de | Propósito | BFF / OAuth |
+|---|---|---|---|---|---|---|
+| UX-LOGIN | Login | CAP-11, CAP-12 | Prof. Arruda | URL fria / sessão expirada | Autenticar | `POST {oauth}/login` (+ refresh/logout) |
+| UX-HOME | Home / app-shell | CAP-12 | Prof. Arruda | Login ok | Shell + menu; landing autenticada | `GET /api/v1/identidade/me` |
+| UX-EMPLOYEES | Funcionários | CAP-1 | Prof. Arruda | Menu | Lista + detalhe + dependents | `/api/v1/employees` |
+| UX-PROFESSORS | Professores | CAP-2 | Grupo 07 | Menu | Lista + detalhe + academic-degrees + **Turmas do semestre em curso** (`classes` do GET BFF; `professorId`) | `/api/v1/professors` |
+| UX-STUDENTS | Alunos | CAP-3 | Grupo 04 | Menu | Cadastro (Novo aluno) + lista + detalhe + AcademicAffiliation 1–N + **Turmas matriculadas no semestre em curso** (`classes` do GET BFF; `studentIds`) | `/api/v1/students` |
+| UX-ROOMS | Salas de Aula | CAP-7, CAP-10 | Grupo 08 | Menu | Lista + detalhe + accessibility-features + **Turmas do semestre** (`classes` T3; `roomId`) | `/api/v1/rooms` |
+| UX-RESOURCES | Recursos | CAP-7, CAP-10 | Grupo 06 | Menu | Lista + detalhe + occurrences + **reservations futuras** (T3) | `/api/v1/resources` |
+| UX-COURSES | Disciplinas | CAP-4, CAP-10 | Grupo 05 | Menu | Lista + detalhe + bibliographic-references + syllabus-items + **Turmas do semestre** (`classes` T3; `courseId`) | `/api/v1/courses` |
+| UX-CLASSES | Turmas | CAP-5 | Grupo 01 | Menu | Lista + detalhe com **2 abas** (Alunos \| Aulas) | `/api/v1/classes` (+ reviews/import) |
+| UX-CLASS-ENROLLMENTS | Turma · Alunos matriculados | CAP-5, CAP-3 | Grupo 01 | Detalhe turma | Associa Students **já cadastrados** à Class (`studentIds`); sem criar Student aqui | `/api/v1/classes` + lista students |
+| UX-CLASS-LESSONS | Turma · Aulas | CAP-6 | Grupo 02 | Detalhe turma | Lista + **CRUD** de Lesson da turma (gerar/criar/editar/excluir + tópicos) | `/api/v1/lessons` |
+| UX-LESSON-RESERVATIONS | Aula · Reservas | CAP-8 | Grupo 03 | Detalhe da aula (a partir da lista de Aulas) | Lista + **CRUD** de Reservation daquela Lesson | `/api/v1/reservations` |
+| UX-OCCUPANCY | Ocupação | CAP-10 (FR-29) | Grupo 03 | Menu | Recursos ocupados em **data + faixa**; **não nominativo** de Student | `GET /api/v1/reservations/ocupacao?data=&faixaId=` |
+| UX-PROFESSOR-VIEW | Plano + roster | CAP-10 (FR-31) | Grupo 07 | Menu | Leitura composta plano + roster — **cliente** junta courses + classes (sem endpoint BFF dedicado) | proxy `/courses`, `/classes` |
+| UX-STUDENT-READ | Minhas aulas | CAP-6 (FR-19) | Grupo 04 | Menu | Sala efetiva / tópico / avaliação + plano — **cliente** junta lessons + `classes` do student (sem endpoint BFF dedicado) | proxy `/lessons`, `/students`, `/courses` |
 
 **Menu hambúrguer (ordem fixa; item ativo marcado; &lt;1024px = folha; Esc fecha):**
 1. Funcionários → `/api/v1/employees`
@@ -237,5 +237,5 @@ Uma única SPA Angular, **responsiva de 360px a 1440px+**. Todas as superfícies
 | ID | Status | Efeito |
 |---|---|---|
 | Persistência do Bearer | `[ASSUMPTION]` alinhada ao SPEC | Memória de sessão da SPA (não `localStorage` longo); cookie httpOnly do oauth pode coexistir — implementação no `frontend/` Angular. |
-| OQ-1 partição nove grupos | Aberto no SPEC/PRD | Emparelhamento grupo↔superfície EXPERIENCE; não bloqueia scaffold Angular nem inventário BFF. |
+| OQ-1 partição implementação | **Fechada (2026-11-24)** | Prof. Arruda → UX-LOGIN, UX-HOME, UX-EMPLOYEES; cada grupo → UX do próprio serviço (mapa em `capability-map.md`). |
 | OQ-PRD-1 | Aberto no SPEC | PRD ainda seed-only para Student; SPEC+este spine+Figma = cadastro UI + associação na turma. |

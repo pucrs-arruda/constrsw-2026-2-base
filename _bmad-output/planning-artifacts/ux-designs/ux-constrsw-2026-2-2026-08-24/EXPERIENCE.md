@@ -61,14 +61,15 @@ IA fecha: UJ-1→S1–S4; UJ-2→S5–S6; UJ-3→S7–S8; UJ-4→S9; autenticaç
 
 ## Partição de telas (nove grupos)
 
-Cada grupo implementa telas de **um domínio que não é o seu** (FR-28). Emparelhamento grupo↔telas = **OQ-1** (aberto; dono: turma/docente). Este spine não o fecha.
+> **Superseded 2026-11-24.** Autoridade vigente: EXPERIENCE 2026-11-23 + `capability-map.md`. OQ-1 fechada: Prof. Arruda → UX-LOGIN, UX-HOME, UX-EMPLOYEES; cada grupo → UX do **próprio** serviço (reverte frontend cruzado).
 
-Regra de partição (intenção da disciplina, não OQ-1):
+~~Cada grupo implementa telas de **um domínio que não é o seu** (FR-28). Emparelhamento grupo↔telas = **OQ-1** (aberto).~~
 
-- **UX-S1–UX-S9:** no máximo **um** grupo por superfície. Nenhum par de grupos compartilha a mesma UX-S*.
-- Um grupo pode receber **uma ou mais** superfícies exclusivas, se a turma repartir assim; o inventário acima cabe 1:1 (nove grupos, nove exclusivas).
-- **UX-LOGIN** e **UX-HOME** são as únicas superfícies em que mais de um grupo pode trabalhar.
-- UX-S3 é **uma** superfície (duas zonas: Room e Resource), não duas telas a ratear. UX-S7 é **uma** superfície (duas zonas: Lesson e Reservation). Roster **não** mora em UX-S7 (NFR-LGPD-3).
+Regra legada (inventário UX-S* desta rodada — só rastreio):
+
+- **UX-S1–UX-S9:** no máximo **um** grupo por superfície.
+- UX-S3 era uma superfície (Room+Resource); no inventário 2026-11-23 virou UX-ROOMS + UX-RESOURCES.
+- UX-S7 era Lesson+Reservation; no inventário vigente = UX-CLASS-LESSONS + UX-LESSON-RESERVATIONS.
 
 ## Língua na UI
 
@@ -201,7 +202,7 @@ Herdado das alternativas rejeitadas do addendum e do recorte do PRD — não de 
 
 - **Levantar:** língua única API/BFF/UI; sala padrão na abertura da turma; *onde* = sala efetiva; faixa canônica; Recurso no feliz, Room na exceção; roster longe da Reservation.
 - **Rejeitado — nove CRUDs com `pessoa`:** a chrome não tem “Pessoas”. Employee e Student não compartilham ficha.
-- **Rejeitado — cada grupo implementa as próprias telas:** partição cruzada; OQ-1.
+- ~~**Rejeitado — cada grupo implementa as próprias telas**~~ **Revertido 2026-11-24:** UX do próprio serviço; ver EXPERIENCE 2026-11-23.
 - **Rejeitado — adaptador JS da UI no IdP:** Login só em `POST /login` de `backend/oauth`. Sem Keycloak no browser e sem `keycloak-js`.
 - **Rejeitado — app nativo / totem / quatro produtos.**
 - **Rejeitado — tela de alta de Student.**
@@ -288,7 +289,7 @@ Nomes UJ verbatim do PRD. Climax em negrito. Falha = recusa de invariante, não 
 
 | ID | Status | Efeito na UI |
 |---|---|---|
-| OQ-1 | Aberto | Emparelhamento grupo↔UX-S1…S9. Bloqueia o quadro de donos, não o inventário nem as jornadas. |
+| OQ-1 | **Fechada (2026-11-24)** | UX do próprio serviço; shell + employees = Prof. Arruda. Mapa vigente no companion 2026-11-23 / `capability-map.md`. |
 | OQ-2 | Default de demo no PRD | Employee desativado: Class somente leitura; nova Reservation recusada; sem fluxo de substituir Professor. |
 | OQ-3 | Aberto | LessonTopic em S7: `[ASSUMPTION]` pelo menos um de `syllabusItemId` ou enunciado extra até o PRD fechar. |
 

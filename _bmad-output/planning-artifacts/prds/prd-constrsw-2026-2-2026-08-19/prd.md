@@ -46,7 +46,7 @@ Não compete com SIGAA, TOTVS ou Ellucian; senta *ao lado* do sistema de registr
 - **ad hoc** — Reservation sem `lessonId`.
 - **BFF** — módulo compartilhado de composição/rotas. Sem grupo dono exclusivo.
 - **OAuth** — módulo compartilhado de identidade. Sem grupo dono exclusivo.
-- **frontend** — UI web única, acesso por papel; fora do par 1–N. Cada grupo implementa as telas de um domínio que **não** é o seu.
+- **frontend** — UI web única, acesso por papel; fora do par 1–N. Prof. Arruda implementa UX-LOGIN, UX-HOME e UX-EMPLOYEES; cada grupo implementa a UX do **próprio** serviço.
 - **gateway REST de identidade** — superfície REST que cada grupo entrega para o provedor de identidade (Keycloak — ver addendum). A UI não fala com o IdP por adaptador próprio.
 
 ## 3. Target User
@@ -93,7 +93,7 @@ Folha/SIGRH, secretaria de matrícula no Closed CRAS, protocolo e-MEC, operador 
 ## 4. Constraints (ConstrSW)
 
 - Nove grupos; cada domínio = **uma classe principal + uma secundária 1–N**. IDs de outros contextos são atributos, não terceira classe.
-- Sucesso de grupo = par 1–N **e** rotas do domínio no BFF **e** gateway REST de identidade **e** telas de **outro** domínio no frontend.
+- Sucesso de grupo = par 1–N **e** rotas do domínio no BFF **e** gateway REST de identidade **e** UX do **próprio** serviço no frontend.
 - Não é sucesso: um grupo com modelo mais rico que os outros; backend órfão do BFF; grupo dono exclusivo de BFF ou OAuth.
 - Provedor de identidade da disciplina: Keycloak, via gateway REST em todos os grupos (mecanismo no addendum).
 - Grade canônica A–E, F–N, P; aulas seg–sáb; sem E1, E2, O. Tabela horária no addendum.
@@ -418,7 +418,7 @@ Professor cria ReservationLine `kind=SALA` somente para trocar a sala padrão da
 
 ### 5.10 Superfície compartilhada: contratos, BFF, UI, identidade
 
-Par 1–N **e** domínio no BFF e no OAuth; frontend cruzado; gateway REST de identidade em todos os grupos. Realiza UJ-1–UJ-4.
+Par 1–N **e** domínio no BFF e no OAuth; UX do próprio serviço no frontend; gateway REST de identidade em todos os grupos. Realiza UJ-1–UJ-4.
 
 #### FR-25: Contract-first por contexto
 
@@ -456,18 +456,18 @@ Cada um dos nove grupos implementa um gateway REST de identidade para o provedor
 - Não há grupo dono exclusivo do OAuth.
 - Provedor da disciplina e o desenho do gateway estão no addendum (Keycloak).
 
-#### FR-28: Frontend cruzado
+#### FR-28: UX do próprio serviço
 
-Cada grupo implementa, no `frontend` compartilhado, as telas de **um domínio que não é o seu** contexto de backend.
+Cada grupo implementa, no `frontend` compartilhado, a UX do **próprio** contexto de backend. Prof. Arruda implementa UX-LOGIN, UX-HOME e UX-EMPLOYEES.
 
 **Consequences (testable):**
 - Uma UI web com acesso por papel, não quatro produtos.
-- O grupo de `employees` não implementa as telas de Employee/Dependent; implementa as de outro domínio. O mesmo vale, cruzado, para os outros oito. `[ASSUMPTION]` o emparelhamento grupo↔telas é decisão de turma (OQ-1).
+- Grupo `professors` → UX-PROFESSORS (+ UX-PROFESSOR-VIEW); `students` → UX-STUDENTS (+ UX-STUDENT-READ); `classes` → UX-CLASSES (+ UX-CLASS-ENROLLMENTS); `lessons` → UX-CLASS-LESSONS; `reservations` → UX-LESSON-RESERVATIONS (+ UX-OCCUPANCY); `courses` → UX-COURSES; `resources` → UX-RESOURCES; `rooms` → UX-ROOMS; `employees`/shell → Prof. Arruda. Mapa canônico: `capability-map.md` (OQ-1 fechada 2026-11-24).
 - Contratos e telas usam a língua travada.
 - Operador não escolhe microsserviço; escolhe a jornada do papel.
 
 **Feature-specific NFRs:**
-- O frontend cruzado **força** consumo do contrato alheio: quem desenha a tela de Class consome `courseId` / `employeeId` via Professor, não inventa `pessoa`.
+- A UI do próprio domínio **ainda** consome IDs alheios via BFF (ex.: tela de Class usa `courseId` / `professorId` / `roomId`) — não inventa `pessoa` nem bypassa o contrato OpenAPI.
 
 ## 6. Cross-Cutting NFRs
 
@@ -518,7 +518,7 @@ Critérios demonstráveis em laboratório — não há rubrica numérica da disc
 - **SM-1:** Zero Professor sem Employee **ativo**; tentativa com `employeeId` inexistente ou Employee inativo é recusada. Valida FR-4, FR-5, FR-1a.
 - **SM-2:** UJ-2 sem criar Reservation da sala padrão; Student em UJ-4 vê sala efetiva (nunca a padrão quando a efetiva for outra). Valida FR-15, FR-18, FR-19, FR-24.
 - **SM-3:** As quatro personas completam UJ-1–UJ-4 na UI sem escolher microsserviço. Valida FR-26, FR-28, FR-29.
-- **SM-4:** Cada grupo demonstra par 1–N + rota BFF + gateway REST de identidade + telas de domínio alheio. Valida FR-2/6/8/12/14/21/22 (pares), FR-26, FR-27, FR-28.
+- **SM-4:** Cada grupo demonstra par 1–N + rota BFF + gateway REST de identidade + UX do próprio serviço. Valida FR-2/6/8/12/14/21/22 (pares), FR-26, FR-27, FR-28.
 
 **Secondary**
 - **SM-5:** Conflito recusado na operação certa: gerar/abrir Class (sala efetiva ou Professor, FR-13) e confirmar/alterar Reservation (sala efetiva, Resource ou Professor, FR-23/FR-24/FR-30). Valida FR-18, FR-23, FR-24.
@@ -531,7 +531,7 @@ Critérios demonstráveis em laboratório — não há rubrica numérica da disc
 
 ## 10. Open Questions
 
-1. **OQ-1.** Emparelhamento: qual grupo implementa as telas de qual domínio (restrição: não o próprio). Dono: turma/docente. Bloqueia UX detalhada, não o restante deste PRD. Inventário v1 das telas está no addendum.
+1. ~~**OQ-1.** Emparelhamento grupo↔telas~~ **Fechada (2026-11-24):** Prof. Arruda → UX-LOGIN, UX-HOME, UX-EMPLOYEES; cada grupo → UX do próprio serviço. Inventário e mapa: addendum + `capability-map.md`.
 2. ~~**OQ-2.** Employee desativado…~~ **Fechada** → FR-1a: Class somente leitura; nova Reservation recusada; sem exigência de substituição na v1.
 3. **OQ-3.** LessonTopic: `syllabusItemId` obrigatório, enunciado extra obrigatório, ou pelo menos um dos dois?
 
@@ -551,7 +551,7 @@ Critérios demonstráveis em laboratório — não há rubrica numérica da disc
 | Feriados não excluídos na geração de Lesson | FR-16 |
 | Sem fila de “aprovar reserva”; confirmação = invariante de conflito | FR-24 |
 | UI autentica via gateway REST de identidade, não adaptador direto ao IdP | FR-27 |
-| Emparelhamento frontend cruzado em OQ-1; a regra “não o próprio domínio” já vale | FR-28 |
+| OQ-1 fechada: UX do próprio serviço; shell + employees = Prof. Arruda | FR-28 |
 | Sucesso = demo de laboratório das quatro personas | SM |
 | Uma UI web com acesso por papel, não quatro produtos | FR-28 / brief |
 | `estado` v1 de InventoryItem: disponível \| indisponível | FR-22 |

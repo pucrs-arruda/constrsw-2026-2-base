@@ -65,7 +65,7 @@ sources:
 - FR-19 e FR-31: composição **no cliente** sobre proxies; sem endpoint BFF dedicado de plano/roster/aulas do aluno.
 - Roster só via `classes`/`studentIds`; módulo `reservations` do BFF não inclui `Class.studentIds`.
 - Sobe só pelo Compose da raiz. Runtime e pins: `stack.md`. Sem Kubernetes/Helm na v1.
-- Sem dono exclusivo de BFF/OAuth. Equidade: sucesso de grupo = par 1–N + rotas BFF do domínio + gateway + telas alheias.
+- Sem dono exclusivo de BFF/OAuth. Equidade: sucesso de grupo = par 1–N + rotas BFF do domínio + gateway + UX do próprio serviço.
 
 ## Non-goals
 

@@ -43,7 +43,7 @@ companions: []
 
 # Architecture Spine — Closed CRAS
 
-Invariantes para nove grupos + agentes SDD implementarem em paralelo sem divergir em contrato, identidade, BFF, stores ou frontend. Glossário, UJs, telas e OQ-1 não se relitam aqui. Overrides OV-1…OV-10 (2026-10-14) emendam plataforma; invariantes de produto permanecem.
+Invariantes para nove grupos + agentes SDD implementarem em paralelo sem divergir em contrato, identidade, BFF, stores ou frontend. Glossário e UJs não se relitam aqui; donos de superfície UX = OQ-1 fechada (mapa no SPEC/`capability-map.md`). Overrides OV-1…OV-10 (2026-10-14) emendam plataforma; invariantes de produto permanecem.
 
 ## Design Paradigm
 
@@ -183,9 +183,9 @@ flowchart TB
 
 ### AD-8 — UI web única Angular + Material [ADOPTED]
 
-- **Binds:** FR-28, UX-LOGIN, UX-HOME, UX-S1–UX-S9, `DESIGN.md`, `EXPERIENCE.md`, OV-6
-- **Prevents:** quatro SPAs; SPA por papel; tema Material default sem tokens; React/Vite/TanStack como stack UI; tela de alta de Student; seletor de microsserviço; grupo implementando a tela do próprio contexto; `keycloak-js`
-- **Rule:** um app Angular SPA (sem SSR competindo com o BFF). `src/shell` = UX-LOGIN, UX-HOME, `app-shell` e `role-nav` em todas as rotas autenticadas. Superfícies: `src/surfaces/ux-s1` … `ux-s9` (no máximo um grupo por UX-S*). Frontend cruzado (FR-28); emparelhamento = OQ-1. Dados só via BFF. Angular Material permitido como kit; tokens de `DESIGN.md` **prevalecem** (primary `#1E3A5F`; accent `#C45C26` só sala efetiva divergente; IBM Plex Sans/Mono; v1 light-only). Sessão ausente/expirada ou logout → UX-LOGIN. URL de outro papel → UX-HOME do papel atual. Credencial recusada: banner no `login-panel`. BFF/IdP/domínio crítico down: banner (AD-10). Até OQ-3 fechar, LessonTopic exige pelo menos um de `syllabusItemId` ou enunciado extra.
+- **Binds:** FR-28, UX-LOGIN, UX-HOME, superfícies EXPERIENCE, `DESIGN.md`, `EXPERIENCE.md`, OV-6
+- **Prevents:** quatro SPAs; SPA por papel; tema Material default sem tokens; React/Vite/TanStack como stack UI; seletor de microsserviço; um grupo implementando UX de outro serviço; `keycloak-js`
+- **Rule:** um app Angular SPA (sem SSR competindo com o BFF). `src/shell` = UX-LOGIN, UX-HOME, `app-shell` e `role-nav` em todas as rotas autenticadas — **Prof. Arruda**. UX-EMPLOYEES também **Prof. Arruda**. Demais superfícies: cada grupo implementa a UX do **próprio** serviço (OQ-1 fechada; mapa em `capability-map.md`). Dados só via BFF. Angular Material permitido como kit; tokens de `DESIGN.md` **prevalecem** (primary `#1E3A5F`; accent `#C45C26` só sala efetiva divergente; IBM Plex Sans/Mono; v1 light-only). Sessão ausente/expirada ou logout → UX-LOGIN. URL de outro papel → UX-HOME do papel atual. Credencial recusada: banner no `login-panel`. BFF/IdP/domínio crítico down: banner (AD-10). Até OQ-3 fechar, LessonTopic exige pelo menos um de `syllabusItemId` ou enunciado extra.
 
 > **Conflito upstream (handoff `bmad-spec`):** SPEC Constraints / CAP-12 e companion antigo pinavam React+Vite (+ TanStack Query). OV-6 substitui por Angular + Angular Material. Pins Keycloak/Nest do SPEC (26.7.x / 11.2.x) ficam stale frente à Stack desta spine.
 
@@ -374,18 +374,18 @@ sequenceDiagram
 | FR-25 contract-first | `openapi/openapi.yaml` por contexto | AD-2, AD-3, AD-11 |
 | FR-26, FR-29 ocupação data+faixa | BFF `modules/ocupacao` → UX-S4 | AD-5, AD-6 OV-10 |
 | FR-27 gateway identidade | oauth + BFF login + resource-server nos 9 | AD-4 |
-| FR-28 frontend cruzado | `frontend` superfícies; OQ-1 | AD-8 |
+| FR-28 UX do próprio serviço | `frontend` superfícies; OQ-1 fechada | AD-8 |
 | FR-31 plano + roster | BFF módulo `classes` → UX-S8 | AD-6 OV-10 |
 | NFR-LGPD-1–4 | BFF recortes + sem CPF v1 | AD-6, AD-12 |
 | NFR-CTR-1–4 | direção AD-1; faixas AD-2 | AD-1, AD-2 |
 | NFR-Q-1, NFR-Q-2 | compose + observabilidade; sem sensor | AD-7, AD-10 |
-| UX-LOGIN, UX-HOME | `frontend/src/shell` + BFF `/v1/auth` | AD-4, AD-8 |
-| UX-S1–UX-S9 | `frontend/src/surfaces`; OQ-1 | AD-8 |
+| UX-LOGIN, UX-HOME, UX-EMPLOYEES | `frontend` shell + employees — Prof. Arruda | AD-4, AD-8 |
+| Demais superfícies EXPERIENCE | `frontend` — grupo do próprio serviço (OQ-1) | AD-8 |
 | Resilience / métricas / seed / testes | todos os serviços | AD-10, AD-11, AD-12, AD-7 |
 
 ## Deferred
 
-- **OQ-1** emparelhamento grupo ↔ UX-S1…S9 — turma/docente; a spine não atribui donos. A regra “não o próprio domínio” já vale (AD-8).
+- ~~**OQ-1** emparelhamento grupo ↔ superfície~~ **Fechada (2026-11-24):** Prof. Arruda → UX-LOGIN, UX-HOME, UX-EMPLOYEES; cada grupo → UX do próprio serviço. Mapa: `capability-map.md` / EXPERIENCE.
 - **OQ-3** enunciado vs `syllabusItemId` obrigatório — grupo `lessons`. Default na AD-8 até fechar.
 - **OQ-ARCH-1** qual contexto usa Mongo vs PG no cold-start — escolha por grupo no README do submódulo; compose sempre sobe ambos. `[ASSUMPTION]` até o bootstrap fixar defaults de lab.
 - **OQ-ARCH-2** enriquecimento de display name Employee na vista Professor — default BFF (visualização).
