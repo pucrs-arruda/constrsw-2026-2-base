@@ -1,0 +1,119 @@
+# generated: 2026-11-24 07:00:53 UTC
+# last_updated: 2026-11-24 07:00:53 UTC
+# project: constrsw-2026-2
+# project_key: NOKEY
+# tracking_system: file-system
+# story_location: {project-root}/_bmad-output/implementation-artifacts
+#
+# STATUS DEFINITIONS:
+# ==================
+# Epic Status:
+#   - backlog: Epic not yet started
+#   - in-progress: Epic actively being worked on
+#   - done: All stories in epic completed
+#
+# Epic Status Transitions:
+#   - backlog → in-progress: Automatically when first story is created (via create-story)
+#   - in-progress → done: Manually when all stories reach 'done' status
+#
+# Story Status:
+#   - backlog: Story only exists in epic file
+#   - ready-for-dev: Story file created in stories folder
+#   - in-progress: Developer actively working on implementation
+#   - review: Ready for code review (via Dev's code-review workflow)
+#   - done: Story completed
+#
+# Retrospective Status:
+#   - optional: Can be completed but not required
+#   - done: Retrospective has been completed
+#
+# Action Item Status:
+#   - open: Committed during a retrospective, not yet addressed
+#   - in-progress: Actively being worked on
+#   - done: Completed
+#
+# WORKFLOW NOTES:
+# ===============
+# - Epic transitions to 'in-progress' automatically when first story is created
+# - Stories can be worked in parallel if team capacity allows
+# - Developer typically creates next story after previous one is 'done' to incorporate learnings
+# - Dev moves story to 'review', then runs code-review (fresh context, different LLM recommended)
+# - Retrospective appends its action items to action_items; sprint-status surfaces open ones
+# - Recommended FE order: Epic 0 (Arruda) → 1–6 (groups, parallelizable) → 7 (Turmas/Lessons) → 8 (Reservations)
+# - PM 2026-11-24: OQ-PRD-1 FECHADA — cadastro Student na UI (Epic 3) conforme epics/SPEC
+
+generated: "2026-11-24 07:00:53 UTC"
+last_updated: "2026-11-24 07:00:53 UTC"
+project: constrsw-2026-2
+project_key: NOKEY
+tracking_system: file-system
+story_location: "{project-root}/_bmad-output/implementation-artifacts"
+
+development_status:
+  epic-0: backlog
+  0-1-scaffold-angular-22-material-tema-design: backlog
+  0-2-sessao-oauth-bearer-para-o-bff: backlog
+  0-3-ux-login-responsivo: backlog
+  0-4-ux-home-app-shell-e-navegacao: backlog
+  0-5-kit-compartilhado-tabela-lista-dialogs-banners-http-bff: backlog
+  epic-0-retrospective: optional
+
+  epic-1: backlog
+  1-1-lista-de-funcionarios-responsiva: backlog
+  1-2-detalhe-employee-dependent-1n: backlog
+  1-3-criar-e-editar-employee-ciclo-de-vida: backlog
+  1-4-estados-de-recusa-e-employee-inativo-na-ui: backlog
+  epic-1-retrospective: optional
+
+  epic-2: backlog
+  2-1-lista-de-professores-responsiva: backlog
+  2-2-criar-professor-sobre-employee-ativo: backlog
+  2-3-detalhe-professor-academicdegree-1n: backlog
+  2-4-editar-professor-e-estados-de-recusa: backlog
+  epic-2-retrospective: optional
+
+  epic-3: backlog
+  3-1-lista-de-alunos-responsiva: backlog
+  3-2-criar-e-editar-student-na-ui: backlog
+  3-3-detalhe-student-academicaffiliation-1n: backlog
+  3-4-recusas-e-composicao-t3-no-student: backlog
+  epic-3-retrospective: optional
+
+  epic-4: backlog
+  4-1-lista-de-salas-responsiva: backlog
+  4-2-criar-e-editar-room-capacidade-obrigatoria: backlog
+  4-3-accessibilityfeature-1n-na-room: backlog
+  4-4-classes-t3-e-recusas-na-room: backlog
+  epic-4-retrospective: optional
+
+  epic-5: backlog
+  5-1-lista-de-recursos-responsiva: backlog
+  5-2-criar-e-editar-resource-ativo-inativo: backlog
+  5-3-inventoryitem-1n-no-resource: backlog
+  5-4-reservations-t3-futuras-e-recusas: backlog
+  epic-5-retrospective: optional
+
+  epic-6: backlog
+  6-1-lista-de-disciplinas-responsiva: backlog
+  6-2-criar-e-editar-course-plano-datado: backlog
+  6-3-syllabusitem-1n-no-course: backlog
+  6-4-classes-t3-e-recusas-na-disciplina: backlog
+  epic-6-retrospective: optional
+
+  epic-7: backlog
+  7-1-lista-de-turmas-responsiva: backlog
+  7-2-abrir-class-esqueleto-sala-padrao-colisoes: backlog
+  7-3-detalhe-turma-com-abas-alunos-aulas: backlog
+  7-4-ux-class-enrollments-associar-students-existentes: backlog
+  7-5-gerar-lessons-a-partir-do-esqueleto: backlog
+  7-6-ux-class-lessons-crud-lesson-no-contexto-da-turma: backlog
+  epic-7-retrospective: optional
+
+  epic-8: backlog
+  8-1-ux-lesson-reservations-lista-no-detalhe-da-aula: backlog
+  8-2-criar-reservation-de-resource-caminho-feliz: backlog
+  8-3-alterar-e-cancelar-reservation: backlog
+  8-4-ux-occupancy-consulta-por-data-faixa: backlog
+  8-5-ux-professor-view-plano-roster-composicao-cliente: backlog
+  8-6-ux-student-read-minhas-aulas-composicao-cliente: backlog
+  epic-8-retrospective: optional

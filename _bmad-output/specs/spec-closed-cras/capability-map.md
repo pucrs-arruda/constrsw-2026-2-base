@@ -34,6 +34,7 @@ Traceability do kernel SPEC para PRD, Architecture Spine e EXPERIENCE **2026-11-
 | --- | --- | --- |
 | Poliglota linguagem + store | Constraints stack; CAP-2/9 | AD-3 |
 | Angular + Material | Constraints stack; CAP-12 | AD-8 |
+| UI responsiva (compact/medium/expanded) | CAP-12 success; Constraints UI responsiva; EXPERIENCE Responsive & Platform | AD-8 |
 | Resilience | Constraints; CAP-10 success 503 | AD-10 |
 | Testes | Constraints | AD-11 |
 | Seed/fixtures | Constraints; CAP-3 | AD-12 |
