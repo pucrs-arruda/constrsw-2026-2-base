@@ -38,8 +38,8 @@ Língua da UI: **português do Brasil**. Paths/tags do OpenAPI permanecem em ing
 | UX-LOGIN | Login | URL fria / sessão expirada | Autenticar | `POST {oauth}/login` (+ refresh/logout) |
 | UX-HOME | Home / app-shell | Login ok | Shell + menu; landing autenticada | `GET /api/v1/identidade/me` |
 | UX-EMPLOYEES | Funcionários | Menu | Lista + detalhe + dependents | `/api/v1/employees` |
-| UX-PROFESSORS | Professores | Menu | Lista + detalhe + academic-degrees | `/api/v1/professors` |
-| UX-STUDENTS | Alunos | Menu | Cadastro (Novo aluno) + lista + detalhe + AcademicAffiliation 1–N | `/api/v1/students` |
+| UX-PROFESSORS | Professores | Menu | Lista + detalhe + academic-degrees + **Turmas do semestre em curso** (`classes` do GET BFF; `professorId`) | `/api/v1/professors` |
+| UX-STUDENTS | Alunos | Menu | Cadastro (Novo aluno) + lista + detalhe + AcademicAffiliation 1–N + **Turmas matriculadas no semestre em curso** (`classes` do GET BFF; `studentIds`) | `/api/v1/students` |
 | UX-ROOMS | Salas de Aula | Menu | Lista + detalhe + accessibility-features | `/api/v1/rooms` |
 | UX-RESOURCES | Recursos | Menu | Lista (GET com reservations futuras) + detalhe + occurrences | `/api/v1/resources` |
 | UX-COURSES | Disciplinas | Menu | Lista (GET com classes do semestre) + detalhe + bibliographic-references + syllabus-items | `/api/v1/courses` |
@@ -66,6 +66,8 @@ Língua da UI: **português do Brasil**. Paths/tags do OpenAPI permanecem em ing
 **Hierarquia de escrita:** Turma → (Alunos + Lessons CRUD) → Detalhe da Aula → Reservations CRUD. Lessons e Reservations **não** são itens de menu de topo. Ocupação / Plano+roster / Minhas aulas são superfícies de **leitura SPEC** no menu.
 
 Cada contexto de domínio: **lista + detalhe/master-detail** cobrindo POST/PUT/PATCH/DELETE e secundárias 1–N do OpenAPI. **Turma · Alunos:** só associa/desassocia Students existentes. **Turma · Aulas:** CRUD de Lesson. **Aula · Reservas:** CRUD de Reservation da aula aberta.
+
+**Composição BFF (`classes` no semestre em curso):** GET de professors e students (coleção e item) inclui `classes` — o cliente **não** envia `year`/`semester` (fuso America/Sao_Paulo; semestre 1 se mês &lt; agosto, senão 2). Professores: turmas com `professorId` = id do professor. Alunos: turmas cujo `studentIds` contém o id. Array vazio se não houver. Falha de composição → 503 (banner), sem recurso pela metade.
 
 → Composição: [Figma — Closed CRAS frontend PUCRS](https://www.figma.com/design/FTSWNiR5rQHXqDizXFJYqp) (25 frames expanded). Referência responsiva compact/medium: [mockups/closed-cras-responsivo.html](mockups/closed-cras-responsivo.html). Plano de frames responsivos no Figma: [.working/figma-frame-map.md](.working/figma-frame-map.md). Spines vencem em conflito com mockups.
 

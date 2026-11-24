@@ -7,8 +7,8 @@ Traceability do kernel SPEC para PRD, Architecture Spine e EXPERIENCE **2026-11-
 | CAP | Intent (curto) | FR | AD | UX (EXPERIENCE 2026-11-23) | SM |
 | --- | --- | --- | --- | --- | --- |
 | CAP-1 | Employee + Dependent + FR-1a | FR-1, FR-1a, FR-2, FR-3 | AD-1, AD-2 | UX-EMPLOYEES | SM-1, SM-4 |
-| CAP-2 | Professor is-a + AcademicDegree | FR-4, FR-5, FR-6 | AD-1, AD-2, AD-3 | UX-PROFESSORS | SM-1, SM-4 |
-| CAP-3 | Student cadastro UI + AcademicAffiliation | FR-7*, FR-8, FR-9* (*override PRD) | AD-2, AD-7, AD-12 | UX-STUDENTS CRUD; associação = UX-CLASS-ENROLLMENTS; FR-19 = UX-STUDENT-READ | SM-4 |
+| CAP-2 | Professor is-a + AcademicDegree + turmas semestre | FR-4, FR-5, FR-6 | AD-1, AD-2, AD-3, AD-6 | UX-PROFESSORS (+ `classes` BFF) | SM-1, SM-4 |
+| CAP-3 | Student cadastro UI + AcademicAffiliation + turmas semestre | FR-7*, FR-8, FR-9* (*override PRD) | AD-2, AD-7, AD-12, AD-6 | UX-STUDENTS CRUD (+ `classes` BFF); associação = UX-CLASS-ENROLLMENTS; FR-19 = UX-STUDENT-READ | SM-4 |
 | CAP-4 | Course + SyllabusItem / plano | FR-10, FR-11, FR-12 | AD-2 | UX-COURSES | SM-4 |
 | CAP-5 | Abrir Class + associar Students + gerar Lesson | FR-13, FR-14, FR-15, FR-16, FR-9* | AD-5, AD-9, OV-10 | UX-CLASSES; roster UX-CLASS-ENROLLMENTS; gerar UX-CLASS-LESSONS | SM-2, SM-5 |
 | CAP-6 | Lesson CRUD na Turma + sala efetiva + leitura Student | FR-17, FR-18, FR-19 | AD-5, AD-6 | UX-CLASS-LESSONS (CRUD); FR-19 = UX-STUDENT-READ | SM-2, SM-3 |
@@ -46,8 +46,8 @@ Traceability do kernel SPEC para PRD, Architecture Spine e EXPERIENCE **2026-11-
 | UX-LOGIN | CAP-11, CAP-12 | Todos |
 | UX-HOME | CAP-12 | Shell + menu domínio |
 | UX-EMPLOYEES | CAP-1 | Lista + detalhe + dependents |
-| UX-PROFESSORS | CAP-2 | Lista + detalhe + titulações |
-| UX-STUDENTS | CAP-3 | Cadastro + detalhe + AcademicAffiliation 1–N |
+| UX-PROFESSORS | CAP-2 | Lista + detalhe + titulações + **Turmas do semestre** (`classes` BFF) |
+| UX-STUDENTS | CAP-3 | Cadastro + detalhe + afiliações + **Turmas do semestre** (`classes` BFF) |
 | UX-ROOMS | CAP-7 | Lista + detalhe + accessibility |
 | UX-RESOURCES | CAP-7 | Lista + detalhe + ocorrências |
 | UX-COURSES | CAP-4 | Lista + detalhe + plano |

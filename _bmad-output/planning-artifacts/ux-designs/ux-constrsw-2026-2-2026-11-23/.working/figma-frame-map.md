@@ -16,10 +16,10 @@ Menu hambúrguer (ordem fixa): Funcionários → Professores → Alunos → Sala
 | 05 | Home — folha do menu (<1024px) | `2:79` |
 | 06 | Funcionários — lista | `3:331` |
 | 07 | Funcionários — detalhe + dependentes | `3:382` |
-| 08 | Professores — lista | `3:133` |
-| 09 | Professores — detalhe + titulações | `3:184` |
-| 10 | Alunos — lista + cadastro | `3:232` |
-| 11 | Alunos — detalhe + cadastro + afiliações | `3:283` |
+| 08 | Professores — lista (+ turmas semestre BFF) | `3:133` |
+| 09 | Professores — detalhe + titulações + turmas semestre | `3:184` |
+| 10 | Alunos — lista + cadastro (+ turmas semestre BFF) | `3:232` |
+| 11 | Alunos — detalhe + afiliações + turmas semestre | `3:283` |
 | 12 | Salas — lista | `3:25` |
 | 13 | Salas — detalhe + recursos de acessibilidade | `3:81` |
 | 14 | Recursos — lista (com reservations futuras) | `3:429` |

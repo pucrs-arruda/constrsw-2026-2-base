@@ -29,12 +29,12 @@ sources:
   - **success:** `id` estável; e-mail, quando presente, é único inclusive em inativos e excluídos logicamente; Employee inativo bloqueia criar Professor; Class já atribuídas ficam RO e nova Reservation é recusada (FR-1a); sem delete físico nem provisionamento automático no Keycloak. A secundária desta entrega é Dependent (spec-employees).
 
 - **CAP-2**
-  - **intent:** Funcionário cria Professor somente sobre Employee existente e ativo, com AcademicDegree 1–N, sem duplicar cadastro pessoal.
-  - **success:** Criação sem Employee ou com `ativo=false` é recusada; `employeeId` 1–1; leitura de nome/e-mail resolve via Employee; SM-1 demonstrável; store do contexto (PG ou Mongo) não define identidade — is-a é só `employeeId`.
+  - **intent:** Funcionário cria Professor somente sobre Employee existente e ativo, com AcademicDegree 1–N, sem duplicar cadastro pessoal; a UI lista as Turmas que o professor conduz no semestre em curso.
+  - **success:** Criação sem Employee ou com `ativo=false` é recusada; `employeeId` 1–1; leitura de nome/e-mail resolve via Employee; SM-1 demonstrável; store do contexto (PG ou Mongo) não define identidade — is-a é só `employeeId`. GET BFF `/api/v1/professors` (coleção e item) devolve `classes` do semestre em curso (`professorId`); a tela Professores exibe essas turmas (lista e detalhe) sem o cliente enviar `year`/`semester`.
 
 - **CAP-3**
-  - **intent:** Funcionário cadastra Student e AcademicAffiliation 1–N na UI (UX-STUDENTS); Coordenador associa Students **já existentes** a uma Class via `studentIds` (UX-CLASS-ENROLLMENTS) — sem criar Student na tela de Turmas.
-  - **success:** Jornada “Novo aluno” cria Student com `id` estável; e-mail, quando presente, único; AcademicAffiliation não é roster; associação à turma só referencia `studentId` existente (recusa id inexistente); Student só lê Lesson das Class em que está associado.
+  - **intent:** Funcionário cadastra Student e AcademicAffiliation 1–N na UI (UX-STUDENTS); Coordenador associa Students **já existentes** a uma Class via `studentIds` (UX-CLASS-ENROLLMENTS) — sem criar Student na tela de Turmas; a UI lista as Turmas em que o aluno está matriculado no semestre em curso.
+  - **success:** Jornada “Novo aluno” cria Student com `id` estável; e-mail, quando presente, único; AcademicAffiliation não é roster; associação à turma só referencia `studentId` existente (recusa id inexistente); Student só lê Lesson das Class em que está associado. GET BFF `/api/v1/students` (coleção e item) devolve `classes` do semestre em curso (`studentIds`); a tela Alunos exibe essas turmas (lista e detalhe) sem o cliente enviar `year`/`semester`.
 
 - **CAP-4**
   - **intent:** Coordenador mantém Course com SyllabusItem 1–N e publica plano de ensino datado antes do período da Class.
@@ -62,7 +62,7 @@ sources:
 
 - **CAP-10**
   - **intent:** BFF é a única superfície do browser: proxy de domínio, login/cookie, ocupação agendada e vistas compostas sem persistir agregado nem aplicar regra negocial.
-  - **success:** UI não faz join de nove OpenAPIs; OpenAPI BFF distingue **proxy** (`/v1/<contexto>/...`, pass-through sem pré-validar FR) vs **read-model de composição** (OV-10); FR-29 em módulo `ocupacao` (não nominativo); FR-19 só no módulo lessons do BFF; roster só no módulo classes e nunca em reservations; CORS só no BFF; falha crítica de hop → 503 problem+json + banner (SM-3 parcial).
+  - **success:** UI não faz join de nove OpenAPIs; OpenAPI BFF distingue **proxy** (`/v1/<contexto>/...`, pass-through sem pré-validar FR) vs **read-model de composição** (OV-10); GET de professors/students (e courses/rooms) inclui `classes` do semestre em curso (T3; fuso America/Sao_Paulo); FR-29 em módulo `ocupacao` (não nominativo); FR-19 só no módulo lessons do BFF; roster só no módulo classes e nunca em reservations; CORS só no BFF; falha crítica de hop → 503 problem+json + banner (SM-3 parcial).
 
 - **CAP-11**
   - **intent:** Identidade institucional via REST API `backend/oauth` sobre Keycloak; BFF faz login browser; cada contexto é resource-server JWKS e expõe `GET /v1/identidade/me` com o mesmo schema.
