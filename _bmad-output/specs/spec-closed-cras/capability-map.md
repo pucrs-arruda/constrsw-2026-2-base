@@ -17,7 +17,7 @@ Traceability do kernel SPEC para PRD, Architecture Spine e EXPERIENCE **2026-11-
 | CAP-9 | OpenAPI contract-first | FR-25 | AD-2, AD-3, AD-11 | — (contrato) | SM-4 |
 | CAP-10 | BFF proxy + composição + ocupação + vistas | FR-26, FR-29, FR-31 | AD-6, AD-10, OV-10 | T3 classes/reservations; UX-OCCUPANCY=`/reservations/ocupacao`; FR-31=UX-PROFESSOR-VIEW (cliente); 503 | SM-3, SM-4 |
 | CAP-11 | oauth/Keycloak + resource-server | FR-27 | AD-4 | UX-LOGIN | SM-3, SM-4 |
-| CAP-12 | UI única + frontend cruzado | FR-28 | AD-8 | UX-LOGIN, UX-HOME, UX-EMPLOYEES…UX-CLASSES (+ abas) | SM-3, SM-4 |
+| CAP-12 | UI única + UX do próprio serviço | FR-28 | AD-8 | UX-LOGIN/HOME/EMPLOYEES (Arruda); demais = grupo do contexto | SM-3, SM-4 |
 
 ## NFRs cobertos no kernel (Constraints / Success)
 
@@ -34,6 +34,7 @@ Traceability do kernel SPEC para PRD, Architecture Spine e EXPERIENCE **2026-11-
 | --- | --- | --- |
 | Poliglota linguagem + store | Constraints stack; CAP-2/9 | AD-3 |
 | Angular + Material | Constraints stack; CAP-12 | AD-8 |
+| UI responsiva (compact/medium/expanded) | CAP-12 success; Constraints UI responsiva; EXPERIENCE Responsive & Platform | AD-8 |
 | Resilience | Constraints; CAP-10 success 503 | AD-10 |
 | Testes | Constraints | AD-11 |
 | Seed/fixtures | Constraints; CAP-3 | AD-12 |
@@ -41,25 +42,25 @@ Traceability do kernel SPEC para PRD, Architecture Spine e EXPERIENCE **2026-11-
 
 ## Superfícies UX (inventário EXPERIENCE 2026-11-23)
 
-| Superfície | CAP primário | Notas |
-| --- | --- | --- |
-| UX-LOGIN | CAP-11, CAP-12 | Todos |
-| UX-HOME | CAP-12 | Shell + menu domínio |
-| UX-EMPLOYEES | CAP-1 | Lista + detalhe + dependents |
-| UX-PROFESSORS | CAP-2 | Lista + detalhe + titulações + **Turmas do semestre** (`classes` BFF) |
-| UX-STUDENTS | CAP-3 | Cadastro + detalhe + afiliações + **Turmas do semestre** (`classes` BFF) |
-| UX-ROOMS | CAP-7 / CAP-10 | Lista + detalhe + accessibility + **Turmas semestre** (`classes` T3) |
-| UX-RESOURCES | CAP-7 / CAP-10 | Lista + detalhe + ocorrências + **reservations futuras** (T3) |
-| UX-COURSES | CAP-4 / CAP-10 | Lista + detalhe + plano + **Turmas semestre** (`classes` T3) |
-| UX-CLASSES | CAP-5 | Lista + detalhe (abas Alunos \| Aulas) |
-| UX-CLASS-ENROLLMENTS | CAP-5 / CAP-3 | Aba Alunos matriculados — associa Students já existentes |
-| UX-CLASS-LESSONS | CAP-6 | Aba Aulas — lista + CRUD de Lesson da turma |
-| UX-LESSON-RESERVATIONS | CAP-8 | Detalhe da Aula — lista + CRUD de Reservation da aula |
-| UX-OCCUPANCY | CAP-10 (FR-29) | `GET /api/v1/reservations/ocupacao` — recursos ocupados (data+faixa) |
-| UX-PROFESSOR-VIEW | CAP-10 (FR-31) | Plano + roster — composição cliente (courses + classes) |
-| UX-STUDENT-READ | CAP-6 (FR-19) | Minhas aulas — composição cliente (lessons + classes) |
+| Superfície | CAP primário | Dono (OQ-1 fechada) | Notas |
+| --- | --- | --- | --- |
+| UX-LOGIN | CAP-11, CAP-12 | Prof. Arruda | Shell — login |
+| UX-HOME | CAP-12 | Prof. Arruda | Shell + menu domínio |
+| UX-EMPLOYEES | CAP-1 | Prof. Arruda (`employees`) | Lista + detalhe + dependents |
+| UX-PROFESSORS | CAP-2 | Grupo 07 (`professors`) | Lista + detalhe + titulações + **Turmas do semestre** (`classes` BFF) |
+| UX-STUDENTS | CAP-3 | Grupo 04 (`students`) | Cadastro + detalhe + afiliações + **Turmas do semestre** (`classes` BFF) |
+| UX-ROOMS | CAP-7 / CAP-10 | Grupo 08 (`rooms`) | Lista + detalhe + accessibility + **Turmas semestre** (`classes` T3) |
+| UX-RESOURCES | CAP-7 / CAP-10 | Grupo 06 (`resources`) | Lista + detalhe + ocorrências + **reservations futuras** (T3) |
+| UX-COURSES | CAP-4 / CAP-10 | Grupo 05 (`courses`) | Lista + detalhe + plano + **Turmas semestre** (`classes` T3) |
+| UX-CLASSES | CAP-5 | Grupo 01 (`classes`) | Lista + detalhe (abas Alunos \| Aulas) |
+| UX-CLASS-ENROLLMENTS | CAP-5 / CAP-3 | Grupo 01 (`classes`) | Aba Alunos matriculados — associa Students já existentes |
+| UX-CLASS-LESSONS | CAP-6 | Grupo 02 (`lessons`) | Aba Aulas — lista + CRUD de Lesson da turma |
+| UX-LESSON-RESERVATIONS | CAP-8 | Grupo 03 (`reservations`) | Detalhe da Aula — lista + CRUD de Reservation da aula |
+| UX-OCCUPANCY | CAP-10 (FR-29) | Grupo 03 (`reservations`) | `GET /api/v1/reservations/ocupacao` — recursos ocupados (data+faixa) |
+| UX-PROFESSOR-VIEW | CAP-10 (FR-31) | Grupo 07 (`professors`) | Plano + roster — composição cliente (courses + classes) |
+| UX-STUDENT-READ | CAP-6 (FR-19) | Grupo 04 (`students`) | Minhas aulas — composição cliente (lessons + classes) |
 
-Composição Figma: [Closed CRAS frontend PUCRS](https://www.figma.com/design/FTSWNiR5rQHXqDizXFJYqp) (25 frames). Emparelhamento grupo↔superfície = **OQ-1**.
+Composição Figma: [Closed CRAS frontend PUCRS](https://www.figma.com/design/FTSWNiR5rQHXqDizXFJYqp) (25 frames). **OQ-1 fechada:** UX do próprio serviço; shell + employees = Prof. Arruda. Contrato SPA: [`../spec-frontend/`](../spec-frontend/SPEC.md) (`ownership.md`, `surfaces.md`).
 
 ## Ponte legada UX-S* → EXPERIENCE (somente rastreio UJ)
 

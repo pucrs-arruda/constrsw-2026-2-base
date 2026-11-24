@@ -4,6 +4,7 @@ companions:
   - brownfield-2026-1.md
   - domain-pairs.md
   - capability-map.md
+  - ../spec-frontend/SPEC.md
   - ../../planning-artifacts/prds/prd-constrsw-2026-2-2026-08-19/prd.md
   - ../../planning-artifacts/prds/prd-constrsw-2026-2-2026-08-19/addendum.md
   - ../../planning-artifacts/architecture/architecture-constrsw-2026-2-2026-08-24/ARCHITECTURE-SPINE.md
@@ -69,16 +70,17 @@ sources:
   - **success:** UI não chama o IdP (`keycloak-js` proibido); papéis literais `funcionario`|`coordenador`|`professor`|`student`; claims com IDs opacos; escritura obedece NFR-CTR-2; credencial recusada = 401 sem enumerar conta; create Employee não provisiona usuário no Keycloak. O serviço `employees` desta entrega não publica `GET /identidade/me`; os demais contextos seguem este capability.
 
 - **CAP-12**
-  - **intent:** Uma SPA Angular + Material (shell UX-LOGIN/HOME + superfícies de domínio do companion EXPERIENCE 2026-11-23) com frontend cruzado: cada grupo implementa telas de domínio alheio usando tokens de DESIGN.md.
-  - **success:** Sem seletor de microsserviço; grupo não implementa telas do próprio backend; personas UJ-1–UJ-4 completam jornadas na UI (SM-3, SM-4); emparelhamento grupo↔superfície EXPERIENCE = OQ-1; dados só via BFF; Figma `FTSWNiR5rQHXqDizXFJYqp` é composição de referência (spines vencem em conflito).
+  - **intent:** Uma SPA Angular + Material (shell UX-LOGIN/HOME + superfícies EXPERIENCE): Prof. Arruda entrega UX-LOGIN, UX-HOME e UX-EMPLOYEES; cada grupo entrega a UX do **próprio** serviço, com tokens de DESIGN.md.
+  - **success:** Sem seletor de microsserviço; personas UJ-1–UJ-4 completam jornadas na UI (SM-3, SM-4); donos = OQ-1 fechada; dados só via BFF; Figma `FTSWNiR5rQHXqDizXFJYqp` é composição de referência. Contrato detalhado da SPA: companion `../spec-frontend/SPEC.md`. **Toda** superfície EXPERIENCE (UX-LOGIN…UX-STUDENT-READ), inclusive UX-CLASS-LESSONS e UX-LESSON-RESERVATIONS, é **responsiva** nas classes compact / medium / expanded (360px–1440px+; pivô nav 1024px) conforme EXPERIENCE *Responsive & Platform* — nenhuma tarefa “só desktop”; ACs de story cobrem as três classes.
 
 ## Constraints
 
-- Equidade ConstrSW: cada domínio = uma classe principal + uma secundária 1–N; sucesso de grupo = par + rotas BFF do domínio + gateway REST de identidade + telas de domínio alheio; BFF e OAuth sem dono exclusivo.
+- Equidade ConstrSW: cada domínio = uma classe principal + uma secundária 1–N; sucesso de grupo = par + rotas BFF do domínio + gateway REST de identidade + UX do **próprio** serviço; BFF e OAuth sem dono exclusivo. Shell (UX-LOGIN/HOME) + UX-EMPLOYEES = Prof. Arruda.
 - Dependências de runtime apenas as de AD-1; IDs alheios são atributos, não terceira classe; sem ciclo de escrita `lessons` ↔ `reservations`.
 - **OV-10:** regra/invariante/pré-condição/is-a → API do contexto escritor (+ GET por `id`); join/agregação só para UI → BFF read-model. Escrita e recusa nunca no BFF; composição de tela nunca como fonte da verdade no domínio. Detalhe e anti-padrões: spine AD-1/AD-6 e `domain-pairs.md`.
 - Grade canônica A–E, F–N, P (sem E1/E2/O); par `data` + `faixaId`; intervalo `[início, fim)`; tabela só em `backend/oauth/contracts/faixas.json`.
 - Stack compartilhada: OpenAPI 3.1; Keycloak 26.8.x; BFF NestJS 12.x; UI Angular 22.x + Angular Material (tokens DESIGN.md prevalecem). Domínios: linguagem/framework **poliglota** desde que o checklist AD-3 passe (não lista fechada Spring|Nest). Persistência **PG ou Mongo** por contexto, isolamento `cras_<contexto>`; IDs no contrato = string. Pins finos: companion spine Stack.
+- UI responsiva obrigatória (AD-8 / CAP-12): viewport **360px–1440px+**; classes M3 compact (360–599) / medium (600–1023) / expanded (≥1024); comportamento por componente = EXPERIENCE *Responsive & Platform* (folha &lt;1024px; data-table→lista em compact; dialogs fullscreen em compact; master-detail empilhado &lt;1280px; sem FAB; alvo de toque ≥48px em compact/medium). Escopo = inventário completo UX-LOGIN…UX-STUDENT-READ + nested Lessons/Reservations. Mockups Figma/HTML são referência; spines vencem.
 - Envelope lab: Docker Compose na raiz com Keycloak, PostgreSQL, MongoDB, 9 APIs, BFF, frontend Angular, Prometheus, Grafana; `GET /health` + readiness; métricas scrapáveis; logs estruturados; sem Kubernetes/Helm na v1 (AD-7 / OV-9).
 - Resilience (AD-10): circuit breaker + timeout (+ retry com política explícita) em BFF→domínios e GETs domínio→domínio da malha.
 - Testes (AD-11): unit/component + contrato BFF↔domínios + regressão CI + E2E UJ-1…UJ-4.
@@ -95,11 +97,12 @@ sources:
 - Criar Student a partir da tela de Turmas (associação só escolhe existentes); histórico acadêmico, notas e frequência; faixas E1/E2/O.
 - UI de `classes/.../reviews` (avaliações de turma) na v1 — endpoint existe no BFF, fora do EXPERIENCE.
 - Grade de ocupação de **salas** distintas de `reservations/ocupacao` (v1 = recursos por data+faixa).
+- Frontend “desktop-only”, breakpoints ignorados, scroll horizontal em tabelas (exceto faixa-picker/ocupação), FAB, ou superfícies sem ACs compact/medium/expanded.
 - Federação CAFe/BAITA de produção; EKS/Terraform cloud da edição 2026-1; identidade Mongo=Employee (mesmo UUID) ou copiar cadastro pessoal no contexto `professors` (Mongo como store é permitido se `employeeId` 1–1 e o store não vaza no contrato); provisionar Keycloak automaticamente ao criar Employee.
 
 ## Success signal
 
-Em laboratório (compose), as quatro personas completam UJ-1–UJ-4 na UI sem escolher microsserviço (SM-3); zero Professor sem Employee **ativo** (SM-1 / FR-1a); abertura de Class sem Reservation da sala padrão e Student vê só sala efetiva (SM-2); cada grupo demonstra par 1–N + BFF + gateway + tela alheia (SM-4); conflitos de sala efetiva/Resource/Professor são recusados no escritor certo (SM-5).
+Em laboratório (compose), as quatro personas completam UJ-1–UJ-4 na UI sem escolher microsserviço (SM-3); zero Professor sem Employee **ativo** (SM-1 / FR-1a); abertura de Class sem Reservation da sala padrão e Student vê só sala efetiva (SM-2); cada grupo demonstra par 1–N + BFF + gateway + UX do próprio serviço (SM-4); conflitos de sala efetiva/Resource/Professor são recusados no escritor certo (SM-5).
 
 ## Assumptions
 
@@ -109,13 +112,12 @@ Em laboratório (compose), as quatro personas completam UJ-1–UJ-4 na UI sem es
 - Seed/fixtures (AD-12) podem pré-carregar Students e turmas para demo; caminho feliz de produto = cadastro em UX-STUDENTS + associação em UX-CLASS-ENROLLMENTS.
 - OQ-3 default até fechar: LessonTopic exige pelo menos um de `syllabusItemId` ou enunciado extra.
 - Feriados não são excluídos na geração de Lesson na v1.
-- OQ-ARCH-2 default: enriquecimento de display name Employee na vista Professor é composição BFF.
+- **OQ-ARCH-2 fechada (spec-bff):** enriquecimento de display name Employee na vista Professor é composição BFF (`employeeName` / `employeeEmail`); OpenAPI de `professors` não copia esses campos.
 - Não há rubrica numérica oficial da disciplina neste repositório — sucesso = SM-1–SM-5 demonstráveis.
 
 ## Open Questions
 
-- **OQ-1.** Qual grupo implementa qual superfície EXPERIENCE (UX-EMPLOYEES…UX-CLASSES / abas; restrição: não o próprio domínio de backend)? Dono: turma/docente. Bloqueia emparelhamento de implementação de telas, não o restante deste SPEC.
+- ~~**OQ-1.** Emparelhamento grupo↔superfície~~ **Fechada (2026-11-24):** Prof. Arruda → UX-LOGIN, UX-HOME, UX-EMPLOYEES; cada grupo → UX do próprio serviço (mapa em `spec-frontend/ownership.md` e `capability-map.md`). Reverte o frontend cruzado anterior (FR-28).
 - **OQ-3.** LessonTopic: `syllabusItemId` obrigatório, enunciado extra obrigatório, ou pelo menos um dos dois? Default de demo acima até fechar.
 - **OQ-ARCH-1.** Qual contexto usa Mongo vs PostgreSQL no cold-start? Default: escolha por grupo no README do submódulo; compose sempre sobe ambos. Dono: bootstrap da malha / grupos.
-- **OQ-ARCH-2.** Enriquecimento de display name Employee na vista Professor fica no BFF (default) ou no OpenAPI de `professors`? Default de demo: BFF.
-- **OQ-PRD-1.** PRD FR-7/FR-9 ainda descrevem Student seed-only; SPEC+EXPERIENCE+Figma agora têm cadastro UI + associação na turma. Reconciliar o PRD? Dono: produto.
+- ~~**OQ-PRD-1.** PRD FR-7/FR-9 seed-only~~ **Fechada (2026-11-24, PM/OV-11):** cadastro Student na UI (UX-STUDENTS) + associação na turma prevalecem; reconciliar texto do PRD é follow-up editorial.

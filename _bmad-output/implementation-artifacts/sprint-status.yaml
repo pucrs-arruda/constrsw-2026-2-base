@@ -1,0 +1,83 @@
+# generated: 2026-11-24
+# last_updated: 2026-11-24
+# project: constrsw-2026-2
+# tracking_system: file-system
+# story_location: {project-root}/_bmad-output/implementation-artifacts
+# Recommended FE order: Epic 0 then soft 1->2->3; epics 4-8 parallel after Epic 0
+# Partition: proprio servico (CC 2026-11-24); FR-fonte SPEC-frontend FE-CAP-*
+
+generated: "2026-11-24"
+last_updated: "2026-11-24"
+project: constrsw-2026-2
+project_key: NOKEY
+tracking_system: file-system
+story_location: "{project-root}/_bmad-output/implementation-artifacts"
+
+development_status:
+  epic-0: backlog
+  0-1-scaffold-angular-22-material-tema-design: backlog
+  0-2-sess-o-oauth-bearer-para-o-bff: backlog
+  0-3-ux-login-responsivo: backlog
+  0-4-ux-home-app-shell-e-navega-o: backlog
+  0-5-kit-compartilhado-tabela-lista-dialogs-banners-http-bff: backlog
+  0-6-lista-de-funcion-rios-responsiva: backlog
+  0-7-detalhe-employee-dependent-1-n: backlog
+  0-8-criar-e-editar-employee-ciclo-de-vida: backlog
+  0-9-estados-de-recusa-e-employee-inativo-na-ui: backlog
+  epic-0-retrospective: optional
+
+  epic-1: backlog
+  1-1-lista-de-turmas-responsiva: backlog
+  1-2-abrir-class-esqueleto-sala-padr-o-colis-es: backlog
+  1-3-detalhe-turma-com-abas-alunos-aulas: backlog
+  1-4-ux-class-enrollments-associar-students-existentes: backlog
+  epic-1-retrospective: optional
+
+  epic-2: backlog
+  2-1-gerar-lessons-a-partir-do-esqueleto: backlog
+  2-2-ux-class-lessons-crud-lesson-no-contexto-da-turma: backlog
+  epic-2-retrospective: optional
+
+  epic-3: backlog
+  3-1-ux-lesson-reservations-lista-no-detalhe-da-aula: backlog
+  3-2-criar-reservation-de-resource-caminho-feliz: backlog
+  3-3-alterar-e-cancelar-reservation: backlog
+  3-4-ux-occupancy-consulta-por-data-faixa: backlog
+  epic-3-retrospective: optional
+
+  epic-4: backlog
+  4-1-lista-de-alunos-responsiva: backlog
+  4-2-criar-e-editar-student-na-ui: backlog
+  4-3-detalhe-student-academicaffiliation-1-n: backlog
+  4-4-recusas-e-composi-o-t3-no-student: backlog
+  4-5-ux-student-read-minhas-aulas-composi-o-cliente: backlog
+  epic-4-retrospective: optional
+
+  epic-5: backlog
+  5-1-lista-de-disciplinas-responsiva: backlog
+  5-2-criar-e-editar-course-plano-datado: backlog
+  5-3-syllabusitem-1-n-no-course: backlog
+  5-4-classes-t3-e-recusas-na-disciplina: backlog
+  epic-5-retrospective: optional
+
+  epic-6: backlog
+  6-1-lista-de-recursos-responsiva: backlog
+  6-2-criar-e-editar-resource-ativo-inativo: backlog
+  6-3-inventoryitem-1-n-no-resource: backlog
+  6-4-reservations-t3-futuras-e-recusas: backlog
+  epic-6-retrospective: optional
+
+  epic-7: backlog
+  7-1-lista-de-professores-responsiva: backlog
+  7-2-criar-professor-sobre-employee-ativo: backlog
+  7-3-detalhe-professor-academicdegree-1-n: backlog
+  7-4-editar-professor-e-estados-de-recusa: backlog
+  7-5-ux-professor-view-plano-roster-composi-o-cliente: backlog
+  epic-7-retrospective: optional
+
+  epic-8: backlog
+  8-1-lista-de-salas-responsiva: backlog
+  8-2-criar-e-editar-room-capacidade-obrigat-ria: backlog
+  8-3-accessibilityfeature-1-n-na-room: backlog
+  8-4-classes-t3-e-recusas-na-room: backlog
+  epic-8-retrospective: optional
