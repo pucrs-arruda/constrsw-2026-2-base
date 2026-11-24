@@ -8,7 +8,7 @@ Matriz dos nove bounded contexts (equidade ConstrSW) e referências cross-servic
 | --- | --- | --- | --- |
 | `employees` | Employee | Dependent | Cadastro-mestre desta entrega (spec-employees, 2026-11-16). Não é dono de Room/Resource/Professor |
 | `professors` | Professor | AcademicDegree | is-a Employee via `employeeId` 1–1; não copia nome/e-mail; store PG ou Mongo irrelevante à identidade |
-| `students` | Student | AcademicAffiliation | Identidade recebida (seed); sem tela de alta |
+| `students` | Student | AcademicAffiliation | Cadastro na UI (UX-STUDENTS); associação a Class só por id existente |
 | `courses` | Course | SyllabusItem | `kind`: conteúdo \| bibliografia \| critério; plano datado |
 | `rooms` | Room | AccessibilityFeature | Prédio = texto; capacidade obrigatória |
 | `resources` | Resource | InventoryItem | ≠ Room; `estado` v1: disponível \| indisponível |

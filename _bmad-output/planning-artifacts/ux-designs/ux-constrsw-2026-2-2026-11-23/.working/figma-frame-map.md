@@ -18,8 +18,8 @@ Menu hambúrguer (ordem fixa): Funcionários → Professores → Alunos → Sala
 | 07 | Funcionários — detalhe + dependentes | `3:382` |
 | 08 | Professores — lista | `3:133` |
 | 09 | Professores — detalhe + titulações | `3:184` |
-| 10 | Alunos — lista consulta seed (sem alta) | `3:232` |
-| 11 | Alunos — detalhe leitura + matrículas (sem alta) | `3:283` |
+| 10 | Alunos — lista + cadastro | `3:232` |
+| 11 | Alunos — detalhe + cadastro + afiliações | `3:283` |
 | 12 | Salas — lista | `3:25` |
 | 13 | Salas — detalhe + recursos de acessibilidade | `3:81` |
 | 14 | Recursos — lista (com reservations futuras) | `3:429` |
@@ -27,7 +27,7 @@ Menu hambúrguer (ordem fixa): Funcionários → Professores → Alunos → Sala
 | 16 | Disciplinas — lista (com classes compostas) | `3:528` |
 | 17 | Disciplinas — detalhe + referências + itens de plano | `3:579` |
 | 18 | Turmas — lista | `3:633` |
-| 19 | Turma — detalhe, aba Alunos matriculados | `3:684` |
+| 19 | Turma — detalhe, aba Alunos matriculados (associar existentes) | `3:684` |
 | 20 | Turma — detalhe, aba Aulas | `3:739` |
 | 21 | Turma — detalhe, aba Reservas | `3:801` |
 | 22 | Estado de erro BFF 503 composição | `3:860` |

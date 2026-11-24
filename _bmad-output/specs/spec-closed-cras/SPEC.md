@@ -33,16 +33,16 @@ sources:
   - **success:** Criação sem Employee ou com `ativo=false` é recusada; `employeeId` 1–1; leitura de nome/e-mail resolve via Employee; SM-1 demonstrável; store do contexto (PG ou Mongo) não define identidade — is-a é só `employeeId`.
 
 - **CAP-3**
-  - **intent:** Sistema recebe Student e AcademicAffiliation por seed/import (não por UI de alta) e vincula `Class.studentIds` no mesmo fluxo.
-  - **success:** Não existe jornada de cadastro de Student na UI; carga idempotente por `id` opaco; Student só lê Lesson das Class referenciadas; AcademicAffiliation não é roster.
+  - **intent:** Funcionário cadastra Student e AcademicAffiliation 1–N na UI (UX-STUDENTS); Coordenador associa Students **já existentes** a uma Class via `studentIds` (UX-CLASS-ENROLLMENTS) — sem criar Student na tela de Turmas.
+  - **success:** Jornada “Novo aluno” cria Student com `id` estável; e-mail, quando presente, único; AcademicAffiliation não é roster; associação à turma só referencia `studentId` existente (recusa id inexistente); Student só lê Lesson das Class em que está associado.
 
 - **CAP-4**
   - **intent:** Coordenador mantém Course com SyllabusItem 1–N e publica plano de ensino datado antes do período da Class.
   - **success:** Course tem `id` UUID e `codigo` alinhável; publicar plano com data ≥ início do período é recusado; plano estruturado (não blob) alimenta LessonTopic e leitura do Student/Professor.
 
 - **CAP-5**
-  - **intent:** Coordenador abre Class com sala padrão, WeeklySlot (esqueleto) e gera Lesson datadas sem criar Reservation da sala padrão.
-  - **success:** Abertura recusada em colisão de sala efetiva ou Professor, capacidade insuficiente ou zero AccessibilityFeature; `classes` chama `POST /v1/lessons/gerar` após confirmação (efeito negocial, não join de UI); zero Reservation da sala padrão; data/`faixaId` da Lesson imutáveis (SM-2 parcial).
+  - **intent:** Coordenador abre Class com sala padrão, WeeklySlot (esqueleto), associa Students já cadastrados (`studentIds`) e gera Lesson datadas sem criar Reservation da sala padrão.
+  - **success:** Abertura/associação recusada em colisão de sala efetiva ou Professor, capacidade insuficiente, zero AccessibilityFeature ou `studentId` inexistente; roster editável na aba Alunos matriculados; `classes` chama `POST /v1/lessons/gerar` após confirmação (efeito negocial, não join de UI); zero Reservation da sala padrão; data/`faixaId` da Lesson imutáveis (SM-2 parcial).
 
 - **CAP-6**
   - **intent:** Professor atribuído ajusta Lesson (tópicos, `flagAvaliacao`, modalidade); `lessons` deriva e publica `salaEfetivaId`; Student lê via BFF onde/o quê/avaliação sem local mentiroso.
@@ -92,7 +92,7 @@ sources:
 - Otimizador de grade; editar/regenerar esqueleto; cancelar aula como encontro; 18 reservas da sala padrão.
 - IA no hot path, IoT/sensor/no-show, digital twin, agente de booking, app nativo/totem.
 - Substituir SIS/ERP/LMS; folha/SIGRH/ponto; Lattes; protocolo e-MEC.
-- Tela de alta de Student; histórico acadêmico, notas e frequência; faixas E1/E2/O.
+- Criar Student a partir da tela de Turmas (associação só escolhe existentes); histórico acadêmico, notas e frequência; faixas E1/E2/O.
 - Federação CAFe/BAITA de produção; EKS/Terraform cloud da edição 2026-1; identidade Mongo=Employee (mesmo UUID) ou copiar cadastro pessoal no contexto `professors` (Mongo como store é permitido se `employeeId` 1–1 e o store não vaza no contrato); provisionar Keycloak automaticamente ao criar Employee.
 
 ## Success signal
@@ -104,7 +104,7 @@ Em laboratório (compose), as quatro personas completam UJ-1–UJ-4 na UI sem es
 - Login de laboratório: Direct Access Grant no client confidencial `bff` (AD-4). Companion EXPERIENCE 2026-11-23: UI usa Bearer após `POST {oauth}/login` (+ refresh/logout); cookie httpOnly no BFF permanece opção de transporte se o BFF assim expuser.
 - BFF em NestJS 12.x (não Spring) — composição TypeScript.
 - E-mail de Employee, quando presente, é único.
-- `Class.studentIds` chega no mesmo seed/import que Student (FR-9).
+- Seed/fixtures (AD-12) podem pré-carregar Students e turmas para demo; caminho feliz de produto = cadastro em UX-STUDENTS + associação em UX-CLASS-ENROLLMENTS.
 - OQ-3 default até fechar: LessonTopic exige pelo menos um de `syllabusItemId` ou enunciado extra.
 - Feriados não são excluídos na geração de Lesson na v1.
 - OQ-ARCH-2 default: enriquecimento de display name Employee na vista Professor é composição BFF.
@@ -116,3 +116,4 @@ Em laboratório (compose), as quatro personas completam UJ-1–UJ-4 na UI sem es
 - **OQ-3.** LessonTopic: `syllabusItemId` obrigatório, enunciado extra obrigatório, ou pelo menos um dos dois? Default de demo acima até fechar.
 - **OQ-ARCH-1.** Qual contexto usa Mongo vs PostgreSQL no cold-start? Default: escolha por grupo no README do submódulo; compose sempre sobe ambos. Dono: bootstrap da malha / grupos.
 - **OQ-ARCH-2.** Enriquecimento de display name Employee na vista Professor fica no BFF (default) ou no OpenAPI de `professors`? Default de demo: BFF.
+- **OQ-PRD-1.** PRD FR-7/FR-9 ainda descrevem Student seed-only; SPEC+EXPERIENCE+Figma agora têm cadastro UI + associação na turma. Reconciliar o PRD? Dono: produto.

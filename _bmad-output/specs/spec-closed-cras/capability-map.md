@@ -8,9 +8,9 @@ Traceability do kernel SPEC para PRD, Architecture Spine e EXPERIENCE **2026-11-
 | --- | --- | --- | --- | --- | --- |
 | CAP-1 | Employee + Dependent + FR-1a | FR-1, FR-1a, FR-2, FR-3 | AD-1, AD-2 | UX-EMPLOYEES | SM-1, SM-4 |
 | CAP-2 | Professor is-a + AcademicDegree | FR-4, FR-5, FR-6 | AD-1, AD-2, AD-3 | UX-PROFESSORS | SM-1, SM-4 |
-| CAP-3 | Student seed + AcademicAffiliation | FR-7, FR-8, FR-9 | AD-2, AD-7, AD-12 | UX-STUDENTS consulta seed (sem alta); consumo FR-19 = UX-STUDENT-READ | SM-4 |
+| CAP-3 | Student cadastro UI + AcademicAffiliation | FR-7*, FR-8, FR-9* (*override PRD) | AD-2, AD-7, AD-12 | UX-STUDENTS CRUD; associação = UX-CLASS-ENROLLMENTS; FR-19 = UX-STUDENT-READ | SM-4 |
 | CAP-4 | Course + SyllabusItem / plano | FR-10, FR-11, FR-12 | AD-2 | UX-COURSES | SM-4 |
-| CAP-5 | Abrir Class + gerar Lesson | FR-13, FR-14, FR-15, FR-16 | AD-5, AD-9, OV-10 | UX-CLASSES; gerar em UX-CLASS-LESSONS | SM-2, SM-5 |
+| CAP-5 | Abrir Class + associar Students + gerar Lesson | FR-13, FR-14, FR-15, FR-16, FR-9* | AD-5, AD-9, OV-10 | UX-CLASSES; roster UX-CLASS-ENROLLMENTS; gerar UX-CLASS-LESSONS | SM-2, SM-5 |
 | CAP-6 | Lesson + sala efetiva + leitura Student | FR-17, FR-18, FR-19 | AD-5, AD-6 | UX-CLASS-LESSONS; FR-19 = UX-STUDENT-READ | SM-2, SM-3 |
 | CAP-7 | Room + Resource mestres | FR-20, FR-21, FR-22 | AD-2 | UX-ROOMS + UX-RESOURCES | SM-4 |
 | CAP-8 | Reservation + linhas + cancelar | FR-23, FR-24, FR-30 | AD-5 | UX-CLASS-RESERVATIONS | SM-5 |
@@ -47,12 +47,12 @@ Traceability do kernel SPEC para PRD, Architecture Spine e EXPERIENCE **2026-11-
 | UX-HOME | CAP-12 | Shell + menu domínio |
 | UX-EMPLOYEES | CAP-1 | Lista + detalhe + dependents |
 | UX-PROFESSORS | CAP-2 | Lista + detalhe + titulações |
-| UX-STUDENTS | CAP-3 | Consulta seed; sem alta/edição/exclusão |
+| UX-STUDENTS | CAP-3 | Cadastro + detalhe + AcademicAffiliation 1–N |
 | UX-ROOMS | CAP-7 | Lista + detalhe + accessibility |
 | UX-RESOURCES | CAP-7 | Lista + detalhe + ocorrências |
 | UX-COURSES | CAP-4 | Lista + detalhe + plano |
 | UX-CLASSES | CAP-5 | Lista + detalhe |
-| UX-CLASS-ENROLLMENTS | CAP-5 / CAP-10 | Aba Alunos matriculados |
+| UX-CLASS-ENROLLMENTS | CAP-5 / CAP-3 | Aba Alunos matriculados — associa Students já existentes |
 | UX-CLASS-LESSONS | CAP-6 | Aba Aulas |
 | UX-CLASS-RESERVATIONS | CAP-8 | Aba Reservas |
 | UX-OCCUPANCY | CAP-10 (FR-29) | Grade data+faixa |
