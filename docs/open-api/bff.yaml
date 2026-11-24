@@ -316,13 +316,15 @@ paths:
     get:
       tags: [professors]
       operationId: listProfessors
-      summary: 'Lista professores e as classes do semestre em curso'
+      summary: 'Lista professores, classes do semestre e display name do Employee'
       description: |
         Mesmos filtros do GET de professores do serviço professors.
 
         Cada item inclui `classes`: classes conduzidas por esse professor no semestre em curso (`professorId` igual ao `_id` do professor). Semestre em curso, no fuso America/Sao_Paulo: `year` é o ano civil atual; `semester` é 1 quando o mês é anterior a agosto e 2 quando o mês é agosto ou posterior. O cliente não envia `year` nem `semester`. Sem correspondência, `classes` é um array vazio.
 
-        503 quando o serviço classes não puder ser consultado. As escritas deste caminho devolvem o corpo do serviço professors, sem `classes`.
+        Cada item inclui também `employeeName` e, se houver, `employeeEmail`, resolvidos pela BFF via `employees` (`employeeId`). O OpenAPI de professors não copia esses campos.
+
+        503 quando `classes` ou `employees` não puderem ser consultados. As escritas deste caminho devolvem o corpo do serviço professors, sem `classes` nem display name.
       parameters:
         - $ref: './grupo07-professors-api.yaml#/paths/~1api~1v1~1professors/get/parameters/0'
       responses:
@@ -350,11 +352,13 @@ paths:
     get:
       tags: [professors]
       operationId: getProfessor
-      summary: 'Recupera um professor e as classes do semestre em curso'
+      summary: 'Recupera um professor, classes do semestre e display name do Employee'
       description: |
         Recupera o professor pelo id, como no serviço professors, e inclui `classes`: classes conduzidas por ele no semestre em curso (`professorId` igual ao `_id`). Semestre em curso, no fuso America/Sao_Paulo: `year` é o ano civil atual; `semester` é 1 quando o mês é anterior a agosto e 2 quando o mês é agosto ou posterior. O cliente não envia `year` nem `semester`. Sem correspondência, `classes` é um array vazio.
 
-        404 quando o serviço professors não encontra o id. 503 quando o serviço classes não puder ser consultado.
+        Inclui também `employeeName` e, se houver, `employeeEmail`, resolvidos pela BFF via `employees` (`employeeId`).
+
+        404 quando o serviço professors não encontra o id. 503 quando `classes` ou `employees` não puderem ser consultados.
       responses:
         '200':
           description: |
@@ -643,14 +647,23 @@ components:
     ProfessorView:
       title: ProfessorView
       description: |
-        Professor do serviço professors mais `classes` do semestre em curso. O vínculo usa `_id`. `classes` é normativo nesta BFF, ainda que o schema de domínio feche `additionalProperties`.
+        Professor do serviço professors mais `classes` do semestre em curso e display name do Employee (`employeeId`).
+        O vínculo de turmas usa `_id`. `classes`, `employeeName` e `employeeEmail` (quando houver) são normativos nesta BFF;
+        o OpenAPI de professors não copia nome/e-mail.
       allOf:
         - $ref: './grupo07-professors-api.yaml#/components/schemas/Professor'
         - type: object
-          required: [classes]
+          required: [classes, employeeName]
           properties:
             classes:
               $ref: '#/components/schemas/CurrentSemesterClasses'
+            employeeName:
+              type: string
+              description: Employee.name resolvido pela BFF via employeeId
+            employeeEmail:
+              type: string
+              format: email
+              description: Employee.email quando presente; omitido se o Employee não tem e-mail
     ProfessorViewList:
       type: array
       items:
@@ -673,7 +686,7 @@ components:
   responses:
     CompositionUnavailable:
       description: |
-        O serviço usado na composição (classes ou reservations) não respondeu. O recurso principal não é devolvido pela metade.
+        O serviço usado na composição (classes, reservations ou employees na vista Professor) não respondeu. O recurso principal não é devolvido pela metade.
       content:
         application/problem+json:
           schema:
