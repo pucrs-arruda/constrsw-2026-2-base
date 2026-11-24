@@ -28,8 +28,8 @@ Menu hambúrguer (ordem fixa): Funcionários → Professores → Alunos → Sala
 | 17 | Disciplinas — detalhe + referências + itens de plano | `3:579` |
 | 18 | Turmas — lista | `3:633` |
 | 19 | Turma — detalhe, aba Alunos matriculados (associar existentes) | `3:684` |
-| 20 | Turma — detalhe, aba Aulas | `3:739` |
-| 21 | Turma — detalhe, aba Reservas | `3:801` |
+| 20 | Turma — detalhe, aba Aulas (CRUD lessons) | `3:739` |
+| 21 | Aula — detalhe + reservas (CRUD reservations) | `3:801` |
 | 22 | Estado de erro BFF 503 composição | `3:860` |
 | 23 | Ocupação — grade data+faixa (FR-29) | `85:744` |
 | 24 | Professor — plano + roster (FR-31) | `85:958` |

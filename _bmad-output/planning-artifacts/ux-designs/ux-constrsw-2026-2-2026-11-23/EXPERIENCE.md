@@ -43,10 +43,10 @@ Língua da UI: **português do Brasil**. Paths/tags do OpenAPI permanecem em ing
 | UX-ROOMS | Salas de Aula | Menu | Lista + detalhe + accessibility-features | `/api/v1/rooms` |
 | UX-RESOURCES | Recursos | Menu | Lista (GET com reservations futuras) + detalhe + occurrences | `/api/v1/resources` |
 | UX-COURSES | Disciplinas | Menu | Lista (GET com classes do semestre) + detalhe + bibliographic-references + syllabus-items | `/api/v1/courses` |
-| UX-CLASSES | Turmas | Menu | Lista + detalhe com 3 abas | `/api/v1/classes` (+ reviews/import) |
+| UX-CLASSES | Turmas | Menu | Lista + detalhe com **2 abas** (Alunos \| Aulas) | `/api/v1/classes` (+ reviews/import) |
 | UX-CLASS-ENROLLMENTS | Turma · Alunos matriculados | Detalhe turma | Associa Students **já cadastrados** à Class (`studentIds`); sem criar Student aqui | `/api/v1/classes` + lista students |
-| UX-CLASS-LESSONS | Turma · Aulas | Detalhe turma | Lessons filtradas pela turma; generate/topics | `/api/v1/lessons` |
-| UX-CLASS-RESERVATIONS | Turma · Reservas | Detalhe turma | Reservations ligadas à turma | `/api/v1/reservations` |
+| UX-CLASS-LESSONS | Turma · Aulas | Detalhe turma | Lista + **CRUD** de Lesson da turma (gerar/criar/editar/excluir + tópicos) | `/api/v1/lessons` |
+| UX-LESSON-RESERVATIONS | Aula · Reservas | Detalhe da aula (a partir da lista de Aulas) | Lista + **CRUD** de Reservation daquela Lesson | `/api/v1/reservations` |
 | UX-OCCUPANCY | Ocupação | Menu | Grade agendada data+faixa; Livre/Tomado/Exceção; **não nominativo** (FR-29) | BFF módulo `ocupacao` |
 | UX-PROFESSOR-VIEW | Plano + roster | Menu | Leitura composta plano publicado + roster da Class (FR-31) | BFF composição |
 | UX-STUDENT-READ | Minhas aulas | Menu | Sala efetiva / tópico / avaliação + plano leitura (FR-19); nunca local mentiroso | BFF lessons (+ plano) |
@@ -63,9 +63,9 @@ Língua da UI: **português do Brasil**. Paths/tags do OpenAPI permanecem em ing
 9. Plano + roster → BFF composição (FR-31)
 10. Minhas aulas → BFF lessons (FR-19)
 
-Lessons e Reservations de **escrita** **não** são itens de topo; entram pelo detalhe da Turma. Ocupação / Plano+roster / Minhas aulas são superfícies de **leitura SPEC** no menu.
+**Hierarquia de escrita:** Turma → (Alunos + Lessons CRUD) → Detalhe da Aula → Reservations CRUD. Lessons e Reservations **não** são itens de menu de topo. Ocupação / Plano+roster / Minhas aulas são superfícies de **leitura SPEC** no menu.
 
-Cada contexto de domínio: **lista + detalhe/master-detail** cobrindo POST/PUT/PATCH/DELETE e secundárias 1–N do OpenAPI. **Turma · Alunos matriculados:** só associa/desassocia Students existentes (picker), nunca formulário de alta de Student.
+Cada contexto de domínio: **lista + detalhe/master-detail** cobrindo POST/PUT/PATCH/DELETE e secundárias 1–N do OpenAPI. **Turma · Alunos:** só associa/desassocia Students existentes. **Turma · Aulas:** CRUD de Lesson. **Aula · Reservas:** CRUD de Reservation da aula aberta.
 
 → Composição: [Figma — Closed CRAS frontend PUCRS](https://www.figma.com/design/FTSWNiR5rQHXqDizXFJYqp) (25 frames expanded). Referência responsiva compact/medium: [mockups/closed-cras-responsivo.html](mockups/closed-cras-responsivo.html). Plano de frames responsivos no Figma: [.working/figma-frame-map.md](.working/figma-frame-map.md). Spines vencem em conflito com mockups.
 
@@ -92,7 +92,8 @@ Microcopy em pt-BR. Postura de marca (Cuidador / Criador / Cientista; jeito PUCR
 | login-panel | UX-LOGIN | Submit → `POST /login`. `201` → Bearer + Home. `401` banner sem enumerar conta. `503`/rede → “Identidade indisponível.” |
 | data-table | Listas | Linha abre detalhe. Sem infinite scroll. |
 | master-detail-panel | Detalhes | Secundária 1–N só da principal selecionada. |
-| class-tabs | Detalhe turma | Alunos matriculados \| Aulas \| Reservas. |
+| class-tabs | Detalhe turma | Alunos matriculados \| Aulas. (Reservas vivem no detalhe da Aula.) |
+| lesson-reservations | Detalhe aula | Tabela de reservations da Lesson + Nova reserva / editar / cancelar. |
 | faixa-picker | Aulas / reservas / ocupação | Códigos canônicos; sem time picker livre. |
 | refusal-banner | Escritas / login 401 | `role="alert"`; prosa travada. |
 | identity-banner | Login 503; BFF 503 composição | Mensagem institucional, sem nomear microsserviço. |
@@ -181,7 +182,7 @@ Uma única UI web, **responsiva de 360px a 1440px+**. Todas as 22 superfícies f
 1. Abre UX-LOGIN (repouso). Informa usuário e senha → `POST /login`.
 2. `201`: sessão com Bearer; Home; cabeçalho mostra identidade de `/identidade/me`.
 3. Abre hambúrguer → **Turmas** → lista → detalhe.
-4. **Climax:** nas abas **Alunos matriculados**, **Aulas** e **Reservas** opera o período sem sair do hub da turma; Lessons/Reservations não existem no menu de topo.
+4. **Climax:** nas abas **Alunos** e **Aulas** opera a turma; abre uma aula para CRUD de **Reservas**; Lessons/Reservations não existem no menu de topo.
 
 **Falha:** `401` → banner sem enumerar conta. `503`/rede → “Identidade indisponível.”
 
@@ -194,8 +195,8 @@ Uma única UI web, **responsiva de 360px a 1440px+**. Todas as 22 superfícies f
 ### F3. Rafael abre disciplina e turma
 
 1. **Disciplinas** → Course + referências + syllabus-items; lista mostra classes do semestre.
-2. **Turmas** → abre Class; gera Lessons na aba Aulas.
-3. **Climax:** oferta do período sem inventar Reservation de sala padrão no topo do menu.
+2. **Turmas** → abre Class; gera/CRUD Lessons na aba Aulas; associa alunos na aba Alunos.
+3. **Climax:** abre uma Lesson e faz CRUD de Reservation ali — sem Reservation de sala padrão no menu de topo.
 
 ### F4. Alunos — composição falha
 

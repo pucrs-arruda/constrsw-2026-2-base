@@ -45,16 +45,16 @@ sources:
   - **success:** Abertura/associação recusada em colisão de sala efetiva ou Professor, capacidade insuficiente, zero AccessibilityFeature ou `studentId` inexistente; roster editável na aba Alunos matriculados; `classes` chama `POST /v1/lessons/gerar` após confirmação (efeito negocial, não join de UI); zero Reservation da sala padrão; data/`faixaId` da Lesson imutáveis (SM-2 parcial).
 
 - **CAP-6**
-  - **intent:** Professor atribuído ajusta Lesson (tópicos, `flagAvaliacao`, modalidade); `lessons` deriva e publica `salaEfetivaId`; Student lê via BFF onde/o quê/avaliação sem local mentiroso.
-  - **success:** Presencial sem linha SALA → sala efetiva = sala padrão; com linha SALA → `targetId` e padrão liberada; remoto → nulo; Student nunca vê a padrão quando a efetiva diverge; só `lessons` deriva (AD-5); BFF não recalcula.
+  - **intent:** Na Turma (UX-CLASS-LESSONS), listar e fazer CRUD de Lesson da Class (gerar/criar/editar/excluir tópicos, `flagAvaliacao`, modalidade); `lessons` deriva e publica `salaEfetivaId`; Student lê via BFF onde/o quê/avaliação sem local mentiroso.
+  - **success:** CRUD de Lesson só no contexto da Turma (não no menu de topo); presencial sem linha SALA → sala efetiva = sala padrão; com linha SALA → `targetId` e padrão liberada; remoto → nulo; Student nunca vê a padrão quando a efetiva diverge; só `lessons` deriva (AD-5); BFF não recalcula.
 
 - **CAP-7**
   - **intent:** Funcionário mantém Room + AccessibilityFeature 1–N e Resource + InventoryItem 1–N como espaços/ativos reserváveis distintos.
   - **success:** Room tem capacidade obrigatória e ≥1 feature para FR-15/SALA; Resource ≠ Room; InventoryItem sem órfãos; Resource inativo não confirma Reservation.
 
 - **CAP-8**
-  - **intent:** Professor cria/altera/cancela Reservation com ReservationLine (RECURSO no caminho feliz; SALA só na exceção ou ad hoc); conflitos resolvidos no escritor.
-  - **success:** Recusa Resource tomado/inativo, segunda SALA na mesma Lesson, sobreposição de sala efetiva/Resource/Professor; cancelar libera faixa e restaura sala efetiva à padrão; sem fila de aprovação (SM-5).
+  - **intent:** No detalhe da Aula (UX-LESSON-RESERVATIONS), listar e fazer CRUD de Reservation daquela Lesson (ReservationLine: RECURSO no caminho feliz; SALA só na exceção ou ad hoc); conflitos resolvidos no escritor.
+  - **success:** CRUD de Reservation parte da Aula (não aba de Turma nem menu de topo); recusa Resource tomado/inativo, segunda SALA na mesma Lesson, sobreposição de sala efetiva/Resource/Professor; cancelar libera faixa e restaura sala efetiva à padrão; sem fila de aprovação (SM-5).
 
 - **CAP-9**
   - **intent:** Cada contexto publica OpenAPI 3.1 como fonte da verdade na língua do glossário, com IDs e envelopes uniformes.
