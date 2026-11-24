@@ -58,8 +58,7 @@ uxResolved: ux-constrsw-2026-2-2026-11-23
 **Whole Documents:** none at planning root matching `*ux*.md`
 
 **Sharded / folder versions (TWO generations):**
-- Folder: `ux-designs/ux-constrsw-2026-2-2026-08-24/`
-  - `DESIGN.md`, `EXPERIENCE.md` (legacy spine)
+- Folder: `ux-designs/ux-constrsw-2026-2-2026-08-24/` — **REMOVED 2026-11-24** (legacy)
 - Folder: `ux-designs/ux-constrsw-2026-2-2026-11-23/`
   - `DESIGN.md`, `EXPERIENCE.md` (Angular 22 + Material, CAP-12, responsive DoD)
 
@@ -511,7 +510,7 @@ From `epics.md` FR Coverage Map + stories: all PRD FR-1…FR-31 (incl. FR-1a) cl
 | FR-4 | Professor não nasce sem Employee | Epic 2 Story 2.2 | ✓ Covered |
 | FR-5 | Criar Professor sobre Employee ativo | Epic 2 Story 2.2 | ✓ Covered |
 | FR-6 | AcademicDegree 1–N | Epic 2 Story 2.3 | ✓ Covered |
-| FR-7 | Seed/import Student (PRD: sem UI alta) | Epic 3 Stories 3.1–3.2 | ⚠ Covered with SPEC override (UI create) |
+| FR-7 | Seed/import Student (PRD) → **UI create (PM 2026-11-24)** | Epic 3 Stories 3.1–3.2 | ✓ Covered (epics/SPEC authority) |
 | FR-8 | AcademicAffiliation 1–N | Epic 3 Story 3.3 | ✓ Covered |
 | FR-9 | Vínculo Student↔turma (PRD: seed) | Epic 7 Story 7.4 | ⚠ Covered with UX override (associate existing) |
 | FR-10 | Course identificador | Epic 6 Stories 6.1–6.2 | ✓ Covered |
@@ -547,7 +546,7 @@ None — every PRD FR ID appears in epics with at least one story path.
 
 ### High Priority / documented tensions (not missing IDs)
 
-1. **FR-7:** PRD = seed/import only, §7 forbids Student registration UI; epics/SPEC = UX-STUDENTS create. **Recommendation:** keep override explicit in story ACs and readiness risk register; PM accept SPEC/CAP-3 as source of truth for FE.
+1. **FR-7:** ~~open tension~~ **CLOSED 2026-11-24** — PM accepted UX-STUDENTS create; epics/SPEC/CAP-3 authority.
 2. **FR-9:** PRD = roster via seed; epics = UX-CLASS-ENROLLMENTS associate existing. **Recommendation:** treat association UI as intentional CAP override; ensure seed still valid path.
 3. **FR-16:** PRD implies generate on Class confirm; epics use explicit `POST /api/v1/lessons/generate`. **Recommendation:** SPEC/BFF path wins (already in stories).
 4. **FR-19 / FR-31 / FR-26:** PRD wording “via BFF”; epics = client composition over BFF proxies. **Recommendation:** SPEC CAP-10 supersede already noted in epics — acceptable if IR accepts.
@@ -669,31 +668,38 @@ None for FE story structure.
 
 ### Overall Readiness Status
 
-**NEEDS WORK** for full-stack document convergence; **READY (conditional)** to start frontend implementation of Epics 0–8 if SPEC + UX 2026-11-23 overrides are accepted as authority over stale PRD/Architecture wording.
+**READY (FE)** for Epics 0–8. Architecture spine updated with **OV-11**; UX canônica só 11-23. Residual: agents must não reintroduzir pasta UX 08-24.
+
+### PM Decision Log (post-assessment)
+
+| ID | Date | Decision |
+| -- | ---- | -------- |
+| OQ-PRD-1 / FR-7 | 2026-11-24 | **Accepted:** cadastro de Students na UI conforme `epics.md` (Epic 3 UX-STUDENTS) + associação na turma (Epic 7). Epics/SPEC/CAP-3/EXPERIENCE **vencem** PRD FR-7 e non-goal §7. Stories 3.1–3.2 are in scope. |
 
 ### Critical Issues Requiring Immediate Action
 
-1. **Authority conflict FR-7 / OQ-PRD-1:** PRD forbids Student registration UI; UX/epics require it — get explicit PM accept/reject before Grupo 03 implements Story 3.2.
+1. ~~Authority conflict FR-7 / OQ-PRD-1~~ **RESOLVED** (PM 2026-11-24 — epics prevail).
 2. **Architecture spine stale for FE contracts:** `/v1/lessons/gerar`, dedicated BFF FR-19/31 modules, AD-8 token examples — must not be used as FE source of truth without OV/update.
-3. **Dual UX folders:** quarantine or clearly deprecate `ux-...-2026-08-24` to prevent agent/human drift.
+3. ~~Dual UX folders~~ **RESOLVED 2026-11-24:** pasta `ux-constrsw-2026-2-2026-08-24` removida; só 11-23 permanece.
 
 ### Recommended Next Steps
 
-1. Record PM decision on Student UI create (accept SPEC override or revert Epic 3 stories).
+1. ~~Record PM decision on Student UI~~ **done**.
 2. Add Architecture OV or patch for BFF paths (`/api/v1/lessons/generate`, client composition FR-19/31) and DESIGN tokens.
 3. Minor epics.md polish: viewport ACs on 0.2/1.3; remove duplicate FR Coverage Map heading.
-4. Run **Sprint Planning** (`bmad-sprint-planning`) for FE Epic 0 first, then groups 1–8 in dependency order.
-5. Optionally open/refresh PR containing `epics.md` + this readiness report.
+4. Sprint Planning generated — start **Create Story** for `0-1-scaffold-angular-22-material-tema-design`.
+5. Open/refresh PR containing epics + IR + sprint-status.
 
 ### Issues tally
 
 | Category | Count |
 | -------- | ----- |
-| Critical (block full-stack truth) | 3 |
-| Major (process/sequencing) | 2 (quality) + coverage tensions noted in Step 3 |
+| Critical open (block FE) | 0 (was 1 FR-7; closed) |
+| Critical open (docs hygiene) | 0 (Architecture OV-11 + UX 08-24 removida) |
+| Major (process/sequencing) | 2 |
 | Minor | 4 |
 | FR ID coverage gaps | 0 |
 
 ### Final Note
 
-This assessment identified **documented authority conflicts and architecture drift**, not missing FR IDs in epics. Frontend epics/stories are structurally sound for implementation **once** the Student-UI override and BFF path authority are confirmed. Assessor: Cloud Agent IR workflow · Date: 2026-11-24 · User: EduardoArruda.
+PM confirmed Student registration UI per epics. FE implementation may proceed Epic 0 → groups; Architecture OV still recommended so backend groups do not revive seed-only FR-7. Assessor update: 2026-11-24 · User: EduardoArruda.

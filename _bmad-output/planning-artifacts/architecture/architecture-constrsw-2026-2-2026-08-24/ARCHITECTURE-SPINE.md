@@ -7,7 +7,7 @@ paradigm: malha de bounded contexts com BFF
 scope: nove contextos de dominio + oauth + BFF + frontend da ConstrSW PUCRS 2026/2
 status: final
 created: 2026-08-24
-updated: 2026-10-14
+updated: 2026-11-24
 binds:
   - employees
   - professors
@@ -28,22 +28,24 @@ binds:
   - NFR-Q
   - UX-LOGIN
   - UX-HOME
-  - UX-S1-UX-S9
+  - UX-EMPLOYEES-UX-STUDENT-READ
 sources:
   - _bmad-output/specs/spec-closed-cras/SPEC.md
   - _bmad-output/specs/spec-closed-cras/domain-pairs.md
+  - _bmad-output/specs/spec-closed-cras/capability-map.md
   - _bmad-output/specs/spec-closed-cras/brownfield-2026-1.md
   - _bmad-output/planning-artifacts/prds/prd-constrsw-2026-2-2026-08-19/prd.md
   - _bmad-output/planning-artifacts/prds/prd-constrsw-2026-2-2026-08-19/addendum.md
-  - _bmad-output/planning-artifacts/ux-designs/ux-constrsw-2026-2-2026-08-24/DESIGN.md
-  - _bmad-output/planning-artifacts/ux-designs/ux-constrsw-2026-2-2026-08-24/EXPERIENCE.md
+  - _bmad-output/planning-artifacts/ux-designs/ux-constrsw-2026-2-2026-11-23/DESIGN.md
+  - _bmad-output/planning-artifacts/ux-designs/ux-constrsw-2026-2-2026-11-23/EXPERIENCE.md
+  - _bmad-output/planning-artifacts/epics.md
   - .gitmodules
 companions: []
 ---
 
 # Architecture Spine — Closed CRAS
 
-Invariantes para nove grupos + agentes SDD implementarem em paralelo sem divergir em contrato, identidade, BFF, stores ou frontend. Glossário, UJs, telas e OQ-1 não se relitam aqui. Overrides OV-1…OV-10 (2026-10-14) emendam plataforma; invariantes de produto permanecem.
+Invariantes para nove grupos + agentes SDD implementarem em paralelo sem divergir em contrato, identidade, BFF, stores ou frontend. Glossário, UJs e OQ-1 de partição não se relitam aqui. Overrides **OV-1…OV-10** (2026-10-14) emendam plataforma; **OV-11** (2026-11-24) alinha FE/BFF paths, composição FR-19/31, Student UI (OQ-PRD-1) e tokens DESIGN 2026-11-23. Onde OV-11 e texto legado de AD conflitarem, **OV-11 vence**.
 
 ## Design Paradigm
 
@@ -63,7 +65,7 @@ Invariantes para nove grupos + agentes SDD implementarem em paralelo sem divergi
 
 - **Binds:** os 9 contextos, `bff`, `oauth`, `frontend`, NFR-CTR-1, NFR-CTR-2, OV-1, OV-10
 - **Prevents:** UI falando com domínio; BFF persistindo agregado ou validando invariante negocial; `classes` copiando Room; ciclo de escrita `lessons` ↔ `reservations`; domínio embeber join de tela; BFF recalcular sala efetiva
-- **Rule:** setas abaixo são as únicas dependências de runtime permitidas, em duas classes: **negocial** (domínio→domínio na escrita/validação) e **composição** (BFF→domínios na leitura/orquestração de vista). IDs alheios são atributos, não terceira classe. Escrita obedece NFR-CTR-2. A **única** criação em massa de Lesson é `POST /v1/lessons/gerar` chamado por `classes` após FR-13/FR-15 (AD-9) — efeito colateral **negocial**, não join de UI. `lessons` persiste o agregado; professor só altera Lesson já existente. `classes` e `reservations` fazem GET em `employees` (campo `ativo`, OQ-2). `oauth` não é chamado como serviço de domínio. Ciclo `lessons` ↔ `reservations` só em GET, profundidade 1. Browser fala **somente** com o BFF (OV-1). Orquestração BFF→domínios é HTTP síncrono com resilience (AD-10).
+- **Rule:** setas abaixo são as únicas dependências de runtime permitidas, em duas classes: **negocial** (domínio→domínio na escrita/validação) e **composição** (BFF→domínios na leitura/orquestração de vista; e, sob OV-11, composição **cliente** de FR-19/FR-31 sobre proxies BFF). IDs alheios são atributos, não terceira classe. Escrita obedece NFR-CTR-2. A **única** criação em massa de Lesson é o generate de `lessons` (AD-9 / OV-11): path público BFF `POST /api/v1/lessons/generate` (UI e lab); path legado `/v1/lessons/gerar` **superseded** para FE/OpenAPI BFF. Efeito **negocial**, não join de UI. `lessons` persiste o agregado; professor só altera Lesson já existente. `classes` e `reservations` fazem GET em `employees` (campo `ativo`, OQ-2). `oauth` não é chamado como serviço de domínio. Ciclo `lessons` ↔ `reservations` só em GET, profundidade 1. Browser fala **somente** com o BFF (OV-1). Orquestração BFF→domínios é HTTP síncrono com resilience (AD-10).
 
 **Classificação OV-10 (canônica na altitude initiative):**
 
@@ -72,18 +74,18 @@ Invariantes para nove grupos + agentes SDD implementarem em paralelo sem divergi
 | `professors` → `employees` | negocial | `professors` | Professor is-a Employee; create recusa sem Employee **ativo** (FR-4/FR-5) |
 | `classes` → Course/Professor/Room/Student IDs | negocial | `classes` | abertura FR-13/FR-15; refs por `id` |
 | `classes` → `employees.ativo` | negocial | `classes` | FR-1a (Class RO) |
-| `classes` → `POST /v1/lessons/gerar` | negocial | `classes` → `lessons` | AD-9; não é join de tela |
+| `classes` / UI → generate Lessons | negocial | `lessons` via BFF | AD-9 + OV-11: BFF `POST /api/v1/lessons/generate` |
 | `classes`/`reservations` → GET ocupação | negocial | escritor | merge conflito AD-5 |
 | `lessons` → Class / Room / linhas SALA | negocial | `lessons` | deriva e publica `salaEfetivaId` (AD-5) |
 | `reservations` → Room/Resource/Professor/`employees.ativo` | negocial | `reservations` | FR-23/24/30 + FR-1a |
-| BFF Class+Lessons (+ Room nome) | visualização | BFF | read-model; consome `salaEfetivaId` já resolvido |
-| BFF ocupação FR-29 | visualização | BFF `modules/ocupacao` | une salas efetivas + SALA ad hoc + RECURSO; sem roster |
-| BFF Student FR-19 | visualização | BFF módulo `lessons` | onde/quê/avaliação |
-| BFF plano + roster FR-31 | visualização | BFF módulo `classes` | só Class atribuída; nunca em `reservations` |
+| BFF T3 `classes[]` / `reservations[]` | visualização | BFF | composição embutida nos GETs (CAP-10) |
+| BFF ocupação FR-29 | visualização | BFF `GET /api/v1/reservations/ocupacao` | recursos; sem roster |
+| FR-19 Student read | visualização | **cliente** sobre proxies BFF | OV-11 / SPEC CAP-10 |
+| FR-31 plano + roster | visualização | **cliente** sobre proxies BFF | OV-11; roster nunca em Reservation |
 | BFF proxy CRUD de domínio | passthrough | BFF | sem regra nova; envelope AD-2 |
 | BFF display name Employee em vista Professor | visualização | BFF | `[ASSUMPTION]` OQ-ARCH-2 |
 
-**Não classificar como “só visualização”:** merge de conflito sala efetiva / Professor / Resource nos escritores; derivação de `salaEfetivaId`; validação `employees.ativo` em `professors`/`reservations`/`classes`; `POST /v1/lessons/gerar`. Na dúvida de mutação/invariante → domínio; na dúvida de join só para tela → BFF.
+**Não classificar como “só visualização”:** merge de conflito sala efetiva / Professor / Resource nos escritores; derivação de `salaEfetivaId`; validação `employees.ativo` em `professors`/`reservations`/`classes`; generate de Lessons. Na dúvida de mutação/invariante → domínio; join de tela → BFF **ou** composição cliente (FR-19/31).
 
 **Anti-padrões:** BFF validando “Employee ativo” no lugar de `professors`; UI ou BFF inventando lista de Lessons como fonte da verdade da Class; `classes` embutindo payload completo de Lesson no agregado “para a tela”; duplicar a fórmula de sala efetiva no BFF.
 
@@ -169,11 +171,11 @@ flowchart TB
 - **Prevents:** BFF ou UI calculando sala efetiva; 18 reservas da sala padrão; `reservations` persistindo a derivação; ocupação só a partir de Reservation; FR-13 recusando Recurso; dois módulos BFF donos de FR-29
 - **Rule:** `lessons` é o único dono da derivação. Presencial sem linha SALA → `salaEfetivaId` = `Class.roomId`. Presencial com `ReservationLine.kind=SALA` daquela `lessonId` → `salaEfetivaId` = `targetId` e a sala padrão fica livre naquela data+faixa. Remoto → `salaEfetivaId` nulo **mesmo se** existir linha SALA; `lessons` não apaga Reservation (o professor cancela via FR-30). GET de Lesson e `GET /v1/lessons/ocupacao?data=&faixaId=` devolvem `salaEfetivaId` já resolvido e leem `rooms` por esse id (sem embutir Room no agregado persistido). `GET /v1/lessons/ocupacao` inclui `lessonId`, `professorIds` (ids de Professor, não Employee), `modalidade` — **sem** Resource. `GET /v1/reservations/ocupacao?data=&faixaId=` devolve `reservationId`, `professorId` (Professor), `lessonId` (ausente se ad hoc), `kind`, `targetId`. **Universo de merge (obrigatório, mesmos conjuntos):** FR-13 usa union de salas (`lessons.salaEfetivaId` ∪ `reservations` kind=SALA) e union de professores (`lessons.professorIds` ∪ `reservations.professorId`); Recurso **não** entra; FR-15 à parte via GET `rooms` (capacidade ≥ vagas e ≥1 AccessibilityFeature). FR-23/24/30 usam o mesmo union de sala e professor **mais** Recurso tomado/inativo (só linhas RECURSO); no máximo uma linha SALA por `lessonId`; SALA exige capacidade/a11y da Room (ad hoc: capacidade > 0 e ≥1 feature). Cancelar Reservation (FR-30) libera a faixa e restaura sala efetiva à padrão via rederivação em `lessons`. FR-29 (BFF, AD-6) une salas efetivas + SALA ad hoc + RECURSO; nunca `studentIds`. OV-10 **não** enfraquece esta AD.
 
-### AD-6 — Browser só no BFF; composição de leitura; LGPD [ADOPTED]
+### AD-6 — Browser só no BFF; composição de leitura; LGPD [ADOPTED] *(emended OV-11)*
 
-- **Binds:** FR-19, FR-26, FR-29, FR-31, NFR-LGPD-1–4, UX-S7, UX-S8, UX-S9, OV-1, OV-10
-- **Prevents:** join de nove OpenAPIs no browser; CORS de SPA nos contextos; roster em Reservation; BFF como motor de regra negocial (incl. validar `employees.ativo`/FR no proxy); dois donos BFF de FR-29/FR-19
-- **Rule:** só o BFF configura CORS para a origem do `frontend` com credentials. Contextos **não** habilitam CORS de SPA (browser não os chama). Contrato público: `backend/bff/openapi/openapi.yaml` (OpenAPI 3.1, envelope AD-2). Distinguir no OpenAPI BFF: **proxy** (CRUD/pass-through sob paths espelhando `/v1/<contexto>/...`, sem regra FR adicional) vs **read-model de composição** (OV-10 visualização; paths próprios, ex. ocupação/FR-19/FR-31). Proxy **repassa** status/problem+json do domínio; não pré-valida invariantes negociais. Cada grupo adiciona o próprio domínio em `backend/bff/src/modules/<contexto>/`. FR-29 só em `modules/ocupacao/`. FR-19 só no módulo `lessons` do BFF (Student vê só sala efetiva — nunca a padrão quando diverge). Módulo `reservations` do BFF **não** inclui `Class.studentIds`. Roster só no módulo `classes` (UX-S8 / FR-31) da Class atribuída; AcademicAffiliation ≠ roster. Sem CPF na v1. NFR-LGPD-4: não apagar `id` canônico. Read-models consomem AD-5; não recalculam sala efetiva.
+- **Binds:** FR-19, FR-26, FR-29, FR-31, NFR-LGPD-1–4, UX-OCCUPANCY, UX-PROFESSOR-VIEW, UX-STUDENT-READ, OV-1, OV-10, OV-11
+- **Prevents:** join de nove OpenAPIs de domínio no browser **fora** dos proxies BFF; CORS de SPA nos contextos; roster em Reservation; BFF como motor de regra negocial (incl. validar `employees.ativo`/FR no proxy); dois donos BFF de FR-29
+- **Rule:** só o BFF configura CORS para a origem do `frontend` com credentials. Contextos **não** habilitam CORS de SPA. Contrato público: `backend/bff/openapi/openapi.yaml` (OpenAPI 3.1, envelope AD-2; paths públicos sob `/api/v1/...` no envelope lab). Distinguir no OpenAPI BFF: **proxy** (CRUD/pass-through) vs **composição BFF** (T3 embutida; ocupação FR-29). **OV-11:** FR-19 (UX-STUDENT-READ) e FR-31 (UX-PROFESSOR-VIEW) são composição **no cliente** sobre proxies BFF — **sem** read-model BFF dedicado. Proxy **repassa** status/problem+json; não pré-valida invariantes. Cada grupo adiciona o próprio domínio em `backend/bff/src/modules/<contexto>/`. FR-29: `GET /api/v1/reservations/ocupacao`. Módulo `reservations` do BFF **não** inclui `Class.studentIds`. Roster nunca em tela de Reservation. Sem CPF na v1. NFR-LGPD-4: não apagar `id` canônico. Qualquer projeção consome `salaEfetivaId` de AD-5; não recalcula.
 
 ### AD-7 — Envelope operacional de laboratório [ADOPTED]
 
@@ -181,19 +183,19 @@ flowchart TB
 - **Prevents:** Kubernetes/Helm na v1; um schema/database compartilhado entre contextos; IdP SaaS; sensores no caminho crítico; omitir métricas scrapáveis
 - **Rule:** um Docker Compose na raiz sobe: Keycloak `start-dev`, PostgreSQL 18.x (databases `cras_<contexto>` para contextos PG + Keycloak), MongoDB 8.x (databases `cras_<contexto>` para contextos Mongo), os nove serviços, BFF, frontend Angular, Prometheus, Grafana. Ambiente `local` = compose na máquina; `lab` = mesmo compose em VM. `GET /health` anônimo + readiness em BFF e contextos. Endpoint de métricas scrapável (seed `/metrics`) em todo serviço. Logs estruturados em stdout. Ocupação v1 é **agendada** (FR-29), não sensor.
 
-### AD-8 — UI web única Angular + Material [ADOPTED]
+### AD-8 — UI web única Angular + Material [ADOPTED] *(emended OV-11)*
 
-- **Binds:** FR-28, UX-LOGIN, UX-HOME, UX-S1–UX-S9, `DESIGN.md`, `EXPERIENCE.md`, OV-6
-- **Prevents:** quatro SPAs; SPA por papel; tema Material default sem tokens; React/Vite/TanStack como stack UI; tela de alta de Student; seletor de microsserviço; grupo implementando a tela do próprio contexto; `keycloak-js`
-- **Rule:** um app Angular SPA (sem SSR competindo com o BFF). `src/shell` = UX-LOGIN, UX-HOME, `app-shell` e `role-nav` em todas as rotas autenticadas. Superfícies: `src/surfaces/ux-s1` … `ux-s9` (no máximo um grupo por UX-S*). Frontend cruzado (FR-28); emparelhamento = OQ-1. Dados só via BFF. Angular Material permitido como kit; tokens de `DESIGN.md` **prevalecem** (primary `#1E3A5F`; accent `#C45C26` só sala efetiva divergente; IBM Plex Sans/Mono; v1 light-only). Sessão ausente/expirada ou logout → UX-LOGIN. URL de outro papel → UX-HOME do papel atual. Credencial recusada: banner no `login-panel`. BFF/IdP/domínio crítico down: banner (AD-10). Até OQ-3 fechar, LessonTopic exige pelo menos um de `syllabusItemId` ou enunciado extra.
+- **Binds:** FR-28, UX-LOGIN, UX-HOME, superfícies EXPERIENCE (UX-EMPLOYEES…UX-STUDENT-READ), `DESIGN.md` **2026-11-23**, `EXPERIENCE.md` **2026-11-23**, OV-6, OV-11, CAP-12
+- **Prevents:** quatro SPAs; SPA por papel; tema Material default sem tokens; React/Vite/TanStack como stack UI; seletor de microsserviço; grupo implementando a tela do próprio contexto; `keycloak-js`; frontend desktop-only (sem gate responsivo)
+- **Rule:** um app Angular **22.x** SPA + Angular Material M3 (sem SSR competindo com o BFF). `src/shell` = UX-LOGIN, UX-HOME, `app-shell` e nav. Superfícies nomeadas pelo EXPERIENCE (`ux-employees`, `ux-professors`, … `ux-student-read`); IDs legados UX-S1…S9 são alias históricos. Frontend cruzado (FR-28); matriz OQ-1 materializada em `epics.md` (Épico 0 Arruda; Épicos 1–8 = Grupos 01–08). Dados só via BFF. Tokens de `DESIGN.md` **2026-11-23** prevalecem (primary `#0066B3`; sky `#6DCDF6` semântico sala efetiva; navy `#0A2540`; gold `#C5A06C`; error `#B1101A`; tipografia conforme DESIGN; v1 light-only). **OV-11 / OQ-PRD-1:** UX-STUDENTS inclui **cadastro** de Student na UI; UX-CLASS-ENROLLMENTS associa existentes. **Gate responsivo (CAP-12):** toda superfície passa compact 360 / medium 768 / expanded 1280. Sessão ausente/expirada ou logout → UX-LOGIN. Credencial recusada: banner no `login-panel`. BFF/IdP/domínio crítico down: banner (AD-10). Até OQ-3 fechar, LessonTopic exige pelo menos um de `syllabusItemId` ou enunciado extra.
 
-> **Conflito upstream (handoff `bmad-spec`):** SPEC Constraints / CAP-12 e companion antigo pinavam React+Vite (+ TanStack Query). OV-6 substitui por Angular + Angular Material. Pins Keycloak/Nest do SPEC (26.7.x / 11.2.x) ficam stale frente à Stack desta spine.
+> **Autoridade UX:** somente `ux-designs/ux-constrsw-2026-2-2026-11-23/` é canônica (pasta 2026-08-24 removida 2026-11-24).
 
-### AD-9 — Geração de Lesson e imutabilidade da data+faixa [ADOPTED]
+### AD-9 — Geração de Lesson e imutabilidade da data+faixa [ADOPTED] *(emended OV-11)*
 
-- **Binds:** FR-13, FR-14, FR-16, `classes`, `lessons`
-- **Prevents:** `classes` e `lessons` cada um inventando o POST de criação; regenerar esqueleto; editar data+faixa da Lesson na v1; tratar gerar como join de UI (OV-10)
-- **Rule:** depois de FR-13 e FR-15 confirmados, só `classes` chama `POST /v1/lessons/gerar` com `classId`. `lessons` cria uma Lesson por par (dia, faixa) no intervalo início/fim da Class (WeeklySlot seg–sáb; feriados **não** excluídos na v1). `data` e `faixaId` da Lesson são imutáveis. Correção de oferta = nova Class. Professor não cria Class nem dispara gerar. OV-10 classifica esta seta como **negocial**.
+- **Binds:** FR-13, FR-14, FR-16, `classes`, `lessons`, BFF, frontend
+- **Prevents:** dois contratos públicos de generate; regenerar esqueleto; editar data+faixa da Lesson na v1; tratar gerar como join de UI (OV-10)
+- **Rule:** depois de FR-13 e FR-15, Lessons em massa nascem via generate em `lessons`. **Path público (FE/BFF OpenAPI):** `POST /api/v1/lessons/generate`. Path legado `/v1/lessons/gerar` está **superseded** para UI e contrato BFF. `lessons` cria uma Lesson por par (dia, faixa) no intervalo da Class (WeeklySlot seg–sáb; feriados **não** excluídos na v1). `data` e `faixaId` imutáveis. Correção de oferta = nova Class. Professor não cria Class. OV-10: seta **negocial**.
 
 ### AD-10 — Resilience em hops HTTP [ADOPTED]
 
@@ -207,11 +209,11 @@ flowchart TB
 - **Prevents:** só teste manual; contrato OpenAPI sem verificação; E2E omitindo UJs
 - **Rule:** cada unidade (9 + oauth + BFF + frontend) entrega: (1) unit/component; (2) testes de contrato alinhados ao OpenAPI na fronteira BFF↔domínios (e fragmentos oauth); (3) suíte executável em CI de regressão; (4) E2E cobrindo UJ-1…UJ-4 na UI contra a malha compose. Framework por linguagem = seed (JUnit/Jest/Vitest/Playwright etc.); as **camadas** são a invariante.
 
-### AD-12 — Fixtures e seed de laboratório [ADOPTED]
+### AD-12 — Fixtures e seed de laboratório [ADOPTED] *(emended OV-11)*
 
-- **Binds:** UJ-1…UJ-4, conflitos FR, OV-8, CAP-3 Student seed
+- **Binds:** UJ-1…UJ-4, conflitos FR, OV-8, CAP-3 (cadastro UI + seed)
 - **Prevents:** massa ad hoc não versionada; CPF em fixture; seed que provisiona Keycloak na create Employee; fixtures que quebram idempotência
-- **Rule:** cada REST API (9 + oauth + BFF) versiona fixtures/seed idempotentes (reaplicáveis sem duplicar agregados). Sem CPF. Cobertura mínima: jornadas UJ-1…UJ-4 e casos de recusa FR dos escritores. Student continua seed/import (sem tela de alta). oauth seed = realm/users/clients de lab — separado da create de Employee.
+- **Rule:** cada REST API (9 + oauth + BFF) versiona fixtures/seed idempotentes. Sem CPF. Cobertura mínima: UJ-1…UJ-4 e recusas FR. **OV-11:** seed/import de Student permanece válido para lab; **cadastro na UI (UX-STUDENTS) também é permitido** (OQ-PRD-1 fechada). oauth seed = realm/users/clients de lab — separado da create de Employee.
 
 ## Consistency Conventions
 
@@ -219,11 +221,11 @@ flowchart TB
 | --- | --- |
 | Naming | Submódulo e path = inglês do contexto. JSON e UI = tokens do glossário. OpenAPI `info.title` = nome do contexto. |
 | Data & formats | UUID v4 só para ID emitido; Student.id opaco; Course.codigo além do id; IDs = string no contrato; `data` date-only; `faixaId` cânone; lista com `items`; RFC 9457; JSON camelCase; UTF-8 |
-| State & cross-cutting | Mutação no contexto dono; BFF sem persistência de agregado; composição de leitura só no BFF (OV-10); JWT Bearer serviço-a-serviço (token do usuário); sem barramento de eventos na v1; config por env (`DATABASE_URL` ou `MONGODB_URI`, `KEYCLOAK_JWKS_URL`, `BFF_ORIGIN`) |
+| State & cross-cutting | Mutação no contexto dono; BFF sem persistência de agregado; composição BFF (T3/ocupação) + composição cliente FR-19/31 (OV-11); JWT Bearer; sem barramento de eventos na v1; config por env |
 | AuthZ | Quatro papéis de realm; gateway de cada contexto recusa escrita fora de NFR-CTR-2; Student sem rota de escrita |
 | Equidade | Uma principal + uma secundária 1–N. IDs alheios = atributos. Professor não copia nome/e-mail. Todo Professor é Employee via `employeeId` 1–1; nem todo Employee é Professor. |
 | Employee | E-mail institucional único (ativos e inativos); desativar não apaga vínculos nem registro; sem delete físico; sem provisionar Keycloak na create |
-| Student | Seed/import JSON idempotente por `id` em `students`; `Class.studentIds` no mesmo fluxo; AcademicAffiliation ≠ roster; sem tela de alta |
+| Student | Cadastro UI (UX-STUDENTS) **e/ou** seed/import JSON idempotente por `id`; associação à turma em UX-CLASS-ENROLLMENTS; AcademicAffiliation ≠ roster (OV-11) |
 | OQ-2 | Employee desativado: Class somente leitura; nova Reservation recusada. Escritores consultam `employees.ativo` (**negocial**, não BFF). |
 | OQ-3 (default até fechar) | LessonTopic: pelo menos um de `syllabusItemId` ou enunciado extra |
 | LGPD | Cadastro administrativo em escopo; sem CPF v1; não apagar id canônico |
@@ -254,8 +256,8 @@ Verificado na web em 2026-10-14. Código passa a ser o dono depois do cold-start
 | Angular (`@angular/core`) | 22.2.2 |
 | Angular Material | 22.2.3 |
 | @angular/cdk | 22.2.3 |
-| @fontsource/ibm-plex-sans | 5.3.0 |
-| @fontsource/ibm-plex-mono | 5.3.0 |
+| Fontes UI | conforme DESIGN.md 2026-11-23 (prevalecem) |
+| @fontsource/* (seed legado) | opcional; não vence DESIGN |
 | Prometheus | 3.15.0 |
 | Grafana (OSS image) | 13.2.4 |
 | Docker Compose | v2 |
@@ -275,10 +277,10 @@ constrsw-2026-2/                  # malha (este repo); compose.yaml na raiz
   backend/lessons/
   backend/reservations/
   backend/bff/                    # NestJS; modules/<contexto>/; modules/ocupacao/; modules/auth/
-  frontend/                       # Angular SPA + Material
-    src/shell/                    # UX-LOGIN, UX-HOME, app-shell, role-nav
-    src/surfaces/ux-s1 … ux-s9/
-    src/theme/tokens.css          # DESIGN.md prevalece sobre tema Material
+  frontend/                       # Angular 22 SPA + Material (DESIGN 2026-11-23)
+    src/shell/                    # UX-LOGIN, UX-HOME, app-shell, nav
+    src/surfaces/                 # UX-EMPLOYEES … UX-STUDENT-READ (EXPERIENCE)
+    src/theme/tokens.css          # tokens DESIGN.md 2026-11-23
 ```
 
 Portas seed do compose (host):
@@ -362,30 +364,44 @@ sequenceDiagram
 | FR-1, FR-2 Employee + Dependent | `employees` (spec-employees) + BFF módulo + UX-S1 | AD-1, AD-2, AD-6 |
 | FR-3, NFR-ID-1/2 identidade não copiada | consumidores guardam IDs | AD-1, AD-2, AD-3 |
 | FR-4, FR-5, FR-6 Professor is-a + AcademicDegree | `professors` (exige `employeeId` ativo) + UX-S2 | AD-1 OV-10, AD-4 |
-| FR-7, FR-8, FR-9 Student seed + affiliation; roster em Class | `students` import; `classes.studentIds` | AD-1, AD-8, AD-12 |
+| FR-7, FR-8, FR-9 Student UI+affiliation; associação Class | `students` + UX-STUDENTS; UX-CLASS-ENROLLMENTS | AD-1, AD-8, AD-12, OV-11 |
 | FR-10, FR-11, FR-12 Course + plano + SyllabusItem | `courses` + UX-S5 | AD-1, AD-2 |
 | FR-13, FR-14, FR-15 abrir Class + esqueleto + capacidade/a11y | `classes` escreve; GET ocupacao; GET rooms | AD-5, AD-2, AD-9, OV-10 |
-| FR-16 gerar Lesson | `POST /v1/lessons/gerar` só via `classes` | AD-9, OV-10 negocial |
+| FR-16 gerar Lesson | BFF `POST /api/v1/lessons/generate` | AD-9, OV-11, OV-10 negocial |
 | FR-17, FR-18, OQ-3 Lesson + sala efetiva | `lessons` dono da derivação | AD-5 |
-| FR-19 Student onde/quê/avaliação | BFF módulo `lessons` → UX-S9 | AD-5, AD-6 OV-10 |
+| FR-19 Student onde/quê/avaliação | UX-STUDENT-READ composição cliente | AD-5, AD-6, OV-11 |
 | FR-20, FR-21 Room + AccessibilityFeature | `rooms` + UX-S3 zona Room | AD-1 |
 | FR-22 Resource + InventoryItem | `resources` + UX-S3 zona Resource | AD-1 |
 | FR-23, FR-24, FR-30 Reservation +/- cancelar | `reservations`; merge AD-5 | AD-5, AD-2 |
 | FR-25 contract-first | `openapi/openapi.yaml` por contexto | AD-2, AD-3, AD-11 |
-| FR-26, FR-29 ocupação data+faixa | BFF `modules/ocupacao` → UX-S4 | AD-5, AD-6 OV-10 |
+| FR-26, FR-29 ocupação data+faixa | BFF ocupacao → UX-OCCUPANCY | AD-5, AD-6, OV-11 |
 | FR-27 gateway identidade | oauth + BFF login + resource-server nos 9 | AD-4 |
 | FR-28 frontend cruzado | `frontend` superfícies; OQ-1 | AD-8 |
-| FR-31 plano + roster | BFF módulo `classes` → UX-S8 | AD-6 OV-10 |
+| FR-31 plano + roster | UX-PROFESSOR-VIEW composição cliente | AD-6, OV-11 |
 | NFR-LGPD-1–4 | BFF recortes + sem CPF v1 | AD-6, AD-12 |
 | NFR-CTR-1–4 | direção AD-1; faixas AD-2 | AD-1, AD-2 |
 | NFR-Q-1, NFR-Q-2 | compose + observabilidade; sem sensor | AD-7, AD-10 |
-| UX-LOGIN, UX-HOME | `frontend/src/shell` + BFF `/v1/auth` | AD-4, AD-8 |
-| UX-S1–UX-S9 | `frontend/src/surfaces`; OQ-1 | AD-8 |
+| UX-LOGIN, UX-HOME | `frontend/src/shell` + oauth/BFF login | AD-4, AD-8 |
+| UX-EMPLOYEES…UX-STUDENT-READ | `frontend/src/surfaces`; OQ-1 via epics | AD-8, OV-11 |
 | Resilience / métricas / seed / testes | todos os serviços | AD-10, AD-11, AD-12, AD-7 |
+
+
+
+## OV-11 — Alinhamento FE/SPEC 2026-11-24 [ADOPTED]
+
+Emenda AD-1, AD-6, AD-8, AD-9, AD-12 e o mapa de capabilities. Fontes: SPEC CAP-3/10/12, EXPERIENCE/DESIGN **2026-11-23**, `epics.md`, decisão PM OQ-PRD-1.
+
+1. **Student UI:** cadastro em UX-STUDENTS permitido; associação em UX-CLASS-ENROLLMENTS; seed/import permanece para lab. PRD FR-7/§7 seed-only **não** governa FE.
+2. **Generate Lessons:** path público BFF/FE = `POST /api/v1/lessons/generate`; `/v1/lessons/gerar` superseded para UI/OpenAPI BFF.
+3. **FR-19 / FR-31:** composição **cliente** sobre proxies BFF; sem read-model BFF dedicado.
+4. **Tokens / UX canônica:** somente `ux-designs/ux-constrsw-2026-2-2026-11-23/` (pasta 08-24 removida). Primary `#0066B3` e demais tokens DESIGN.md.
+5. **Responsivo:** gate CAP-12 obrigatório (360 / 768 / 1280) em toda superfície FE.
+6. **OQ-1:** matriz grupo↔superfície materializada nos Épicos 0–8 de `epics.md` (ainda revisável pela turma).
 
 ## Deferred
 
-- **OQ-1** emparelhamento grupo ↔ UX-S1…S9 — turma/docente; a spine não atribui donos. A regra “não o próprio domínio” já vale (AD-8).
+- **OQ-PRD-1** ~~aberta~~ **fechada 2026-11-24 (PM):** Student UI create conforme epics/SPEC (OV-11).
+- **OQ-1** emparelhamento grupo ↔ superfície — proposta em `epics.md` (Épico 0–8); a spine não trava donos além de FR-28. A regra “não o próprio domínio” vale (AD-8).
 - **OQ-3** enunciado vs `syllabusItemId` obrigatório — grupo `lessons`. Default na AD-8 até fechar.
 - **OQ-ARCH-1** qual contexto usa Mongo vs PG no cold-start — escolha por grupo no README do submódulo; compose sempre sobe ambos. `[ASSUMPTION]` até o bootstrap fixar defaults de lab.
 - **OQ-ARCH-2** enriquecimento de display name Employee na vista Professor — default BFF (visualização).

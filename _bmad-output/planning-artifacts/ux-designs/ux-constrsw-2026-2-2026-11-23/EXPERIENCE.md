@@ -9,7 +9,6 @@ sources:
   - "backend/oauth/README.md"
   - "backend/oauth/contracts/identity-gateway.yaml"
   - "https://portal.pucrs.br/wp-content/uploads/2025/02/2025_02_18-portal-sobre_a_pucrs-guias_de_comunicacao-01-dna.pdf"
-  - "{planning_artifacts}/ux-designs/ux-constrsw-2026-2-2026-08-24/EXPERIENCE.md"
   - "https://www.figma.com/design/FTSWNiR5rQHXqDizXFJYqp"
 updated: 2026-11-24
 ---
@@ -249,4 +248,4 @@ Uma única SPA Angular, **responsiva de 360px a 1440px+**. Todas as superfícies
 |---|---|---|
 | Persistência do Bearer | `[ASSUMPTION]` alinhada ao SPEC | Memória de sessão da SPA (não `localStorage` longo); cookie httpOnly do oauth pode coexistir — implementação no `frontend/` Angular. |
 | OQ-1 partição nove grupos | Aberto no SPEC/PRD | Emparelhamento grupo↔superfície EXPERIENCE; não bloqueia scaffold Angular nem inventário BFF. |
-| OQ-PRD-1 | Aberto no SPEC | PRD ainda seed-only para Student; SPEC+este spine+Figma = cadastro UI + associação na turma. |
+| OQ-PRD-1 | **Fechada 2026-11-24 (PM)** | Cadastro de Student na UI (UX-STUDENTS) + associação na turma (UX-CLASS-ENROLLMENTS) conforme epics/SPEC/CAP-3 — **prevalece** sobre PRD FR-7/§7 seed-only. |

@@ -16,6 +16,12 @@ notes: >
   Scope deste breakdown = implementação do frontend Angular (CAP-12) com numeração
   Epic 0=Arruda, Epic 1..8=Grupos 01..08. SPEC prevalece sobre PRD (OQ-PRD-1 Student cadastro)
   e sobre Architecture onde paths/FR-19/31 divergem (/generate; composição cliente).
+pmDecisions:
+  - id: OQ-PRD-1
+    date: 2026-11-24
+    decision: >
+      Cadastro de Students na UI conforme Epic 3 (UX-STUDENTS) e associação via
+      UX-CLASS-ENROLLMENTS (Epic 7). Epics/SPEC/CAP-3 vencem PRD FR-7 e non-goal §7.
 ---
 
 # constrsw-2026-2 - Epic Breakdown
@@ -37,7 +43,7 @@ FR3: Consumidores guardam IDs — sem copiar cadastro pessoal entre contextos (P
 FR4: Professor não nasce sem Employee (PRD FR-4).
 FR5: Criar Professor só sobre Employee existente e ativo via `employeeId` 1–1; sem duplicar nome/e-mail (PRD FR-5; CAP-2).
 FR6: AcademicDegree 1–N sob Professor (PRD FR-6; CAP-2).
-FR7: Student tem `id` string opaco; **override SPEC:** cadastro na UI UX-STUDENTS (não só seed) (PRD FR-7 tensionado; CAP-3; OQ-PRD-1).
+FR7: Student tem `id` string opaco; **cadastro na UI UX-STUDENTS** (PM 2026-11-24 fechou OQ-PRD-1; epics/SPEC/CAP-3 vencem PRD seed-only).
 FR8: AcademicAffiliation 1–N sob Student (PRD FR-8; CAP-3).
 FR9: Vínculo Student↔turma: associação de Students **já existentes** via `studentIds` em UX-CLASS-ENROLLMENTS; sem criar Student na tela de Turmas (PRD FR-9 override; CAP-3/5).
 FR10: Course com identificador alinhável (`id` + `codigo`) (PRD FR-10; CAP-4).
