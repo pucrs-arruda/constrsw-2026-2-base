@@ -24,7 +24,7 @@ IDs alheios são **atributos**, não terceira classe do par. `professorId` ≠ `
 | --- | --- | --- |
 | `professors` → `employees` (ativo, is-a) | negocial | `professors` |
 | `classes` → Course/Professor/Room/Student; GET ocupação; FR-1a | negocial | `classes` |
-| `classes` → `POST /v1/lessons/gerar` | negocial | `classes` → `lessons` |
+| `classes` → `POST /api/v1/lessons/generate` (via BFF / escritor) | negocial | `classes` → `lessons` |
 | `lessons` deriva `salaEfetivaId`; merge conflito nos escritores | negocial | `lessons` / `reservations` / `classes` |
 | Class+Lessons, ocupação FR-29, Student FR-19, plano+roster FR-31 | visualização | BFF read-model |
 | Proxy CRUD de domínio | passthrough | BFF (sem regra FR) |
@@ -36,7 +36,7 @@ Na dúvida de mutação/invariante → domínio; na dúvida de join só para tel
 | De | Consome (IDs / GET) | Não pode |
 | --- | --- | --- |
 | `professors` | `employees` (`employeeId`) | Copiar nome/e-mail; existir sem Employee ativo; identidade store=Employee |
-| `classes` | Course, Professor(s), Room, Student IDs; GET `employees.ativo`; GET ocupação lessons/reservations na abertura | Copiar cadastro; criar Lesson direto (usa `POST /v1/lessons/gerar`); embutir Lesson completa no agregado |
+| `classes` | Course, Professor(s), Room, Student IDs; GET `employees.ativo`; GET ocupação lessons/reservations na abertura | Copiar cadastro; criar Lesson direto (usa `POST /api/v1/lessons/generate`); embutir Lesson completa no agregado |
 | `lessons` | Class; Room pela sala efetiva; GET linhas SALA em reservations | Persistir sala efetiva como fato independente da regra AD-5; editar data/`faixaId`; embutir Room no OpenAPI de domínio “para a tela” |
 | `reservations` | Lesson?, Room, Resource, Professor; GET ocupação; GET `employees.ativo` | Segurar sala padrão; segunda linha SALA na mesma Lesson; vazar roster |
 | BFF | Todos os nove (proxy + composição) + Keycloak (login) | Persistir agregado; recalcular sala efetiva; validar FR negocial; CORS nos contextos |

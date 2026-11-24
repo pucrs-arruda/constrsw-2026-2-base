@@ -20,7 +20,7 @@ Menu hambúrguer (ordem fixa): Funcionários → Professores → Alunos → Sala
 | 09 | Professores — detalhe + titulações + turmas semestre | `3:184` |
 | 10 | Alunos — lista + cadastro (+ turmas semestre BFF) | `3:232` |
 | 11 | Alunos — detalhe + afiliações + turmas semestre | `3:283` |
-| 12 | Salas — lista | `3:25` |
+| 12 | Salas — lista (+ turmas semestre BFF) | `3:25` |
 | 13 | Salas — detalhe + recursos de acessibilidade | `3:81` |
 | 14 | Recursos — lista (com reservations futuras) | `3:429` |
 | 15 | Recursos — detalhe + ocorrências | `3:480` |
@@ -31,7 +31,7 @@ Menu hambúrguer (ordem fixa): Funcionários → Professores → Alunos → Sala
 | 20 | Turma — detalhe, aba Aulas (CRUD lessons) | `3:739` |
 | 21 | Aula — detalhe + reservas (CRUD reservations) | `3:801` |
 | 22 | Estado de erro BFF 503 composição | `3:860` |
-| 23 | Ocupação — grade data+faixa (FR-29) | `85:744` |
+| 23 | Ocupação — recursos (GET /reservations/ocupacao) | `85:744` |
 | 24 | Professor — plano + roster (FR-31) | `85:958` |
 | 25 | Student — sala efetiva / plano / avaliação (FR-19) | `85:1124` |
 

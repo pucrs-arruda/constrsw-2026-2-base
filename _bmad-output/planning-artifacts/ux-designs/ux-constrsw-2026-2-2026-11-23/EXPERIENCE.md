@@ -40,16 +40,16 @@ Língua da UI: **português do Brasil**. Paths/tags do OpenAPI permanecem em ing
 | UX-EMPLOYEES | Funcionários | Menu | Lista + detalhe + dependents | `/api/v1/employees` |
 | UX-PROFESSORS | Professores | Menu | Lista + detalhe + academic-degrees + **Turmas do semestre em curso** (`classes` do GET BFF; `professorId`) | `/api/v1/professors` |
 | UX-STUDENTS | Alunos | Menu | Cadastro (Novo aluno) + lista + detalhe + AcademicAffiliation 1–N + **Turmas matriculadas no semestre em curso** (`classes` do GET BFF; `studentIds`) | `/api/v1/students` |
-| UX-ROOMS | Salas de Aula | Menu | Lista + detalhe + accessibility-features | `/api/v1/rooms` |
-| UX-RESOURCES | Recursos | Menu | Lista (GET com reservations futuras) + detalhe + occurrences | `/api/v1/resources` |
-| UX-COURSES | Disciplinas | Menu | Lista (GET com classes do semestre) + detalhe + bibliographic-references + syllabus-items | `/api/v1/courses` |
+| UX-ROOMS | Salas de Aula | Menu | Lista + detalhe + accessibility-features + **Turmas do semestre** (`classes` T3; `roomId`) | `/api/v1/rooms` |
+| UX-RESOURCES | Recursos | Menu | Lista + detalhe + occurrences + **reservations futuras** (T3) | `/api/v1/resources` |
+| UX-COURSES | Disciplinas | Menu | Lista + detalhe + bibliographic-references + syllabus-items + **Turmas do semestre** (`classes` T3; `courseId`) | `/api/v1/courses` |
 | UX-CLASSES | Turmas | Menu | Lista + detalhe com **2 abas** (Alunos \| Aulas) | `/api/v1/classes` (+ reviews/import) |
 | UX-CLASS-ENROLLMENTS | Turma · Alunos matriculados | Detalhe turma | Associa Students **já cadastrados** à Class (`studentIds`); sem criar Student aqui | `/api/v1/classes` + lista students |
 | UX-CLASS-LESSONS | Turma · Aulas | Detalhe turma | Lista + **CRUD** de Lesson da turma (gerar/criar/editar/excluir + tópicos) | `/api/v1/lessons` |
 | UX-LESSON-RESERVATIONS | Aula · Reservas | Detalhe da aula (a partir da lista de Aulas) | Lista + **CRUD** de Reservation daquela Lesson | `/api/v1/reservations` |
-| UX-OCCUPANCY | Ocupação | Menu | Grade agendada data+faixa; Livre/Tomado/Exceção; **não nominativo** (FR-29) | BFF módulo `ocupacao` |
-| UX-PROFESSOR-VIEW | Plano + roster | Menu | Leitura composta plano publicado + roster da Class (FR-31) | BFF composição |
-| UX-STUDENT-READ | Minhas aulas | Menu | Sala efetiva / tópico / avaliação + plano leitura (FR-19); nunca local mentiroso | BFF lessons (+ plano) |
+| UX-OCCUPANCY | Ocupação | Menu | Recursos ocupados em **data + faixa** (FR-29); **não nominativo** de Student | `GET /api/v1/reservations/ocupacao?data=&faixaId=` |
+| UX-PROFESSOR-VIEW | Plano + roster | Menu | Leitura composta plano + roster (FR-31) — **cliente** junta courses + classes (sem endpoint BFF dedicado) | proxy `/courses`, `/classes` |
+| UX-STUDENT-READ | Minhas aulas | Menu | Sala efetiva / tópico / avaliação + plano (FR-19) — **cliente** junta lessons + `classes` do student (sem endpoint BFF dedicado) | proxy `/lessons`, `/students`, `/courses` |
 
 **Menu hambúrguer (ordem fixa; item ativo marcado; &lt;1024px = folha; Esc fecha):**
 1. Funcionários → `/api/v1/employees`
@@ -67,7 +67,23 @@ Língua da UI: **português do Brasil**. Paths/tags do OpenAPI permanecem em ing
 
 Cada contexto de domínio: **lista + detalhe/master-detail** cobrindo POST/PUT/PATCH/DELETE e secundárias 1–N do OpenAPI. **Turma · Alunos:** só associa/desassocia Students existentes. **Turma · Aulas:** CRUD de Lesson. **Aula · Reservas:** CRUD de Reservation da aula aberta.
 
-**Composição BFF (`classes` no semestre em curso):** GET de professors e students (coleção e item) inclui `classes` — o cliente **não** envia `year`/`semester` (fuso America/Sao_Paulo; semestre 1 se mês &lt; agosto, senão 2). Professores: turmas com `professorId` = id do professor. Alunos: turmas cujo `studentIds` contém o id. Array vazio se não houver. Falha de composição → 503 (banner), sem recurso pela metade.
+**Composição BFF T3 (leitura):** o cliente **não** envia `year`/`semester` (fuso America/Sao_Paulo; semestre 1 se mês &lt; agosto, senão 2).
+
+| GET BFF | Campo composto | Vínculo |
+|---|---|---|
+| `/api/v1/students` (+`/{id}`) | `classes[]` | `studentIds` contém o estudante |
+| `/api/v1/professors` (+`/{id}`) | `classes[]` | `professorId` = id do professor |
+| `/api/v1/courses` (+`/{id}`) | `classes[]` | `courseId` = id da disciplina |
+| `/api/v1/rooms` (+`/{id}`) | `classes[]` | `roomId` = id da sala |
+| `/api/v1/resources` (+`/{id}`) | `reservations[]` | reservations futuras do resource |
+
+Array vazio se não houver. Escritas e GET de secundárias (ex. `enrollments`, titulações) **não** trazem `classes`. **AcademicAffiliation / enrollments ≠** `classes[]` do semestre. Falha T3 → 503 + banner, sem recurso pela metade.
+
+**Ocupação:** `GET /api/v1/reservations/ocupacao?data=&faixaId=` devolve itens `{reservationId, professorId, lessonId, resourceId}` (só **recursos** ACTIVE). UI lista esses recursos; não monta grade de salas neste endpoint.
+
+**Gerar aulas:** `POST /api/v1/lessons/generate` (não `/gerar`).
+
+**Fora da UI v1:** `classes/.../reviews` (existe no BFF).
 
 → Composição: [Figma — Closed CRAS frontend PUCRS](https://www.figma.com/design/FTSWNiR5rQHXqDizXFJYqp) (25 frames expanded). Referência responsiva compact/medium: [mockups/closed-cras-responsivo.html](mockups/closed-cras-responsivo.html). Plano de frames responsivos no Figma: [.working/figma-frame-map.md](.working/figma-frame-map.md). Spines vencem em conflito com mockups.
 

@@ -42,11 +42,11 @@ sources:
 
 - **CAP-5**
   - **intent:** Coordenador abre Class com sala padrão, WeeklySlot (esqueleto), associa Students já cadastrados (`studentIds`) e gera Lesson datadas sem criar Reservation da sala padrão.
-  - **success:** Abertura/associação recusada em colisão de sala efetiva ou Professor, capacidade insuficiente, zero AccessibilityFeature ou `studentId` inexistente; roster editável na aba Alunos matriculados; `classes` chama `POST /v1/lessons/gerar` após confirmação (efeito negocial, não join de UI); zero Reservation da sala padrão; data/`faixaId` da Lesson imutáveis (SM-2 parcial).
+  - **success:** Abertura/associação recusada em colisão de sala efetiva ou Professor, capacidade insuficiente, zero AccessibilityFeature ou `studentId` inexistente; roster editável na aba Alunos matriculados; após confirmação a UI chama `POST /api/v1/lessons/generate` via BFF (efeito negocial no escritor `lessons`, não join de UI); zero Reservation da sala padrão; data/`faixaId` da Lesson imutáveis (SM-2 parcial).
 
 - **CAP-6**
-  - **intent:** Na Turma (UX-CLASS-LESSONS), listar e fazer CRUD de Lesson da Class (gerar/criar/editar/excluir tópicos, `flagAvaliacao`, modalidade); `lessons` deriva e publica `salaEfetivaId`; Student lê via BFF onde/o quê/avaliação sem local mentiroso.
-  - **success:** CRUD de Lesson só no contexto da Turma (não no menu de topo); presencial sem linha SALA → sala efetiva = sala padrão; com linha SALA → `targetId` e padrão liberada; remoto → nulo; Student nunca vê a padrão quando a efetiva diverge; só `lessons` deriva (AD-5); BFF não recalcula.
+  - **intent:** Na Turma (UX-CLASS-LESSONS), listar e fazer CRUD de Lesson da Class (gerar/criar/editar/excluir tópicos, `flagAvaliacao`, modalidade); `lessons` deriva e publica `salaEfetivaId`; Student lê onde/o quê/avaliação sem local mentiroso.
+  - **success:** CRUD de Lesson só no contexto da Turma (não no menu de topo); presencial sem linha SALA → sala efetiva = sala padrão; com linha SALA → `targetId` e padrão liberada; remoto → nulo; Student nunca vê a padrão quando a efetiva diverge; só `lessons` deriva (AD-5); BFF não recalcula. UX-STUDENT-READ (FR-19) é **composição no cliente** sobre proxy BFF (`/api/v1/lessons`, turmas do GET students/`classes`, plano via courses) — sem endpoint BFF dedicado.
 
 - **CAP-7**
   - **intent:** Funcionário mantém Room + AccessibilityFeature 1–N e Resource + InventoryItem 1–N como espaços/ativos reserváveis distintos.
@@ -62,7 +62,7 @@ sources:
 
 - **CAP-10**
   - **intent:** BFF é a única superfície do browser: proxy de domínio, login/cookie, ocupação agendada e vistas compostas sem persistir agregado nem aplicar regra negocial.
-  - **success:** UI não faz join de nove OpenAPIs; OpenAPI BFF distingue **proxy** (`/v1/<contexto>/...`, pass-through sem pré-validar FR) vs **read-model de composição** (OV-10); GET de professors/students (e courses/rooms) inclui `classes` do semestre em curso (T3; fuso America/Sao_Paulo); FR-29 em módulo `ocupacao` (não nominativo); FR-19 só no módulo lessons do BFF; roster só no módulo classes e nunca em reservations; CORS só no BFF; falha crítica de hop → 503 problem+json + banner (SM-3 parcial).
+  - **success:** UI não faz join de nove OpenAPIs; OpenAPI BFF distingue **proxy** (`/api/v1/<contexto>/...`, pass-through sem pré-validar FR) vs **composição T3 de leitura** (OV-10); GET de professors/students/courses/rooms inclui `classes` do semestre; GET de resources inclui `reservations` futuras; FR-29 na UI = `GET /api/v1/reservations/ocupacao?data=&faixaId=` (lista de **recursos** ocupados; sem nomes de Student); FR-19/FR-31 = composição cliente sobre proxies (sem read-model BFF dedicado); roster só via `classes`/`studentIds`, nunca em reservations; CORS só no BFF; falha T3 → 503 problem+json (`BFF-DEPENDENCY` onde aplicável) + banner (SM-3 parcial).
 
 - **CAP-11**
   - **intent:** Identidade institucional via REST API `backend/oauth` sobre Keycloak; BFF faz login browser; cada contexto é resource-server JWKS e expõe `GET /v1/identidade/me` com o mesmo schema.
@@ -93,6 +93,8 @@ sources:
 - IA no hot path, IoT/sensor/no-show, digital twin, agente de booking, app nativo/totem.
 - Substituir SIS/ERP/LMS; folha/SIGRH/ponto; Lattes; protocolo e-MEC.
 - Criar Student a partir da tela de Turmas (associação só escolhe existentes); histórico acadêmico, notas e frequência; faixas E1/E2/O.
+- UI de `classes/.../reviews` (avaliações de turma) na v1 — endpoint existe no BFF, fora do EXPERIENCE.
+- Grade de ocupação de **salas** distintas de `reservations/ocupacao` (v1 = recursos por data+faixa).
 - Federação CAFe/BAITA de produção; EKS/Terraform cloud da edição 2026-1; identidade Mongo=Employee (mesmo UUID) ou copiar cadastro pessoal no contexto `professors` (Mongo como store é permitido se `employeeId` 1–1 e o store não vaza no contrato); provisionar Keycloak automaticamente ao criar Employee.
 
 ## Success signal
