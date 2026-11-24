@@ -37,10 +37,10 @@ Língua da UI: **português do Brasil**. Paths/tags do OpenAPI permanecem em ing
 |---|---|---|---|---|
 | UX-LOGIN | Login | URL fria / sessão expirada | Autenticar | `POST {oauth}/login` (+ refresh/logout) |
 | UX-HOME | Home / app-shell | Login ok | Shell + menu; landing autenticada | `GET /api/v1/identidade/me` |
-| UX-ROOMS | Salas de Aula | Menu | Lista + detalhe + accessibility-features | `/api/v1/rooms` |
+| UX-EMPLOYEES | Funcionários | Menu | Lista + detalhe + dependents | `/api/v1/employees` |
 | UX-PROFESSORS | Professores | Menu | Lista + detalhe + academic-degrees | `/api/v1/professors` |
 | UX-STUDENTS | Alunos | Menu | Lista (GET com classes do semestre) + detalhe + enrollments | `/api/v1/students` |
-| UX-EMPLOYEES | Funcionários | Menu | Lista + detalhe + dependents | `/api/v1/employees` |
+| UX-ROOMS | Salas de Aula | Menu | Lista + detalhe + accessibility-features | `/api/v1/rooms` |
 | UX-RESOURCES | Recursos | Menu | Lista (GET com reservations futuras) + detalhe + occurrences | `/api/v1/resources` |
 | UX-COURSES | Disciplinas | Menu | Lista (GET com classes do semestre) + detalhe + bibliographic-references + syllabus-items | `/api/v1/courses` |
 | UX-CLASSES | Turmas | Menu | Lista + detalhe com 3 abas | `/api/v1/classes` (+ reviews/import) |
@@ -49,10 +49,10 @@ Língua da UI: **português do Brasil**. Paths/tags do OpenAPI permanecem em ing
 | UX-CLASS-RESERVATIONS | Turma · Reservas | Detalhe turma | Reservations ligadas à turma; details/ocupação | `/api/v1/reservations` |
 
 **Menu hambúrguer (ordem fixa; item ativo marcado; &lt;1024px = folha; Esc fecha):**
-1. Salas de Aula → `/api/v1/rooms`
+1. Funcionários → `/api/v1/employees`
 2. Professores → `/api/v1/professors`
 3. Alunos → `/api/v1/students`
-4. Funcionários → `/api/v1/employees`
+4. Salas de Aula → `/api/v1/rooms`
 5. Recursos → `/api/v1/resources`
 6. Disciplinas → `/api/v1/courses`
 7. Turmas → `/api/v1/classes`
@@ -81,7 +81,7 @@ Microcopy em pt-BR. Postura de marca (Cuidador / Criador / Cientista; jeito PUCR
 | Component | Onde | Regras |
 |---|---|---|
 | app-shell | Autenticadas | Hambúrguer esq.; Closed CRAS; usuário + **Sair** (`POST /logout` → UX-LOGIN). |
-| hamburger-nav | Autenticadas | Lista fixa de 7 itens pt-BR. Ativo marcado. Folha &lt;1024px; Esc fecha. |
+| hamburger-nav | Autenticadas | Ordem fixa: Funcionários, Professores, Alunos, Salas de Aula, Recursos, Disciplinas, Turmas. Ativo marcado. Folha &lt;1024px; Esc fecha. |
 | page-header | Cada contexto | Título pt-BR da superfície + caption de propósito. |
 | login-panel | UX-LOGIN | Submit → `POST /login`. `201` → Bearer + Home. `401` banner sem enumerar conta. `503`/rede → “Identidade indisponível.” |
 | data-table | Listas | Linha abre detalhe. Sem infinite scroll. |

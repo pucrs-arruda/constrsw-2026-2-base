@@ -217,7 +217,7 @@ Hierarquia por borda `{colors.border}` e `{colors.card}` sobre `{colors.backgrou
 ## Components
 
 - **app-shell** — Barra 56px; hambúrguer; **Closed CRAS**; usuário (nome de `GET /api/v1/identidade/me`) + link **Sair**.
-- **hamburger-nav** — Ordem fixa pt-BR: Salas de Aula; Professores; Alunos; Funcionários; Recursos; Disciplinas; Turmas. Ativo = primary. Folha &lt;1024px.
+- **hamburger-nav** — Ordem fixa pt-BR: Funcionários; Professores; Alunos; Salas de Aula; Recursos; Disciplinas; Turmas. Ativo = primary. Folha &lt;1024px.
 - **page-header** — Headline + caption de contexto em português.
 - **button-primary / secondary / destructive** — Altura 36px. Destructive via confirm-dialog.
 - **data-table** — Densidade compacta; clique abre detalhe.
