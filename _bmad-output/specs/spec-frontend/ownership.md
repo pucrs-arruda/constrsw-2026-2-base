@@ -2,6 +2,8 @@
 
 **Decisão 2026-11-24:** reverte frontend cruzado. Prof. Arruda entrega shell + employees; cada grupo entrega a UX do **próprio** serviço.
 
+**Travado no Correct Course (2026-11-24):** a matriz abaixo é a partição oficial para épicos/stories e quick-dev — CE não pode alterar donos/superfícies.
+
 ## Mapa
 
 | Superfície | Dono | Contexto / serviço |
@@ -28,3 +30,4 @@
 - Shell (LOGIN/HOME) e UX-EMPLOYEES não são rateados entre os nove grupos.
 - Sucesso de grupo (SM-4 / FR-28) = par 1–N + BFF do domínio + gateway + **UX do próprio serviço**.
 - Coordenação de pastas no repo Angular: `contribution.md`.
+- Rastreio: `traceability.md` (`FE-CAP-N` + bloco Refs).

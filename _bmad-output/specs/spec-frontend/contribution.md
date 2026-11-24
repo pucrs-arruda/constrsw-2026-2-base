@@ -12,12 +12,13 @@ A SPA é compartilhada: **sem dono exclusivo** (exceto shell + employees = Prof.
 6. Testes: unit do componente/serviço da superfície; E2E da jornada do domínio quando a stack Compose do domínio + BFF estiver no ar.
 7. Não alterar superfícies de outro dono sem coordenação (`ownership.md`).
 8. Mudanças no shell (UX-LOGIN/HOME) ou em shared UI exigem alinhamento com Prof. Arruda.
+9. Story / quick-dev: bloco `Refs` com `FE-CAP-N` + `UX-*` + ownership + path (`traceability.md`).
 
 ## Escopo típico por dono
 
 | Dono | Escopo no `frontend/` |
 |---|---|
-| Prof. Arruda | `shell` (LOGIN, HOME, app-shell, nav) + `ux-employees` |
+| Prof. Arruda | `shell` (LOGIN, HOME, app-shell, nav) + `ux-employees` (+ scaffold/kit no Epic 0) |
 | Grupo 01 | `ux-classes` + aba enrollments |
 | Grupo 02 | `ux-class-lessons` (aba Aulas) |
 | Grupo 03 | `ux-lesson-reservations` + `ux-occupancy` |
@@ -32,7 +33,9 @@ A SPA é compartilhada: **sem dono exclusivo** (exceto shell + employees = Prof.
 - Inventar segunda SPA ou tema fora de `DESIGN.md`.
 - Colocar Lessons/Reservations no menu de topo.
 - Chamar Keycloak no browser.
+- Implementar UX de outro serviço (cruzado).
 - Commitar só o ponteiro do repo base sem o commit no submódulo `frontend` (e vice-versa).
+- Citar CAP nu do produto sem prefixo quando a story for FE — usar `FE-CAP-N`.
 
 ## Como apontar no bmad-quick-dev / build
 
@@ -42,6 +45,7 @@ _bmad-output/specs/spec-frontend/surfaces.md
 _bmad-output/specs/spec-frontend/ownership.md
 _bmad-output/specs/spec-frontend/contribution.md
 _bmad-output/specs/spec-frontend/stack.md
+_bmad-output/specs/spec-frontend/traceability.md
 _bmad-output/planning-artifacts/ux-designs/ux-constrsw-2026-2-2026-11-23/EXPERIENCE.md
 _bmad-output/planning-artifacts/ux-designs/ux-constrsw-2026-2-2026-11-23/DESIGN.md
 docs/open-api/bff.yaml
