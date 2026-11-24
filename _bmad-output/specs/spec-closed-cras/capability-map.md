@@ -59,7 +59,7 @@ Traceability do kernel SPEC para PRD, Architecture Spine e EXPERIENCE **2026-11-
 | UX-PROFESSOR-VIEW | CAP-10 (FR-31) | Grupo 07 (`professors`) | Plano + roster — composição cliente (courses + classes) |
 | UX-STUDENT-READ | CAP-6 (FR-19) | Grupo 04 (`students`) | Minhas aulas — composição cliente (lessons + classes) |
 
-Composição Figma: [Closed CRAS frontend PUCRS](https://www.figma.com/design/FTSWNiR5rQHXqDizXFJYqp) (25 frames). **OQ-1 fechada:** UX do próprio serviço; shell + employees = Prof. Arruda.
+Composição Figma: [Closed CRAS frontend PUCRS](https://www.figma.com/design/FTSWNiR5rQHXqDizXFJYqp) (25 frames). **OQ-1 fechada:** UX do próprio serviço; shell + employees = Prof. Arruda. Contrato SPA: [`../spec-frontend/`](../spec-frontend/SPEC.md) (`ownership.md`, `surfaces.md`).
 
 ## Ponte legada UX-S* → EXPERIENCE (somente rastreio UJ)
 

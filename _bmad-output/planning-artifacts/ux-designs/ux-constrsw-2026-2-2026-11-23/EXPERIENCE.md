@@ -16,9 +16,9 @@ updated: 2026-11-24
 
 # Closed CRAS — Experience Spine
 
-Companion UX do **SPEC-closed-cras** (CAP-10/11/12 + Constraints). UI web única Closed CRAS, ConstrSW PUCRS 2026/2. Identidade visual em `DESIGN.md` (tokens prevalecem sobre tema Material default). Autenticação só via `backend/oauth`; dados só via BFF. Sem Keycloak no browser. Sem chamar os nove serviços de domínio direto do browser.
+Companion UX do **SPEC-closed-cras** (CAP-12) e do **SPEC-frontend** (`_bmad-output/specs/spec-frontend/`). UI web única Closed CRAS, ConstrSW PUCRS 2026/2. Identidade visual em `DESIGN.md` (tokens prevalecem sobre tema Material default). Autenticação só via `backend/oauth`; dados só via BFF. Sem Keycloak no browser. Sem chamar os nove serviços de domínio direto do browser.
 
-**Autoridade:** SPEC vence em conflito de produto/stack; este spine vence em IA, fluxos e microcopy; `DESIGN.md` vence em tokens; Figma `FTSWNiR5rQHXqDizXFJYqp` é composição de referência (spines vencem o mockup).
+**Autoridade:** SPEC-frontend vence em partição/stack/contribuição; SPEC-closed-cras vence em FRs de produto; este spine vence em IA, fluxos e microcopy; `DESIGN.md` vence em tokens; Figma `FTSWNiR5rQHXqDizXFJYqp` é composição de referência (spines vencem o mockup).
 
 ## Foundation
 
@@ -237,5 +237,5 @@ Uma única SPA Angular, **responsiva de 360px a 1440px+**. Todas as superfícies
 | ID | Status | Efeito |
 |---|---|---|
 | Persistência do Bearer | `[ASSUMPTION]` alinhada ao SPEC | Memória de sessão da SPA (não `localStorage` longo); cookie httpOnly do oauth pode coexistir — implementação no `frontend/` Angular. |
-| OQ-1 partição implementação | **Fechada (2026-11-24)** | Prof. Arruda → UX-LOGIN, UX-HOME, UX-EMPLOYEES; cada grupo → UX do próprio serviço (mapa em `capability-map.md`). |
+| OQ-1 partição implementação | **Fechada (2026-11-24)** | Prof. Arruda → UX-LOGIN, UX-HOME, UX-EMPLOYEES; cada grupo → UX do próprio serviço (mapa em `spec-frontend/ownership.md`). |
 | OQ-PRD-1 | Aberto no SPEC | PRD ainda seed-only para Student; SPEC+este spine+Figma = cadastro UI + associação na turma. |

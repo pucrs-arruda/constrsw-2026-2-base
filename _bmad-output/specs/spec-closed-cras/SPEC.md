@@ -4,6 +4,7 @@ companions:
   - brownfield-2026-1.md
   - domain-pairs.md
   - capability-map.md
+  - ../spec-frontend/SPEC.md
   - ../../planning-artifacts/prds/prd-constrsw-2026-2-2026-08-19/prd.md
   - ../../planning-artifacts/prds/prd-constrsw-2026-2-2026-08-19/addendum.md
   - ../../planning-artifacts/architecture/architecture-constrsw-2026-2-2026-08-24/ARCHITECTURE-SPINE.md
@@ -69,8 +70,8 @@ sources:
   - **success:** UI não chama o IdP (`keycloak-js` proibido); papéis literais `funcionario`|`coordenador`|`professor`|`student`; claims com IDs opacos; escritura obedece NFR-CTR-2; credencial recusada = 401 sem enumerar conta; create Employee não provisiona usuário no Keycloak. O serviço `employees` desta entrega não publica `GET /identidade/me`; os demais contextos seguem este capability.
 
 - **CAP-12**
-  - **intent:** Uma SPA Angular + Material (shell UX-LOGIN/HOME + superfícies de domínio do companion EXPERIENCE 2026-11-23): Prof. Arruda entrega UX-LOGIN, UX-HOME e UX-EMPLOYEES; cada grupo entrega a UX do **próprio** serviço, com tokens de DESIGN.md.
-  - **success:** Sem seletor de microsserviço; personas UJ-1–UJ-4 completam jornadas na UI (SM-3, SM-4); donos de superfície = mapa fechado (OQ-1); dados só via BFF; Figma `FTSWNiR5rQHXqDizXFJYqp` é composição de referência (spines vencem em conflito).
+  - **intent:** Uma SPA Angular + Material (shell UX-LOGIN/HOME + superfícies EXPERIENCE): Prof. Arruda entrega UX-LOGIN, UX-HOME e UX-EMPLOYEES; cada grupo entrega a UX do **próprio** serviço, com tokens de DESIGN.md.
+  - **success:** Sem seletor de microsserviço; personas UJ-1–UJ-4 completam jornadas na UI (SM-3, SM-4); donos = OQ-1 fechada; dados só via BFF; Figma `FTSWNiR5rQHXqDizXFJYqp` é composição de referência. Contrato detalhado da SPA: companion `../spec-frontend/SPEC.md`.
 
 ## Constraints
 
@@ -114,7 +115,7 @@ Em laboratório (compose), as quatro personas completam UJ-1–UJ-4 na UI sem es
 
 ## Open Questions
 
-- ~~**OQ-1.** Emparelhamento grupo↔superfície~~ **Fechada (2026-11-24):** Prof. Arruda → UX-LOGIN, UX-HOME, UX-EMPLOYEES; cada grupo → UX do próprio serviço (mapa em `capability-map.md`). Reverte o frontend cruzado anterior (FR-28).
+- ~~**OQ-1.** Emparelhamento grupo↔superfície~~ **Fechada (2026-11-24):** Prof. Arruda → UX-LOGIN, UX-HOME, UX-EMPLOYEES; cada grupo → UX do próprio serviço (mapa em `spec-frontend/ownership.md` e `capability-map.md`). Reverte o frontend cruzado anterior (FR-28).
 - **OQ-3.** LessonTopic: `syllabusItemId` obrigatório, enunciado extra obrigatório, ou pelo menos um dos dois? Default de demo acima até fechar.
 - **OQ-ARCH-1.** Qual contexto usa Mongo vs PostgreSQL no cold-start? Default: escolha por grupo no README do submódulo; compose sempre sobe ambos. Dono: bootstrap da malha / grupos.
 - **OQ-PRD-1.** PRD FR-7/FR-9 ainda descrevem Student seed-only; SPEC+EXPERIENCE+Figma agora têm cadastro UI + associação na turma. Reconciliar o PRD? Dono: produto.

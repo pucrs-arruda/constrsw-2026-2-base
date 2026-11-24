@@ -90,4 +90,4 @@ Diagrama completo e regras: companion adotado `ARCHITECTURE-SPINE.md` (AD-1).
 | --- | --- |
 | `backend/oauth` | Catálogo IdP sobre Keycloak: realm, faixas, roles-scopes, fragmento OpenAPI identity-gateway, adapters de referência |
 | `backend/bff` | Login browser, cookie, proxy + read-models, módulo `ocupacao` (FR-29); resilience AD-10 |
-| `frontend` | SPA Angular única; shell + UX-EMPLOYEES = Prof. Arruda; cada grupo = UX do próprio serviço (OQ-1 fechada); tokens DESIGN.md |
+| `frontend` | SPA Angular única; contrato em `../spec-frontend/`; shell + UX-EMPLOYEES = Prof. Arruda; cada grupo = UX do próprio serviço; tokens DESIGN.md |
