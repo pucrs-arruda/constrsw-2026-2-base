@@ -44,22 +44,30 @@ Menu hambúrguer (ordem fixa): Funcionários → Professores → Alunos → Sala
 | Lib 6 | M3 Metrics | `21:1125` |
 | Lib 7 | Paleta PUCRS (chips Tertiary/Gold/Primary/Secondary) | `23:620` |
 
-## Responsive frames (planejados — ainda não criados no Figma)
+## Responsive frames (página Responsivo, 2026-11-24)
 
-Página nova no arquivo: **Responsivo**. Cada frame é uma variante editável (auto-layout + instances da Lib), não screenshot. Larguras: compact **360 × 800**, medium **768 × 1024**. Nome: `{#}C — {nome} (compact)` / `{#}M — {nome} (medium)`. Referência visual: `../mockups/closed-cras-responsivo.html` e `qa/responsive/*.png`. Spines vencem.
+Variantes editáveis (auto-layout + instances). Larguras: compact **360**, medium **768**. Spines vencem.
 
-| # | Origem | Compact 360 | Medium 768 | O que o frame precisa provar |
-|---|---|---|---|---|
-| R01 | 01 Login — repouso | sim | sim | Faixa de marca no topo; card sem elevação em largura total (compact) |
-| R02 | 02 Login — credencial recusada | sim | — | Banner quebrando linha dentro do card |
-| R03 | 05 Home — folha do menu | sim | sim | Folha 280px + scrim; caption e nome do usuário ocultos (compact) |
-| R04 | 12 Salas — lista | sim | sim | Compact: lista de 2 linhas + "Mais ações"; CTA filled em linha inteira. Medium: tabela com colunas de prioridade baixa ocultas |
-| R05 | 13 Salas — detalhe | sim | sim | "← Voltar para Salas de Aula"; principal e secundária empilhadas |
-| R06 | 07 Funcionários — detalhe + dependentes | sim | — | Secundária como lista; Adicionar dependente em linha inteira |
-| R07 | 20 Turma — aba Aulas | sim | sim | Abas roláveis; chips de contexto quebrando; aulas como lista com chip «Com avaliação» |
-| R08 | 21 Turma — aba Reservas | sim | — | Única grade com scroll horizontal e coluna de faixas fixa |
-| R09 | 22 BFF 503 composição | sim | — | identity-banner com ação abaixo do texto |
-| R10 | Edição (dialog genérico) | sim | sim | Compact: dialog tela cheia com ações no rodapé. Medium: dialog 560px |
+| # | Frame | node id |
+|---|---|---|
+| R01C | Login — repouso (compact) | `37:615` |
+| R01M | Login — repouso (medium) | `37:637` |
+| R02C | Login — credencial recusada (compact) | `37:659` |
+| R03C | Home — folha do menu (compact) | `37:684` |
+| R03M | Home — folha do menu (medium) | `37:734` |
+| R04C | Salas — lista (compact) | `37:786` |
+| R04M | Salas — lista (medium) | `37:910` |
+| R05C | Salas — detalhe (compact) | `39:792` |
+| R05M | Salas — detalhe (medium) | `39:875` |
+| R06C | Funcionários — detalhe (compact) | `39:960` |
+| R07C | Turma — aba Aulas (compact) | `39:1021` |
+| R07M | Turma — aba Aulas (medium) | `39:1122` |
+| R08C | Turma — aba Reservas (compact) | `39:1208` |
+| R09C | BFF 503 composição (compact) | `39:1321` |
+| R10C | Edição — dialog tela cheia (compact) | `39:1349` |
+| R10M | Edição — dialog 560 (medium) | `39:1380` |
+
+Componentes novos na página Components: `IconButton/MoreActions` `35:652`, `ListItem/Compact` `35:688` (Meta Nenhuma/Tertiary/Gold), `AppBar/Compact` `35:689`.
 
 As demais superfícies (Funcionários/Professores/Alunos/Recursos/Disciplinas/Turmas lista e detalhe) seguem o padrão de R04/R05 a partir das spines e não ganham frame próprio.
 
