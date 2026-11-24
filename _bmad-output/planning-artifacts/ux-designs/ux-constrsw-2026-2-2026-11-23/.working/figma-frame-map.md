@@ -1,9 +1,11 @@
 # Figma frame map
 
 File: https://www.figma.com/design/FTSWNiR5rQHXqDizXFJYqp  
-Session: Closed CRAS — frontend PUCRS
+Update polish: 2026-11-23
 
 Menu hambúrguer (ordem fixa): Funcionários → Professores → Alunos → Salas de Aula → Recursos → Disciplinas → Turmas.
+
+## Product frames (22)
 
 | # | Frame | node id |
 |---|---|---|
@@ -30,5 +32,17 @@ Menu hambúrguer (ordem fixa): Funcionários → Professores → Alunos → Sala
 | 21 | Turma — detalhe, aba Reservas | `3:801` |
 | 22 | Estado de erro BFF 503 composição | `3:860` |
 
-Deep link pattern: `https://www.figma.com/design/FTSWNiR5rQHXqDizXFJYqp?node-id={id-with-hyphen}`  
+## Library frames (≤6, não são telas de produto)
+
+| # | Frame | node id |
+|---|---|---|
+| Lib 1 | Chrome (header + nav) | `13:79` |
+| Lib 2 | Controles (botões + campos) | `13:103` |
+| Lib 3 | Dados (tabela + pills) | `13:122` |
+| Lib 4 | Feedback (banners + abas) | `13:139` |
+| Lib 5 | M3 Buttons (h=40) | `21:1108` |
+| Lib 6 | M3 Metrics | `21:1125` |
+| Lib 7 | Paleta PUCRS (chips Tertiary/Gold/Primary/Secondary) | `23:620` |
+
+Deep link: `https://www.figma.com/design/FTSWNiR5rQHXqDizXFJYqp?node-id={id-with-hyphen}`  
 Example: https://www.figma.com/design/FTSWNiR5rQHXqDizXFJYqp?node-id=2-2
