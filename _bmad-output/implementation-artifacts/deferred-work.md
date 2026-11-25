@@ -76,3 +76,7 @@
 - source_spec: `_bmad-output/implementation-artifacts/spec-0-5-kit-compartilhado-tabela-lista-dialogs-banners-http-bff.md`
   summary: mapBffHttpError 401 always returns refusal bannerKind (no session-clear-only option)
   evidence: Edge review — callers that only clear session can ignore bannerKind
+
+- source_spec: `_bmad-output/implementation-artifacts/spec-0-6-lista-de-funcionarios-responsiva.md`
+  summary: Employees list uses parallel me()+list() without switchMap; create stubs lack Voltar CTA
+  evidence: Adversarial review 0.6 — polish for reload races and stub UX
