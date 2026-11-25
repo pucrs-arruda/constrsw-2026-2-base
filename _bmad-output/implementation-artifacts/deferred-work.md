@@ -80,3 +80,15 @@
 - source_spec: `_bmad-output/implementation-artifacts/spec-0-6-lista-de-funcionarios-responsiva.md`
   summary: Employees list uses parallel me()+list() without switchMap; create stubs lack Voltar CTA
   evidence: Adversarial review 0.6 — polish for reload races and stub UX
+
+- source_spec: `_bmad-output/implementation-artifacts/spec-0-7-detalhe-employee-dependent-1-n.md`
+  summary: Falha de identidade/me (incl. 401) só desliga canWrite; não limpa sessão nem redireciona — mesmo padrão da lista 0.6
+  evidence: Adversarial/edge review 0.7 — alinhado a employees-list-page; unificar auth em story de sessão
+
+- source_spec: `_bmad-output/implementation-artifacts/spec-0-7-detalhe-employee-dependent-1-n.md`
+  summary: IDs de employee/dependent sem encodeURIComponent nos path segments do EmployeesApi
+  evidence: Edge review 0.7 — UUIDs atuais ok; reforçar se IDs opacos ganharem caracteres reservados
+
+- source_spec: `_bmad-output/implementation-artifacts/spec-0-7-detalhe-employee-dependent-1-n.md`
+  summary: Sem suite dedicada dependent-form-dialog.spec (validação/refusal/401 no write do dialog)
+  evidence: Adversarial review 0.7 — cobertura parcial via page + api specs; expandir depois
