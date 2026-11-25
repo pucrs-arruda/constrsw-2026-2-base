@@ -6,7 +6,7 @@
 | Data | 24/11/2026 |
 | Executores | Gemini Argon (agentes de desenvolvimento AG-01 a AG-09) |
 | Revisor | Claude (agente REV) |
-| Repositório base | `constrsw-2026-2-base`; principal do grupo `grupo08-base` (criada pelo AG-09 a partir de `claude/rooms-frontend-bff-dfae7e`, onde este plano está). Regra de branches: seção 3.1 |
+| Repositório base | `constrsw-2026-2-base`; principal do grupo `base/grupo08` (criada pelo AG-09 a partir de `claude/rooms-frontend-bff-dfae7e`, onde este plano está). Regra de branches: seção 3.1 |
 | Fonte de verdade | Este documento + `docs/open-api/bff.yaml` + `docs/open-api/grupo08-rooms-api.yaml` |
 
 ---
@@ -26,6 +26,34 @@
 11. Riscos e armadilhas conhecidas
 12. Fora do escopo
 13. Glossário
+
+---
+
+## 0. ATUALIZAÇÃO 24/11/2026 — specs do professor (PREVALECE sobre qualquer trecho abaixo)
+
+O professor publicou `_bmad-output/specs/spec-bff/` e `_bmad-output/specs/spec-frontend/` (trazidas para este worktree no merge `4174494`). Onde este plano divergir delas, **valem as specs e esta seção**. Leitura obrigatória antes de trabalhar ou revisar:
+- BFF (AG-02, AG-03, REV-1b): `spec-bff/SPEC.md`, `routes.md`, `composition.md`, `stack.md`, `contribution.md`, `brownfield.md`, `divergences.md`.
+- Frontend (AG-04 a AG-08, REV-2): `spec-frontend/SPEC.md`, `stack.md`, `ownership.md`, `contribution.md`, `surfaces.md`, `traceability.md`; `EXPERIENCE.md` (responsividade); mockups em `frontend/mockups/` (`frames/12-salas-lista.png`, `13-salas-detalhe.png`, `22-bff-503-composicao.png`, `responsive/salas-*`, `responsive/sala-detalhe-*`, `closed-cras-responsivo.html`). As spines vencem o mockup.
+
+**0.1 Dono de cada parte (spec-frontend/ownership.md).** O Grupo 08 é dono **só de UX-ROOMS** (telas de salas). Scaffold, shell, login (UX-LOGIN), home (UX-HOME) e kit de UI são do **Prof. Arruda** (Epic 0, ainda não entregue). Decisão: AG-04 e AG-05 continuam, mas tudo o que criam fora de `surfaces/ux-rooms/` é **scaffold provisório**: dizer isso no README do frontend e no relatório; não reivindicar autoria de UX-LOGIN/UX-HOME; antes de qualquer merge em `frontend/grupo08`, rodar `git ls-remote --heads origin` no `frontend` e checar `origin/main` para ver se o scaffold do professor apareceu — se apareceu, PARAR e avisar o REV-2 (a tela de salas passa a ser montada sobre o scaffold dele). Nunca existir dois `angular.json`.
+
+**0.2 Pastas (substitui 6.3/6.4/6.7).** Usar a convenção dos épicos/spec: `src/app/shell/` (layout, menu, app bar — provisório), `src/app/shared/` (ui compartilhada, http, config — provisório), `src/app/auth/` (provisório), `src/app/surfaces/ux-rooms/` (**nosso**: `data/`, `list/`, `detail/`, `ux-rooms.routes.ts` exportando `ROOMS_ROUTES`). O shell registra a tela com **um** `loadChildren` para `ROOMS_ROUTES` em `/salas`. Onde o plano diz `features/rooms/...` leia `surfaces/ux-rooms/...`; onde diz `core/layout` leia `shell/`; `core/ui` e `core/http` → `shared/ui`, `shared/http`; `core/auth` → `auth/`. AG-04 deve reorganizar o que já fez para essa estrutura antes de pedir aprovação.
+
+**0.3 Autenticação (substitui D9 e partes de 8.5/8.6).** Spec: a SPA manda **Bearer** nas chamadas à BFF, com o token **em memória** (signal), **nunca** em localStorage/sessionStorage; o cookie httpOnly pode coexistir. Então: `login()` guarda o `access_token` do corpo do 201 em memória; o interceptor envia `Authorization: Bearer <token>` e mantém `withCredentials: true`; ao recarregar a página, o guard chama `refresh()` (que usa o cookie) e repovoa o token em memória. Isso também evita o 403 de Origin nas escritas.
+
+**0.4 Telas (ajusta 8.7/8.8).**
+- Capacidade **obrigatória no formulário** (inteiro ≥ 1, erro em pt-BR); a listagem e o detalhe continuam tolerando `capacity: null` vindo da API ("Capacidade não informada"). O passo 10 do roteiro do AG-09 passa a ser "editar capacidade para outro valor".
+- Responsividade (EXPERIENCE): compact 360–599, medium 600–1279 (pivô do drawer em 1024), expanded ≥ 1280. **Tabela completa só ≥ 1280**; 1024–1279 usa o comportamento medium. Master-detail em 2 colunas só ≥ 1280. Compact: lista de 2 linhas com "Mais ações", busca em linha inteira com o CTA abaixo, dialog em tela cheia e link "← Voltar para Salas de Aula" acima do título no detalhe.
+- Esc / Cancelar num formulário **com alterações** pede confirmação de descarte (não descartar form sujo sem ação secundária).
+- Ao trocar de rota, foco vai para o `h1`.
+- Evidência obrigatória: screenshots (ou teste de viewport) nas larguras **360, 768 e 1280** (não 375) anexados ou referenciados no relatório.
+- Toda entrega de frontend traz no relatório o bloco `Refs: FE-CAP-N; UX-ROOMS; ownership: Grupo 08; paths: <arquivos>` (spec-frontend/traceability.md).
+
+**0.5 E2E do frontend.** A spec pede E2E da jornada com a stack no ar. Fica **liberado Playwright** como devDependency do `frontend` (exceção à regra global 8). AG-09 escreve `frontend/e2e/rooms.spec.ts` cobrindo login → lista → criar → detalhe → recurso de acessibilidade → editar → excluir, idempotente (códigos únicos, limpa o que criou), e roda nas 3 larguras.
+
+**0.6 BFF.** Rotas, composição, 503 `BFF-DEPENDENCY`, retry só GET/HEAD: o plano já cumpre a spec-bff. Escopo permitido fora de `src/modules/rooms/`: a linha do `bootstrap.ts`, `openapi/*`, `scripts/validate-contract.cjs`, script `test:e2e:rooms` no `package.json`, `compose.rooms.yaml` — documentar como exceções no README do módulo. E2E (AG-03): seguir `test/e2e/students.e2e-spec.ts` como modelo (stamp único, `afterAll` que limpa, `GET /health`, criar uma class com o `roomId` da sala para provar `classes` e apagá-la ao final), login via `POST {oauth}/login` (não o `accessToken()` direto do Keycloak), cobrir todos os endpoints e rodar 2x verde (item 5b da ficha 8.3).
+
+**0.7 Base.** AG-09: a `base/grupo08` deve conter as specs do professor (partir de `grupo08-base-feat/orquestracao`, que já tem o merge `4174494`). Não editar o `docker-compose.yml`. Manter a porta 8080 do frontend.
 
 ---
 
@@ -76,12 +104,14 @@ Em cada repositório existem dois níveis de branch:
 
 | Repositório | Branch **principal do grupo** (integração; recebe os merges; é a que sobe para o GitHub) | Branches **de desenvolvimento** (onde se coda; saem da principal) |
 | --- | --- | --- |
-| `frontend` | `grupo08-frontend` | `grupo08-frontend-feat/<slug>` |
-| `backend/bff` | `grupo08-bff` | `grupo08-bff-feat/<slug>` |
+| `frontend` | `frontend/grupo08` | `frontend/grupo08-feat/<slug>` |
+| `backend/bff` | `bff/grupo08` | `bff/grupo08-feat/<slug>` |
 | `backend/rooms` | `grupo08` (já é a convenção do repositório rooms) | `grupo08-feat/<slug>` |
-| repo base `constrsw-2026-2-base` | `grupo08-base` | `grupo08-base-feat/<slug>` (só se precisar) |
+| repo base `constrsw-2026-2-base` | `base/grupo08` | `base/grupo08-feat/<slug>` (só se precisar) |
 
-> Não usar `grupo08-frontend/<slug>`: o git não deixa existir a branch `grupo08-frontend` e uma `grupo08-frontend/<algo>` ao mesmo tempo. Por isso o sufixo `-feat/`.
+> **Rulesets do GitHub (erro GH013)**: nos repositórios `constrsw-2026-2-base`, `constrsw-2026-2-bff` e `constrsw-2026-2-frontend` há regras que **bloqueiam criar ou atualizar** qualquer branch começando com `grupo08` para a nossa conta. Testado em 24/11/2026: `bff/grupo08` e `frontend/grupo08` foram aceitos (já existem no GitHub, criados a partir da `main`); `grupo08-frontend` foi recusado. Por isso a principal e o desenvolvimento usam o prefixo do repositório: `bff/grupo08` + `bff/grupo08-feat/<slug>`, `frontend/grupo08` + `frontend/grupo08-feat/<slug>`, `base/grupo08` + `base/grupo08-feat/<slug>`. No `rooms` (repositório próprio do grupo) continua `grupo08` + `grupo08-feat/<slug>`. A branch antiga `grupo08-frontend-feat/base` no GitHub não pode mais ser atualizada: abandonar.
+
+> Por que `-feat/` e não `frontend/grupo08/<slug>`: o git não deixa existir a branch `frontend/grupo08` e uma `frontend/grupo08/<algo>` ao mesmo tempo.
 
 **Fluxo de cada agente (copiar literalmente):**
 
@@ -90,7 +120,7 @@ Em cada repositório existem dois níveis de branch:
 cd <submódulo>                         # frontend | backend/bff | backend/rooms
 git fetch origin
 
-# 1) garantir a branch principal do grupo (PRINCIPAL = grupo08-frontend | grupo08-bff | grupo08)
+# 1) garantir a branch principal do grupo (PRINCIPAL = frontend/grupo08 | bff/grupo08 | grupo08)
 #    se já existe no origin:
 git checkout PRINCIPAL && git pull --ff-only origin PRINCIPAL
 #    se ainda NÃO existe (só o primeiro agente do repositório cria): a partir do origin/main
@@ -113,7 +143,7 @@ git push origin PRINCIPAL-feat/<slug>  # opcional, para histórico
 ```
 
 Regras do fluxo:
-- Quem cria a principal de cada repositório (se ela não existir no `origin`): **AG-01** cria `grupo08` no rooms (se não existir), **AG-02** cria `grupo08-bff`, **AG-04** cria `grupo08-frontend`, **AG-09** cria `grupo08-base`. Os demais só fazem `checkout` + `pull`.
+- Quem cria a principal de cada repositório (se ela não existir no `origin`): **AG-01** cria `grupo08` no rooms (se não existir), **AG-02** cria `bff/grupo08`, **AG-04** cria `frontend/grupo08`, **AG-09** cria `base/grupo08`. Os demais só fazem `checkout` + `pull`.
 - Agentes que rodam em paralelo no mesmo repositório (ex.: AG-05 e AG-06) mergeiam um de cada vez: sempre `pull --ff-only` antes do merge. Conflito no merge → resolver só se for em arquivo de configuração compartilhado (`app.config.ts`, `package.json`, `package-lock.json`); senão `git merge --abort` e avisar o REV.
 - Agente de onda posterior **sempre** cria a sua branch de desenvolvimento a partir da principal **atualizada** (que já contém o trabalho aprovado das ondas anteriores). Nunca a partir da branch de desenvolvimento de outro agente.
 - O push é **somente** da principal do grupo (e, opcionalmente, da própria branch de desenvolvimento). Nunca push para `main`. PR para a `main` de cada repositório só é aberto pelo grupo, manualmente, quando decidir entregar.
@@ -507,17 +537,17 @@ Motivo: três repositórios independentes (rooms, bff, frontend) e, dentro do fr
 | ID | Nome | Repositório | Principal do grupo (merge + push) | Branch de desenvolvimento (sai da principal) | Onda | Depende de |
 | --- | --- | --- | --- | --- | --- | --- |
 | AG-01 | Rooms Backend Fixer | `backend/rooms` | `grupo08` | `grupo08-feat/t3-fix-build-health` | 1 | — |
-| AG-02 | BFF Rooms Core | `backend/bff` | `grupo08-bff` (AG-02 cria) | `grupo08-bff-feat/rooms-core` | 1 | — |
-| AG-03 | BFF Rooms Testes e Contrato | `backend/bff` | `grupo08-bff` | `grupo08-bff-feat/rooms-tests` | 2 | AG-02 aprovado e mergeado |
-| AG-04 | Frontend Fundação | `frontend` | `grupo08-frontend` (AG-04 cria) | `grupo08-frontend-feat/base` | 1 | — |
-| AG-05 | Frontend Auth e Shell | `frontend` | `grupo08-frontend` | `grupo08-frontend-feat/auth` | 2 | AG-04 aprovado e mergeado |
-| AG-06 | Frontend Dados de Rooms | `frontend` | `grupo08-frontend` | `grupo08-frontend-feat/rooms-data` | 2 | AG-04 aprovado e mergeado |
-| AG-07 | Frontend Lista de Salas | `frontend` | `grupo08-frontend` | `grupo08-frontend-feat/rooms-list` | 3 | AG-05 e AG-06 aprovados e mergeados |
-| AG-08 | Frontend Detalhe de Sala | `frontend` | `grupo08-frontend` | `grupo08-frontend-feat/rooms-detail` | 3 | AG-05 e AG-06 aprovados e mergeados |
-| AG-09 | Integrador e Entrega | base + 3 submódulos | `grupo08-base` (AG-09 cria) | — | 4 | todos aprovados e mergeados |
+| AG-02 | BFF Rooms Core | `backend/bff` | `bff/grupo08` (AG-02 cria) | `bff/grupo08-feat/rooms-core` | 1 | — |
+| AG-03 | BFF Rooms Testes e Contrato | `backend/bff` | `bff/grupo08` | `bff/grupo08-feat/rooms-tests` | 2 | AG-02 aprovado e mergeado |
+| AG-04 | Frontend Fundação | `frontend` | `frontend/grupo08` (AG-04 cria) | `frontend/grupo08-feat/base` | 1 | — |
+| AG-05 | Frontend Auth e Shell | `frontend` | `frontend/grupo08` | `frontend/grupo08-feat/auth` | 2 | AG-04 aprovado e mergeado |
+| AG-06 | Frontend Dados de Rooms | `frontend` | `frontend/grupo08` | `frontend/grupo08-feat/rooms-data` | 2 | AG-04 aprovado e mergeado |
+| AG-07 | Frontend Lista de Salas | `frontend` | `frontend/grupo08` | `frontend/grupo08-feat/rooms-list` | 3 | AG-05 e AG-06 aprovados e mergeados |
+| AG-08 | Frontend Detalhe de Sala | `frontend` | `frontend/grupo08` | `frontend/grupo08-feat/rooms-detail` | 3 | AG-05 e AG-06 aprovados e mergeados |
+| AG-09 | Integrador e Entrega | base + 3 submódulos | `base/grupo08` (AG-09 cria) | — | 4 | todos aprovados e mergeados |
 | REV | Revisor | todos | — | — | após cada agente | — |
 
-> AG-08 usa `room-form.dialog.ts` do AG-07. Para não bloquear, AG-08 **importa** o dialog pelo caminho combinado (6.3) e, até o AG-07 mergear em `grupo08-frontend`, usa um stub local **não commitado**; antes de pedir revisão, AG-08 faz `git merge grupo08-frontend` na sua branch para pegar o dialog real. Alternativa mais simples se o Orca não lidar bem com isso: rodar AG-08 **depois** do AG-07 (Onda 3b), criando a branch já com o dialog na principal.
+> AG-08 usa `room-form.dialog.ts` do AG-07. Para não bloquear, AG-08 **importa** o dialog pelo caminho combinado (6.3) e, até o AG-07 mergear em `frontend/grupo08`, usa um stub local **não commitado**; antes de pedir revisão, AG-08 faz `git merge frontend/grupo08` na sua branch para pegar o dialog real. Alternativa mais simples se o Orca não lidar bem com isso: rodar AG-08 **depois** do AG-07 (Onda 3b), criando a branch já com o dialog na principal.
 
 ### 7.2 Linha do tempo
 
@@ -598,7 +628,7 @@ Se não houver Docker na máquina do agente, rodar ao menos `./mvnw -q -DskipTes
 
 **Prompt:**
 
-> Você é o AG-02 do plano `_bmad-output/planning-artifacts/rooms-t3-t4-plano-orca.md` (leia as seções 2, 3, 4.3–4.6, 6.1, 6.2 e esta ficha). Trabalhe só no submódulo `backend/bff` (NestJS). Objetivo: transformar `src/modules/rooms/` do proxy legado `/v1/rooms` em `/api/v1/rooms` com composição das classes do semestre em curso nos dois GETs, seguindo exatamente `docs/open-api/bff.yaml`. Use `src/modules/courses/` como modelo de composição e `src/modules/students/` como modelo do 503 `BFF-DEPENDENCY`. Siga a regra de branches da seção 3.1: você é quem cria a principal `grupo08-bff` (a partir de `origin/main`, com push) e coda em `grupo08-bff-feat/rooms-core`, criada a partir de `grupo08-bff`; após o APROVADO do REV, merge `--no-ff` em `grupo08-bff` e push de `grupo08-bff`. Testes completos são do AG-03; você só ajusta `rooms.contract.spec.ts` o mínimo para a suíte não quebrar e adiciona testes unitários do service se quiser. Entregue o relatório da seção 8.0.
+> Você é o AG-02 do plano `_bmad-output/planning-artifacts/rooms-t3-t4-plano-orca.md` (leia as seções 2, 3, 4.3–4.6, 6.1, 6.2 e esta ficha). Trabalhe só no submódulo `backend/bff` (NestJS). Objetivo: transformar `src/modules/rooms/` do proxy legado `/v1/rooms` em `/api/v1/rooms` com composição das classes do semestre em curso nos dois GETs, seguindo exatamente `docs/open-api/bff.yaml`. Use `src/modules/courses/` como modelo de composição e `src/modules/students/` como modelo do 503 `BFF-DEPENDENCY`. Siga a regra de branches da seção 3.1: você é quem cria a principal `bff/grupo08` (a partir de `origin/main`, com push) e coda em `bff/grupo08-feat/rooms-core`, criada a partir de `bff/grupo08`; após o APROVADO do REV, merge `--no-ff` em `bff/grupo08` e push de `bff/grupo08`. Testes completos são do AG-03; você só ajusta `rooms.contract.spec.ts` o mínimo para a suíte não quebrar e adiciona testes unitários do service se quiser. Entregue o relatório da seção 8.0.
 
 **Leia antes (inteiros):** `backend/bff/README.md`; `backend/bff/docs/superpowers/specs/2026-11-23-courses-bff-design.md`; `backend/bff/docs/superpowers/plans/2026-11-23-courses-bff-progress.md`; `src/app.module.ts`; `src/bootstrap.ts`; `src/common/http/downstream.service.ts`; `src/common/http/circuit-breaker.ts`; `src/common/auth/bearer-token.ts`; `src/common/academic/current-semester.ts`; todos os arquivos de `src/modules/courses/`, `src/modules/students/`, `src/modules/rooms/`; `docs/open-api/bff.yaml` (seções de rooms, `RoomView`, `RoomViewList`, `Problem`, `CompositionUnavailable`); `docs/open-api/grupo08-rooms-api.yaml`.
 
@@ -672,7 +702,7 @@ npm run test:contract            # não pode piorar (o AG-03 vai estendê-lo)
 
 **Prompt:**
 
-> Você é o AG-03 do plano `_bmad-output/planning-artifacts/rooms-t3-t4-plano-orca.md` (leia as seções 2, 3, 4.3–4.7, 6.1, 6.2, 8.2 e esta ficha). O AG-02 já entregou o módulo `src/modules/rooms/` com composição. Sua missão é provar com testes que ele cumpre o contrato `docs/open-api/bff.yaml` e estender a validação offline de contrato. Siga a regra de branches da seção 3.1: atualize `grupo08-bff` (que já contém o merge do AG-02) e crie a partir dela `grupo08-bff-feat/rooms-tests`; após o APROVADO do REV, merge `--no-ff` em `grupo08-bff` e push de `grupo08-bff`. Se achar bug no código do AG-02, **não corrija em silêncio**: escreva o teste que falha, descreva no relatório e corrija só se for de uma linha e óbvio; senão devolva ao REV. Entregue o relatório da seção 8.0.
+> Você é o AG-03 do plano `_bmad-output/planning-artifacts/rooms-t3-t4-plano-orca.md` (leia as seções 2, 3, 4.3–4.7, 6.1, 6.2, 8.2 e esta ficha). O AG-02 já entregou o módulo `src/modules/rooms/` com composição. Sua missão é provar com testes que ele cumpre o contrato `docs/open-api/bff.yaml` e estender a validação offline de contrato. Siga a regra de branches da seção 3.1: atualize `bff/grupo08` (que já contém o merge do AG-02) e crie a partir dela `bff/grupo08-feat/rooms-tests`; após o APROVADO do REV, merge `--no-ff` em `bff/grupo08` e push de `bff/grupo08`. Se achar bug no código do AG-02, **não corrija em silêncio**: escreva o teste que falha, descreva no relatório e corrija só se for de uma linha e óbvio; senão devolva ao REV. Entregue o relatório da seção 8.0.
 
 **Leia antes:** tudo que o AG-02 leu + `src/courses.contract.spec.ts`, `src/courses.integration.spec.ts`, `src/testing/http-fixture.ts`, `src/testing/domain-fixtures.ts`, `test/e2e/courses.e2e-spec.ts`, `test/e2e/support/e2e-env.ts`, `test/jest-e2e.json`, `scripts/validate-contract.cjs`, `openapi/README.md`, `openapi/openapi.json`, `openapi/domains/*.openapi.json`, `compose.courses.yaml`, `package.json`.
 
@@ -711,6 +741,12 @@ npm run test:contract            # não pode piorar (o AG-03 vai estendê-lo)
    - Registrar as operações de rooms em `openapi/openapi.json` (mesmo padrão de courses). Não corrigir o mojibake existente nas descrições de outros grupos.
    - `scripts/validate-contract.cjs`: generalizar a lista de documentos e as contagens (um `assert` por domínio). O total de courses (19) não pode mudar.
 5. **E2E (`test/e2e/rooms.e2e-spec.ts`)** + script `"test:e2e:rooms"` no `package.json` (mesmo formato dos outros `test:e2e:*`): login via `POST {oauth}/login` com `admin@pucrs.br` (senha lida de variável de ambiente de teste já usada pelo e2e do courses — **não** hardcode), listar salas (200, cada item com `classes` array), item, criar sala com code único, PATCH, DELETE e conferir 404 depois, criar/listar/excluir feature; com `student@pucrs.br`: GET 200, POST 403 (envelope `RM-403`).
+5b. **Exigência do professor (e-mail de 24/11/2026) para o e2e**: "complementar o script de teste fim-a-fim já existente (`backend/bff/test`). O teste fim-a-fim deve percorrer **todos** os endpoints do seu serviço e ser **idempotente**." Portanto `test/e2e/rooms.e2e-spec.ts` deve:
+   - estender a estrutura existente em `backend/bff/test` (mesmos helpers de `test/e2e/support/e2e-env.ts`, mesmo estilo de `courses.e2e-spec.ts`/`students.e2e-spec.ts`); não criar framework paralelo;
+   - cobrir **cada operação de rooms do `bff.yaml`**, um teste por operação no mínimo: `GET /api/v1/rooms` (sem filtro, com filtro que casa, com filtro que não casa → 404, com `page`/`size`/`sort` e `X-Total-Count`), `POST /api/v1/rooms`, `GET /api/v1/rooms/{id}` (com `classes` array), `PUT`, `PATCH`, `DELETE` (e GET seguinte → 404), `GET|POST /api/v1/rooms/{id}/accessibility-features`, `GET|PUT|PATCH|DELETE /api/v1/rooms/{id}/accessibility-features/{featureId}`; mais 401 sem token e 403 de escrita com `student@pucrs.br`;
+   - ser **idempotente**: rodar duas vezes seguidas dá o mesmo resultado. Cada execução gera códigos únicos (ex.: `E2E-<timestamp curto>-<n>`, respeitando 1–20 caracteres), não depende de dados criados por execução anterior, não assume contagem fixa de salas, e **limpa tudo que criou** em `afterAll`/`finally` (DELETE das features e das salas criadas, ignorando 404). Nunca apagar salas que o teste não criou;
+   - incluir no relatório a saída de **duas execuções consecutivas** de `npm run test:e2e:rooms`, ambas verdes.
+
 6. **`compose.rooms.yaml`**: cópia de `compose.courses.yaml` com `depends_on: !override` em `oauth` (healthy), `rooms` (healthy) e `classes` (healthy). Documentar no `README` do módulo (seção rooms) como rodar:
    ```bash
    docker compose -f docker-compose.yml -f backend/bff/compose.rooms.yaml up -d --build postgresql keycloak oauth rooms classes bff
@@ -741,7 +777,7 @@ npm run test:e2e:rooms     # se houver Docker com a stack de pé; senão, declar
 
 **Prompt:**
 
-> Você é o AG-04 do plano `_bmad-output/planning-artifacts/rooms-t3-t4-plano-orca.md` (leia as seções 2, 3, 4.1, 4.8, 5, 6.3–6.8 e esta ficha). O submódulo `frontend` hoje só tem `README.md`. Crie do zero o projeto Angular 22 (standalone, SCSS, Angular Material M3), a infraestrutura de build (Dockerfile + nginx), o tema com os tokens do `DESIGN.md`, o shell (app bar, menu, drawer) e os componentes de UI compartilhados, deixando stubs para login, lista e detalhe de salas. Siga a regra de branches da seção 3.1: você é quem cria a principal `grupo08-frontend` (a partir de `origin/main`, com push) e coda em `grupo08-frontend-feat/base`, criada a partir de `grupo08-frontend`; após o APROVADO do REV, merge `--no-ff` em `grupo08-frontend` e push de `grupo08-frontend`. Entregue o relatório da seção 8.0.
+> Você é o AG-04 do plano `_bmad-output/planning-artifacts/rooms-t3-t4-plano-orca.md` (leia as seções 2, 3, 4.1, 4.8, 5, 6.3–6.8 e esta ficha). O submódulo `frontend` hoje só tem `README.md`. Crie do zero o projeto Angular 22 (standalone, SCSS, Angular Material M3), a infraestrutura de build (Dockerfile + nginx), o tema com os tokens do `DESIGN.md`, o shell (app bar, menu, drawer) e os componentes de UI compartilhados, deixando stubs para login, lista e detalhe de salas. Siga a regra de branches da seção 3.1: você é quem cria a principal `frontend/grupo08` (a partir de `origin/main`, com push) e coda em `frontend/grupo08-feat/base`, criada a partir de `frontend/grupo08`; após o APROVADO do REV, merge `--no-ff` em `frontend/grupo08` e push de `frontend/grupo08`. Entregue o relatório da seção 8.0.
 
 **Leia antes:** `frontend/README.md`; serviço `frontend` em `docker-compose.yml` da raiz (build args, portas, healthcheck, `depends_on`); `_bmad-output/planning-artifacts/ux-designs/ux-constrsw-2026-2-2026-11-23/DESIGN.md` (inteiro); `EXPERIENCE.md` (seções de shell, menu, responsividade, login, salas); `mockups/closed-cras-responsivo.html` (estrutura do shell e das telas de salas); prints `.working/qa/responsive/*`.
 
@@ -802,7 +838,7 @@ docker run --rm -d -p 18080:80 --name frontend-check frontend-check && curl -fsS
 
 **Prompt:**
 
-> Você é o AG-05 do plano `_bmad-output/planning-artifacts/rooms-t3-t4-plano-orca.md` (leia as seções 2, 3, 4.6, 4.7, 4.8, 6.4–6.6 e esta ficha). O AG-04 entregou o esqueleto Angular com stubs de auth. Implemente login, sessão por cookie, refresh, logout, identidade e guard, e ligue o shell à identidade real. Siga a regra de branches da seção 3.1: atualize `grupo08-frontend` (já com o merge do AG-04) e crie a partir dela `grupo08-frontend-feat/auth`; após o APROVADO do REV, merge `--no-ff` em `grupo08-frontend` (com `pull --ff-only` antes, porque o AG-06 mergeia em paralelo) e push. Não altere arquivos fora do seu escopo. Entregue o relatório da seção 8.0.
+> Você é o AG-05 do plano `_bmad-output/planning-artifacts/rooms-t3-t4-plano-orca.md` (leia as seções 2, 3, 4.6, 4.7, 4.8, 6.4–6.6 e esta ficha). O AG-04 entregou o esqueleto Angular com stubs de auth. Implemente login, sessão por cookie, refresh, logout, identidade e guard, e ligue o shell à identidade real. Siga a regra de branches da seção 3.1: atualize `frontend/grupo08` (já com o merge do AG-04) e crie a partir dela `frontend/grupo08-feat/auth`; após o APROVADO do REV, merge `--no-ff` em `frontend/grupo08` (com `pull --ff-only` antes, porque o AG-06 mergeia em paralelo) e push. Não altere arquivos fora do seu escopo. Entregue o relatório da seção 8.0.
 
 **Leia antes:** código do AG-04 (`app.config.ts`, `app.routes.ts`, `core/**`); `EXPERIENCE.md` (fluxo de login, mensagens, cabeçalho); prints `login*`; `backend/oauth/src/**` (controller de login/refresh/logout, para confirmar corpo e status); `backend/bff/src/modules/reservations/` (endpoint `identidade/me`) e `docs/open-api/bff.yaml` (`/api/v1/identidade/me`).
 
@@ -850,7 +886,7 @@ docker run --rm -d -p 18080:80 --name frontend-check frontend-check && curl -fsS
 
 **Prompt:**
 
-> Você é o AG-06 do plano `_bmad-output/planning-artifacts/rooms-t3-t4-plano-orca.md` (leia as seções 2, 3, 4.2, 4.3, 4.6, 6.7 e esta ficha). O AG-04 entregou o esqueleto Angular. Implemente a camada de dados de rooms: modelos, serviço HTTP para o BFF, montagem de filtros, tradução de erros e testes. Não crie telas. Siga a regra de branches da seção 3.1: atualize `grupo08-frontend` (já com o merge do AG-04) e crie a partir dela `grupo08-frontend-feat/rooms-data`; após o APROVADO do REV, merge `--no-ff` em `grupo08-frontend` (com `pull --ff-only` antes, porque o AG-05 mergeia em paralelo) e push. Entregue o relatório da seção 8.0.
+> Você é o AG-06 do plano `_bmad-output/planning-artifacts/rooms-t3-t4-plano-orca.md` (leia as seções 2, 3, 4.2, 4.3, 4.6, 6.7 e esta ficha). O AG-04 entregou o esqueleto Angular. Implemente a camada de dados de rooms: modelos, serviço HTTP para o BFF, montagem de filtros, tradução de erros e testes. Não crie telas. Siga a regra de branches da seção 3.1: atualize `frontend/grupo08` (já com o merge do AG-04) e crie a partir dela `frontend/grupo08-feat/rooms-data`; após o APROVADO do REV, merge `--no-ff` em `frontend/grupo08` (com `pull --ff-only` antes, porque o AG-05 mergeia em paralelo) e push. Entregue o relatório da seção 8.0.
 
 **Leia antes:** `docs/open-api/bff.yaml` (rooms, `RoomView`, `Problem`), `docs/open-api/grupo08-rooms-api.yaml` e `docs/open-api/schemas/room*.json`, `accessibility-feature*.json`, `error.schema.json`; `docs/open-api/grupo01-classes-api.yaml` e `grupo01-classes-schemas.json` (tipos exatos de `Class`); `core/config/app-config.ts` do AG-04.
 
@@ -901,7 +937,7 @@ docker run --rm -d -p 18080:80 --name frontend-check frontend-check && curl -fsS
 
 **Prompt:**
 
-> Você é o AG-07 do plano `_bmad-output/planning-artifacts/rooms-t3-t4-plano-orca.md` (leia as seções 2, 3, 4.2, 4.8, 6.3–6.8 e esta ficha). AG-04, AG-05 e AG-06 já entregaram esqueleto, auth e camada de dados. Implemente a tela `/salas` (lista) e o dialog de formulário de sala (criar/editar), que também será reusado pelo detalhe. Siga a regra de branches da seção 3.1: atualize `grupo08-frontend` (já com os merges de AG-04, AG-05 e AG-06) e crie a partir dela `grupo08-frontend-feat/rooms-list`; após o APROVADO do REV, merge `--no-ff` em `grupo08-frontend` e push. Entregue o relatório da seção 8.0.
+> Você é o AG-07 do plano `_bmad-output/planning-artifacts/rooms-t3-t4-plano-orca.md` (leia as seções 2, 3, 4.2, 4.8, 6.3–6.8 e esta ficha). AG-04, AG-05 e AG-06 já entregaram esqueleto, auth e camada de dados. Implemente a tela `/salas` (lista) e o dialog de formulário de sala (criar/editar), que também será reusado pelo detalhe. Siga a regra de branches da seção 3.1: atualize `frontend/grupo08` (já com os merges de AG-04, AG-05 e AG-06) e crie a partir dela `frontend/grupo08-feat/rooms-list`; após o APROVADO do REV, merge `--no-ff` em `frontend/grupo08` e push. Entregue o relatório da seção 8.0.
 
 **Leia antes:** `EXPERIENCE.md` (UX-ROOMS lista, dialogs, confirmações, microcopy), `DESIGN.md`, mock `mockups/closed-cras-responsivo.html` (rota `#/salas` e o dialog), prints `salas-*.png` e `salas-dialog*`; código de `features/rooms/data/**`, `core/auth/**`, `core/ui/**`.
 
@@ -958,7 +994,7 @@ docker run --rm -d -p 18080:80 --name frontend-check frontend-check && curl -fsS
 
 **Prompt:**
 
-> Você é o AG-08 do plano `_bmad-output/planning-artifacts/rooms-t3-t4-plano-orca.md` (leia as seções 2, 3, 4.2, 4.3, 4.8, 6.3–6.8 e esta ficha). AG-04, AG-05 e AG-06 já entregaram esqueleto, auth e dados. Implemente a tela `/salas/:id`: dados da sala, turmas do semestre em curso e CRUD de recursos de acessibilidade. Para "Editar sala", reutilize `RoomFormDialog` de `features/rooms/list/room-form.dialog.ts` (do AG-07); não altere esse arquivo. Siga a regra de branches da seção 3.1: atualize `grupo08-frontend` (já com os merges de AG-04, AG-05 e AG-06) e crie a partir dela `grupo08-frontend-feat/rooms-detail`; antes de pedir revisão, se o AG-07 já mergeou, faça `git merge grupo08-frontend` na sua branch para usar o `RoomFormDialog` real; após o APROVADO do REV, merge `--no-ff` em `grupo08-frontend` e push. Entregue o relatório da seção 8.0.
+> Você é o AG-08 do plano `_bmad-output/planning-artifacts/rooms-t3-t4-plano-orca.md` (leia as seções 2, 3, 4.2, 4.3, 4.8, 6.3–6.8 e esta ficha). AG-04, AG-05 e AG-06 já entregaram esqueleto, auth e dados. Implemente a tela `/salas/:id`: dados da sala, turmas do semestre em curso e CRUD de recursos de acessibilidade. Para "Editar sala", reutilize `RoomFormDialog` de `features/rooms/list/room-form.dialog.ts` (do AG-07); não altere esse arquivo. Siga a regra de branches da seção 3.1: atualize `frontend/grupo08` (já com os merges de AG-04, AG-05 e AG-06) e crie a partir dela `frontend/grupo08-feat/rooms-detail`; antes de pedir revisão, se o AG-07 já mergeou, faça `git merge frontend/grupo08` na sua branch para usar o `RoomFormDialog` real; após o APROVADO do REV, merge `--no-ff` em `frontend/grupo08` e push. Entregue o relatório da seção 8.0.
 
 **Leia antes:** `EXPERIENCE.md` (UX-ROOMS detalhe, painéis, recursos de acessibilidade, confirmações), `DESIGN.md`, mock (rota `#/salas/b201`), prints `sala-detalhe-*.png`; `features/rooms/data/**`, `core/**`; `docs/open-api/grupo01-classes-schemas.json` (significado de `status`, `modality`).
 
@@ -1001,12 +1037,12 @@ docker run --rm -d -p 18080:80 --name frontend-check frontend-check && curl -fsS
 
 **Prompt:**
 
-> Você é o AG-09 do plano `_bmad-output/planning-artifacts/rooms-t3-t4-plano-orca.md` (leia o documento inteiro). Todos os agentes AG-01 a AG-08 foram aprovados pelo REV. As principais `grupo08` (rooms), `grupo08-bff` e `grupo08-frontend` já contêm tudo mergeado. Suba a stack a partir delas, rode o roteiro de aceitação ponta a ponta, corrija apenas problemas de integração (configuração, nomes de host) em branches `-feat/integracao` de cada repositório seguindo a seção 3.1, e atualize os ponteiros de submódulo no repo base na principal `grupo08-base`. Nunca a `main`. Push só das principais do grupo, depois do APROVADO do REV. Entregue o relatório da seção 8.0 com o resultado de cada passo do roteiro.
+> Você é o AG-09 do plano `_bmad-output/planning-artifacts/rooms-t3-t4-plano-orca.md` (leia o documento inteiro). Todos os agentes AG-01 a AG-08 foram aprovados pelo REV. As principais `grupo08` (rooms), `bff/grupo08` e `frontend/grupo08` já contêm tudo mergeado. Suba a stack a partir delas, rode o roteiro de aceitação ponta a ponta, corrija apenas problemas de integração (configuração, nomes de host) em branches `-feat/integracao` de cada repositório seguindo a seção 3.1, e atualize os ponteiros de submódulo no repo base na principal `base/grupo08`. Nunca a `main`. Push só das principais do grupo, depois do APROVADO do REV. Entregue o relatório da seção 8.0 com o resultado de cada passo do roteiro.
 
 **Possui:** merges nas branches dos submódulos; `docker-compose.yml` da raiz **somente** se for indispensável para a stack subir (registrar cada linha alterada e o motivo); ponteiros de submódulo no repo base; `README.md` da raiz (seção curta "Rooms: como rodar").
 
 **Tarefas:**
-1. **Conferir as principais**: em cada submódulo, `git fetch origin && git checkout <principal> && git pull --ff-only`. Conferir com `git log --oneline --merges` que estão lá os merges esperados: `grupo08` (AG-01), `grupo08-bff` (AG-02, AG-03), `grupo08-frontend` (AG-04, AG-05, AG-06, AG-07, AG-08). Faltou algum → parar e reportar ao REV. No repo base: `git fetch origin`; se `grupo08-base` não existe, criar a partir da branch atual `claude/rooms-frontend-bff-dfae7e` (que contém este plano) e dar push; senão `checkout` + `pull --ff-only`. Nos submódulos, fazer `git checkout` da principal de cada um antes de subir a stack.
+1. **Conferir as principais**: em cada submódulo, `git fetch origin && git checkout <principal> && git pull --ff-only`. Conferir com `git log --oneline --merges` que estão lá os merges esperados: `grupo08` (AG-01), `bff/grupo08` (AG-02, AG-03), `frontend/grupo08` (AG-04, AG-05, AG-06, AG-07, AG-08). Faltou algum → parar e reportar ao REV. No repo base: `git fetch origin`; se `base/grupo08` não existe, criar a partir da branch atual `claude/rooms-frontend-bff-dfae7e` (que contém este plano) e dar push; senão `checkout` + `pull --ff-only`. Nos submódulos, fazer `git checkout` da principal de cada um antes de subir a stack.
 2. **Build de tudo**:
    ```bash
    docker volume create constrsw-prometheus-data; docker volume create constrsw-keycloak-data; docker volume create constrsw-postgresql-data; docker volume create constrsw-mongodb-data
@@ -1037,15 +1073,15 @@ docker run --rm -d -p 18080:80 --name frontend-check frontend-check && curl -fsS
    17. Esperar > 10 min logado (ou forçar expiração) e navegar → refresh transparente, sem voltar ao login.
 5. **Commits e ponteiros**:
    - Correções de integração em submódulo: branch `<principal>-feat/integracao` a partir da principal, commit, REV, merge `--no-ff` na principal, push da principal (seção 3.1).
-   - No repo base, na branch `grupo08-base-feat/ponteiros` criada a partir de `grupo08-base`: com cada submódulo no último commit da sua principal **já pushado**, `git add backend/rooms backend/bff frontend` e commit `chore: atualiza ponteiros de rooms, bff e frontend (T3/T4 rooms)`. Alterações no `docker-compose.yml` ou `README.md` da raiz em commit separado.
-   - Após o APROVADO do REV: merge `--no-ff` em `grupo08-base` e `git push origin grupo08-base`.
-   - Listar no relatório: para cada submódulo, principal + hash final pushado; para o base, hash do merge em `grupo08-base`.
+   - No repo base, na branch `base/grupo08-feat/ponteiros` criada a partir de `base/grupo08`: com cada submódulo no último commit da sua principal **já pushado**, `git add backend/rooms backend/bff frontend` e commit `chore: atualiza ponteiros de rooms, bff e frontend (T3/T4 rooms)`. Alterações no `docker-compose.yml` ou `README.md` da raiz em commit separado.
+   - Após o APROVADO do REV: merge `--no-ff` em `base/grupo08` e `git push origin base/grupo08`.
+   - Listar no relatório: para cada submódulo, principal + hash final pushado; para o base, hash do merge em `base/grupo08`.
 
 **Critérios de aceite:**
 - [ ] Stack sobe com os comandos documentados.
 - [ ] Todos os testes automáticos verdes (ou falhas explicadas).
 - [ ] 17 passos do roteiro com resultado registrado.
-- [ ] Ponteiros atualizados em `grupo08-base` e principais pushadas (nada em `main`).
+- [ ] Ponteiros atualizados em `base/grupo08` e principais pushadas (nada em `main`).
 
 ---
 
@@ -1121,13 +1157,13 @@ Resumo da regra 3.1 aplicada à entrega:
 | Repositório | Principal do grupo (pushada) | Quem mergeia nela |
 | --- | --- | --- |
 | `backend/rooms` | `grupo08` | AG-01 (e AG-09 se houver correção de integração) |
-| `backend/bff` | `grupo08-bff` | AG-02, depois AG-03 |
-| `frontend` | `grupo08-frontend` | AG-04, AG-05, AG-06, AG-07, AG-08 |
-| base | `grupo08-base` | AG-09 (ponteiros) |
+| `backend/bff` | `bff/grupo08` | AG-02, depois AG-03 |
+| `frontend` | `frontend/grupo08` | AG-04, AG-05, AG-06, AG-07, AG-08 |
+| base | `base/grupo08` | AG-09 (ponteiros) |
 
 1. Cada agente faz merge `--no-ff` da sua branch de desenvolvimento na principal **só depois do APROVADO do REV** e dá push **só da principal** (seção 3.1).
-2. Os ponteiros no base apontam para o último commit **já pushado** de cada principal (`grupo08`, `grupo08-bff`, `grupo08-frontend`). Ponteiro para commit não pushado quebra o clone dos colegas.
-3. Ninguém mergeia, commita ou dá push em `main` de nenhum repositório. Quando o grupo decidir entregar, abre **manualmente** os PRs `grupo08-bff → main` (bff), `grupo08-frontend → main` (frontend), `grupo08 → main` (rooms, se for o fluxo do repositório) e `grupo08-base → main` (base), e atualiza os ponteiros para os hashes finais mergeados.
+2. Os ponteiros no base apontam para o último commit **já pushado** de cada principal (`grupo08`, `bff/grupo08`, `frontend/grupo08`). Ponteiro para commit não pushado quebra o clone dos colegas.
+3. Ninguém mergeia, commita ou dá push em `main` de nenhum repositório. Quando o grupo decidir entregar, abre **manualmente** os PRs `bff/grupo08 → main` (bff), `frontend/grupo08 → main` (frontend), `grupo08 → main` (rooms, se for o fluxo do repositório) e `base/grupo08 → main` (base), e atualiza os ponteiros para os hashes finais mergeados.
 
 Lembrete (AGENTS.md): alteração em submódulo pede commit naquele repositório **e** atualização do ponteiro no base; os dois precisam de push.
 
