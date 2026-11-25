@@ -108,3 +108,11 @@
 - source_spec: `_bmad-output/implementation-artifacts/spec-0-9-estados-de-recusa-e-employee-inativo-na-ui.md`
   summary: Banner identity em falha isolada de identidade/me (503) não foi ligado nas páginas employees
   evidence: Adversarial review 0.9 — evita esconder master; unificar em story de sessão/shell
+
+- source_spec: `_bmad-output/implementation-artifacts/spec-bff-employees-proxy.md`
+  summary: Contract tests for employees proxy use bare createNestApplication without bootstrap configureApp (CORS/bodyParser)
+  evidence: Review of employees proxy — same pattern as rooms; browser cookie/CORS not exercised in unit contract layer
+
+- source_spec: `_bmad-output/implementation-artifacts/spec-bff-employees-proxy.md`
+  summary: Full Playwright UX-EMPLOYEES suite green proof after removing BFF bridge was not re-run in this story
+  evidence: Spec Ask First limited live e2e beyond contract; smoke via curl/BFF + 9 contract tests covered the ship gate
