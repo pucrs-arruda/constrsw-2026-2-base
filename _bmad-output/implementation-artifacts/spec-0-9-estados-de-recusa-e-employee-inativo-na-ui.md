@@ -2,7 +2,8 @@
 title: '0.9 Estados de recusa e Employee inativo na UI'
 type: 'feature'
 created: '2026-11-25'
-status: 'draft'
+status: 'done'
+baseline_commit: '8306defbe813c5e629dd3f5357c2d11069d9f97a'
 review_loop_iteration: 0
 context:
   - '{project-root}/_bmad-output/implementation-artifacts/epic-0-context.md'
@@ -58,12 +59,12 @@ context:
 ## Tasks & Acceptance
 
 **Execution:**
-- [ ] Refusal mapping from problem+json (`detail`/`title`/`code`) on employee (+ dependent) writes -- UX refusal
-- [ ] List + detail: Inactive clearly labeled, still visible/navigable -- FR-1a signal
-- [ ] Identity vs composition 503 paths verified in UI specs -- READY
-- [ ] Unit specs for refusal+code and Inactive labeling -- READY
-- [ ] Verify -- `ng test --watch=false` + `ng build` -- gate
-- [ ] Parent repo -- update frontend pointer after commit -- AD-8
+- [x] Refusal mapping from problem+json (`detail`/`title`/`code`) on employee (+ dependent) writes -- UX refusal
+- [x] List + detail: Inactive clearly labeled, still visible/navigable -- FR-1a signal
+- [x] Identity vs composition 503 paths verified in UI specs -- READY
+- [x] Unit specs for refusal+code and Inactive labeling -- READY
+- [x] Verify -- `ng test --watch=false` + `ng build` -- gate
+- [x] Parent repo -- update frontend pointer after commit -- AD-8
 
 **Acceptance Criteria:**
 - Given a BFF write returns problem+json with FR `code` when present, when UI handles it, then refusal-banner shows institutional pt-BR (`role="alert"`)
@@ -85,3 +86,31 @@ Story 0.8 already maps `detail`/`title` on employee create/edit. 0.9 extends con
 
 **Manual checks:**
 - Force email conflict / FR refusal; open Inactive employee; resize 360/768/1280
+
+## Suggested Review Order
+
+**Refusal helper**
+
+- problem+json `detail`/`title`/`code` → pt-BR (ex. conflito)
+  [`bff-error.ts:66`](../../../frontend/src/app/shared/http/bff-error.ts#L66)
+
+**Writes**
+
+- Dialogs usam `mapped.message` (form retido)
+  [`employee-form-dialog.ts:204`](../../../frontend/src/app/surfaces/ux-employees/employee-form-dialog.ts#L204)
+
+- Dependent write refusal alinhado
+  [`dependent-form-dialog.ts:153`](../../../frontend/src/app/surfaces/ux-employees/dependent-form-dialog.ts#L153)
+
+**Inactive**
+
+- Lista: Situação high-priority + caption inativos
+  [`employees-list-page.ts:28`](../../../frontend/src/app/surfaces/ux-employees/employees-list-page.ts#L28)
+
+- Detalhe: ênfase + nota “permanece visível”
+  [`employees-detail-page.html:70`](../../../frontend/src/app/surfaces/ux-employees/employees-detail-page.html#L70)
+
+**Tests**
+
+- Helper + dialogs + Inactive
+  [`bff-error.spec.ts:61`](../../../frontend/src/app/shared/http/bff-error.spec.ts#L61)

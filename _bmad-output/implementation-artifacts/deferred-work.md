@@ -100,3 +100,11 @@
 - source_spec: `_bmad-output/implementation-artifacts/spec-0-8-criar-e-editar-employee-ciclo-de-vida.md`
   summary: Sem timeout no save do EmployeeFormDialog; hang deixa disableClose ativo
   evidence: Edge review 0.8 — padrão compartilhado de writes; tratar no kit se recorrente
+
+- source_spec: `_bmad-output/implementation-artifacts/spec-0-9-estados-de-recusa-e-employee-inativo-na-ui.md`
+  summary: problem+json `errors[]` (400 validation) ainda não entra no banner — só detail/title/code
+  evidence: Adversarial review 0.9 — mapear field errors no formulário quando UX pedir
+
+- source_spec: `_bmad-output/implementation-artifacts/spec-0-9-estados-de-recusa-e-employee-inativo-na-ui.md`
+  summary: Banner identity em falha isolada de identidade/me (503) não foi ligado nas páginas employees
+  evidence: Adversarial review 0.9 — evita esconder master; unificar em story de sessão/shell

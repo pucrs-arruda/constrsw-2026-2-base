@@ -14,7 +14,7 @@ tracking_system: file-system
 story_location: "{project-root}/_bmad-output/implementation-artifacts"
 
 development_status:
-  epic-0: in-progress
+  epic-0: review
   0-1-scaffold-angular-22-material-tema-design: review
   0-2-sess-o-oauth-bearer-para-o-bff: review
   0-3-ux-login-responsivo: review
@@ -23,7 +23,7 @@ development_status:
   0-6-lista-de-funcion-rios-responsiva: review
   0-7-detalhe-employee-dependent-1-n: review
   0-8-criar-e-editar-employee-ciclo-de-vida: review
-  0-9-estados-de-recusa-e-employee-inativo-na-ui: backlog
+  0-9-estados-de-recusa-e-employee-inativo-na-ui: review
   epic-0-retrospective: optional
 
   epic-1: backlog
