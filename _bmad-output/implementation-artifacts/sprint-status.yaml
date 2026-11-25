@@ -17,7 +17,7 @@ development_status:
   epic-0: in-progress
   0-1-scaffold-angular-22-material-tema-design: review
   0-2-sess-o-oauth-bearer-para-o-bff: review
-  0-3-ux-login-responsivo: backlog
+  0-3-ux-login-responsivo: review
   0-4-ux-home-app-shell-e-navega-o: backlog
   0-5-kit-compartilhado-tabela-lista-dialogs-banners-http-bff: backlog
   0-6-lista-de-funcion-rios-responsiva: backlog

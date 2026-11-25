@@ -4,7 +4,7 @@
 
 ## Goal
 
-Entregar a baseline compartilhada da SPA Closed CRAS: scaffold Angular 22 + Material com tokens de marca, autenticação só via oauth (Bearer no BFF), app-shell único com menu fixo, kit UI/HTTP reutilizável, e a superfície de Funcionários (lista/detalhe + dependents). Isso desbloqueia os grupos 01–08 para plugar as UXs do próprio serviço sem inventar stack, shell ou tema.
+Entregar a baseline compartilhada da SPA Closed CRAS: scaffold Angular 22 + Material com tokens de marca, autenticação só via oauth (Bearer no BFF), app-shell com menu fixo e a superfície de Funcionários (Employee + Dependent). Sem isso, os grupos não têm shell, kit HTTP/UI nem identidade operacional para plugar as demais superfícies em paralelo.
 
 ## Stories
 
@@ -20,32 +20,30 @@ Entregar a baseline compartilhada da SPA Closed CRAS: scaffold Angular 22 + Mate
 
 ## Requirements & Constraints
 
-- Operador autentica/encerra só pelo gateway oauth; SPA envia `Authorization: Bearer` às chamadas BFF. Login multipart (`username`/`password`); 201 → sessão + Home; 401 → banner sem enumerar conta; 503/rede → “Identidade indisponível.”; refresh/logout nos endpoints oauth. Sem `keycloak-js` e sem URL do IdP no browser.
-- Após login, shell único (hambúrguer, marca Closed CRAS, identidade via `GET /api/v1/identidade/me`, Sair) em rotas autenticadas; sessão ausente/expirada → Login. Menu de topo com 10 itens em ordem fixa; Lessons/Reservations fora do topo; `/health` da BFF não é tela.
-- UX-EMPLOYEES: master-detail via BFF (`/api/v1/employees`) — lista, detalhe, CRUD de Employee e Dependent aninhados. Empty pt-BR + CTA; skeleton no cold load; refusal-banner com formulário retido em recusas (ex. e-mail duplicado / problem+json). Criar Employee não provisiona Keycloak; sem delete físico na v1; `ativo=false` permitido e visível (rotulado) para consumidores posteriores. Escrita de employees só com papel `funcionario`.
-- Stack: Angular 22.x + Material M3 + CDK + SCSS + tokens; código em `frontend/`; lab na porta 4200; Compose sobe a SPA. Dados só BFF; auth só oauth. UI 100% pt-BR; paths OpenAPI em inglês. Responsivo 360–1440px+ (compact/medium/expanded); pivô de nav 1024px; ACs em 360/768/1280; sem desktop-only. WCAG 2.2 AA; banners `role="alert"`; alvos ≥24px (toque ≥48px em compact/medium). Bearer em memória de sessão (não `localStorage` longo); cookie httpOnly do oauth pode coexistir.
-- Ownership travado: Prof. Arruda = LOGIN, HOME, EMPLOYEES (+ scaffold/kit); grupos não alteram shell/shared sem coordenação. Autoridade: SPEC-frontend > EXPERIENCE (fluxos/microcopy) > DESIGN (tokens) > Figma.
+- Operador autentica/encerra só pelo gateway oauth; SPA usa `Authorization: Bearer` nas chamadas à BFF. Login: `POST {oauth}/login` multipart (`username`/`password`); `201` → sessão + Home; `401` banner sem enumerar conta; `503`/rede → “Identidade indisponível.”; refresh `POST /refresh`; logout `POST /logout`. Proibido `keycloak-js` e URL do IdP no browser.
+- Após login, shell único (hambúrguer, marca Closed CRAS, identidade, Sair) em rotas autenticadas; cabeçalho via `GET /api/v1/identidade/me`; sessão ausente/expirada → Login. Menu de topo (ordem fixa, 10 itens): Funcionários, Professores, Alunos, Salas de Aula, Recursos, Disciplinas, Turmas, Ocupação, Plano + roster, Minhas aulas. Lessons/Reservations fora do menu. `GET /health` da BFF não é tela.
+- UX-EMPLOYEES: lista/detalhe via BFF `/api/v1/employees`; Dependent 1–N só no agregado do funcionário; empty pt-BR + CTA; skeleton no cold load; recusas com refusal-banner e formulário retido. Criar/editar Employee (incl. `ativo`); e-mail único → recusa problem+json; criar **não** provisiona Keycloak; sem delete físico na v1. Inativos visíveis e rotulados (consumidores posteriores usam o sinal `ativo`).
+- Stack: Angular 22.x + Material M3 + CDK + SCSS + tokens; código em `frontend/`; Compose sobe a SPA (lab ~4200); dados só BFF; UI 100% pt-BR. Responsivo 360–1440px+ (compact/medium/expanded; ACs em 360/768/1280); pivô de nav 1024px; WCAG 2.2 AA; banners `role="alert"`; toque ≥48px em compact/medium. Bearer em memória de sessão (não `localStorage` longo); cookie httpOnly pode coexistir.
+- Ownership: Prof. Arruda = LOGIN, HOME, EMPLOYEES (+ scaffold/kit). Mudanças em shell/shared exigem alinhamento com Arruda. Autoridade: SPEC-frontend > EXPERIENCE (fluxos/microcopy) > DESIGN (tokens); produto closed-cras vence FRs de domínio.
 
 ## Technical Decisions
 
-- Uma SPA; browser fala só com BFF + oauth — nunca com os nove OpenAPIs de domínio.
-- Tema Material sobrescrito por tokens DESIGN (primary `#0066B3`, navy/secondary, sky/tertiary `#6DCDF6`, surfaces, error `#B1101A`; tipografia Source Sans 3; v1 light-only). Sem seletores frágeis `.mdc-*`.
-- Chrome Material: toolbar, sidenav, nav-list, table, form-field, chip, tab-group, dialog, snack-bar, progress-bar. Métricas M3: app bar 64dp, nav 56dp, ícone 24dp, botões 40dp, field 56dp; sem FAB.
-- HTTP client compartilhado: base BFF OpenAPI; 401/503 mapeiam a banners; falha T3 → “Serviço de composição indisponível.” sem join local (kit já prevê o padrão para épicos posteriores).
-- Pastas: shell em `frontend/src/app/shell/`; employees em `frontend/src/app/surfaces/ux-employees/`; primitivos em `frontend/src/app/shared/`. Stories FE carregam bloco Refs (capacidade FE + superfície UX + ownership + path).
-- Employee é identidade de quem trabalha; Dependent é composição 0..*; `id` estável UUID; `ativo` é sinal de leitura para alocação/Professor (enforcement nos consumidores, não na UI de employees além de rotular inativos).
+- Browser fala só com BFF (dados) e oauth (login/refresh/logout); nunca com os nove OpenAPIs de domínio.
+- Origem HTTP de dados: BFF do Compose (tipicamente `localhost:8180`); auth no módulo `backend/oauth`.
+- Tema: tokens DESIGN prevalecem (primary `#0066B3`, navy, sky `#6DCDF6`, surfaces, error); v1 light-only; sem seletores frágeis `.mdc-*`; sem FAB / botão one-off fora das métricas M3 (app bar 64dp, nav item 56dp, ícone 24dp, botão 40dp, field 56dp).
+- Kit compartilhado: cliente HTTP só na base OpenAPI BFF; 401/503 mapeiam a banners; composição T3 503 → “Serviço de composição indisponível.” sem join parcial no cliente (padrão para epics seguintes).
+- Contribuição: superfícies sob `frontend/` (ex. `shell/`, `shared/`, `surfaces/ux-employees/`); registrar rotas no shell; item de menu só se estiver no menu de topo.
+- Employee é system-of-record da pessoa institucional; Dependent é composição 0..\*; `id` estável; escrita típica com papel `funcionario`. Professor (epics posteriores) é is-a Employee — cadastro Employee precisa existir antes.
 
 ## UX & Interaction Patterns
 
-- Login-panel: split (expanded) / faixa de marca + card (medium) / full-width compact; CTA Entrar.
-- App-shell: hambúrguer esq.; marca; caption PUCRS·ConstrSW; usuário; Sair. Nav: folha modal &lt;1024 (Esc/scrim/item fecham; foco volta ao hambúrguer); drawer fixo ≥1024; item ativo marcado. Ordem do menu: Funcionários, Professores, Alunos, Salas de Aula, Recursos, Disciplinas, Turmas, Ocupação, Plano + roster, Minhas aulas.
-- Listagens: page-header + toolbar (busca + CTA); data-table em expanded/medium; em compact → lista 2 linhas + “Mais ações” (sem scroll horizontal). Master-detail: 2 colunas ≥1280; empilhado abaixo; “← Voltar para {lista}” em compact. Dialogs de edição fullscreen com footer sticky em compact; confirm-dialog nomeia o objeto em ações destrutivas.
-- State patterns: skeleton, empty + CTA, refusal-banner, identity-banner; microcopy institucional pt-BR.
+- Login: painel split (expanded) / faixa de marca + card (medium) / faixa compacta + card full-width (compact). Sucesso navega para Home com sessão Bearer.
+- Shell: toolbar com hambúrguer, marca, caption PUCRS·ConstrSW, usuário, Sair. Em compact, caption/nome podem sumir; Sair permanece. &lt;1024px: nav em folha modal (Esc/scrim/item fecham; foco volta ao hambúrguer); ≥1024px: drawer fixo. Item ativo marcado.
+- Domínio: page-header + toolbar (busca + CTA); data-table → lista 2 linhas + “Mais ações” em compact; sem scroll horizontal de tabela; master-detail 2 colunas ≥1280, empilhado abaixo com “← Voltar” em compact; dialogs fullscreen com footer sticky em compact; confirm-dialog nomeando o objeto em ações destrutivas.
+- Estados: refusal-banner / identity-banner / skeleton-block / empty + CTA; microcopy institucional pt-BR; sem stack traces.
 
 ## Cross-Story Dependencies
 
-- 0.1 → 0.2–0.5 (scaffold/tema antes de sessão, shell e kit).
-- 0.2 → 0.3–0.4 (Bearer/sessão antes de Login/Home usáveis).
-- 0.4 + 0.5 → 0.6–0.9 (shell + kit antes da superfície employees).
-- 0.6 → 0.7 → 0.8–0.9 (lista → detalhe/dependents → ciclo de vida e estados de recusa).
-- Soft out: Epics 1–8 dependem deste baseline (shell, tema, HTTP, banners); `ativo` de Employee alimenta recusas em Professors/Classes/Reservations nos épicos seguintes.
+- Ordem interna: 0.1 scaffold → 0.2 sessão → 0.3 Login → 0.4 shell → 0.5 kit; 0.6–0.9 Funcionários dependem de sessão + shell + kit.
+- Epics 1–8 soft-dependem deste épico para app-shell, cliente HTTP BFF, banners/tabela/dialogs e identidade de Employee (`ativo` / `id`) consumida por Professors, Classes e Reservations.
+- Partição travada: grupos não implementam LOGIN/HOME/EMPLOYEES; Arruda não entrega UX dos nove serviços.

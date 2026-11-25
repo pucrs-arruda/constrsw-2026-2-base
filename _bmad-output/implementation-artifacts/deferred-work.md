@@ -40,3 +40,15 @@
 - source_spec: `_bmad-output/implementation-artifacts/spec-0-2-sessao-oauth-bearer-para-o-bff.md`
   summary: AuthSession exposes getters only; no signal/observable for UI binding
   evidence: Adversarial review — Story 0.3 login UI can introduce reactive session state
+
+- source_spec: `_bmad-output/implementation-artifacts/spec-0-3-ux-login-responsivo.md`
+  summary: Boot refresh is one-shot per SPA load; transient network failure blocks restore until full reload
+  evidence: Edge/adversarial review — SessionBootstrap.bootStarted stays true after failed refresh by design of “one boot refresh”
+
+- source_spec: `_bmad-output/implementation-artifacts/spec-0-3-ux-login-responsivo.md`
+  summary: No returnUrl / deep-link restore after login; always lands on HOME stub `/`
+  evidence: Adversarial review — authGuard drops original path; out of Story 0.3 stub scope
+
+- source_spec: `_bmad-output/implementation-artifacts/spec-0-3-ux-login-responsivo.md`
+  summary: App toolbar chrome still visible on UX-LOGIN alongside login-panel brand strip
+  evidence: Adversarial review — EXPERIENCE login-panel is its own surface; hiding global chrome deferred to Story 0.4 shell work
