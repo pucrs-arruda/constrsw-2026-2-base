@@ -1,4 +1,10 @@
 # Builds: cada serviço com `build:` compila/embalagem apenas no Dockerfile (não usar artefatos de build da máquina host no lugar do build da imagem). Ver README.md na raiz.
+#
+# Convenção de imagem (obrigatória para serviços com build neste compose):
+#   image: constrsw/<container_name>
+# O nome da imagem deve ser igual ao `container_name` (não ao nome do service, quando diferirem).
+# Rebuild de um serviço sem retaggar irmãos:
+#   docker compose build <service> && docker compose up -d --no-deps <service>
 networks:
   constrsw:
 
@@ -583,13 +589,13 @@ services:
       start_period: 20s
     restart: always
 
-  # BFF (Backend for Frontend) Service
+  # BFF (Backend for Frontend) Service — container_name `api` ⇒ imagem constrsw/api
   bff:
     container_name: api
     build:
       context: ./backend/bff
       dockerfile: Dockerfile
-    image: constrsw/bff
+    image: constrsw/api
     environment:
       - PORT=${BFF_INTERNAL_API_PORT}
       - APP_ENV=${BFF_APP_ENV}
