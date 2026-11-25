@@ -14,6 +14,41 @@ Quem vai continuar: comece **por este arquivo**. Ele resume o que existe, em que
 5. **O e-mail do professor também pede:** teste fim a fim do BFF que percorra **todos** os endpoints de rooms e seja **idempotente**, e frontend de cada grupo só do próprio serviço (nós: salas).
 6. **Os agentes do Orca ainda podem estar abertos e gastando cota.** Feche todos (seção 9) antes de começar.
 
+## 0.1 Status de revisão e o que ainda NÃO existe (leia antes de confiar em qualquer branch)
+
+Dois revisores atuaram: REV-1 (Claude) e REV-1b/REV-2 (GPT, no Codex). Só o que está na primeira tabela foi revisado. **Tudo o mais é código escrito por agente e conferido apenas pelo próprio agente** (o que ele diz ter rodado está nos relatórios em `_bmad-output/implementation-artifacts/orca/`, mas ninguém confirmou).
+
+### Revisado e aprovado
+| Peça | Branch / hash | Quem aprovou e como |
+| --- | --- | --- |
+| BFF núcleo de rooms | `bff/grupo08-feat/rooms-core` `0eccfbe`, mergeado em `bff/grupo08` (`bb0cd63`, **publicado**) | REV-1 aprovou o diff; REV-1b corroborou build, suíte e contrato (parecer `REV-AG-02-parecer.md`). O próprio AG-02 relatou 154 testes verdes em Node 24. |
+| README do módulo BFF | `bff/grupo08-feat/rooms-readme` `54dcb18` | REV-1b, só o complemento documental. Não mergeado. |
+
+### Revisado e reprovado (não usar)
+| Peça | Resultado |
+| --- | --- |
+| Base antiga do frontend (AG-04, `cd2ced5`) | REV-2 reprovou em 3 rodadas: (1) o proxy do nginx perdia caminho e query (`POST /api/auth/login` chegava como `POST /`) e os ícones usavam a fonte errada; (2) a branch não partia da principal; (3) o professor publicou o scaffold oficial. Os bugs 1 foram corrigidos, mas **a base foi descartada** (parecer `REV2-AG-04-parecer.md`). O nginx corrigido pode ser reaproveitado. |
+
+### Escrito mas NUNCA revisado
+| Peça | Branch / hash | O que o agente afirma (não confirmado) |
+| --- | --- | --- |
+| Correções do backend rooms | `grupo08-feat/t3-fix-build-health` `ef30cd0` (5 commits) | relatório em `AG-01-relatorio.md`; a imagem do rooms chegou a ser construída no Docker, mas `./mvnw verify` e `docker build` não foram confirmados por revisor |
+| Testes e e2e do BFF | `bff/grupo08-feat/rooms-tests` `9d672e8` (12 arquivos: contrato offline `openapi/domains/rooms.openapi.json`, `rooms.integration.spec.ts`, `rooms.e2e-spec.ts`, `compose.rooms.yaml`, script `test:e2e:rooms`, ajuste de 3 linhas no controller) | build e suíte completa com 203 testes verdes; o e2e **não chegou a rodar** |
+| Login e sessão | `frontend/grupo08-feat/auth` `35a575f` (10 arquivos) | relatório do AG-05 não foi escrito |
+| Camada de dados de salas | `frontend/grupo08-feat/rooms-data` `db20174` (10 arquivos) | build de produção passou (relato do AG-06); relatório `AG-06-relatorio.md` |
+| Lista de salas e formulário | `frontend/grupo08-feat/rooms-list` `216bb22`, `5c5a61f` (8 arquivos) | nenhum relatório |
+| Detalhe de sala | `frontend/grupo08-feat/rooms-detail` `f8a42e2` (7 arquivos) | nenhum relatório |
+
+### Não existe (nunca foi feito)
+- Base do frontend sobre o scaffold do professor (`frontend/grupo08-feat/base-v2`): a branch existe mas está **igual ao scaffold dele**, sem nada nosso. Por isso as 4 branches do frontend acima ainda estão sobre a base antiga e precisam de rebase.
+- Teste E2E do frontend com Playwright: nada escrito (`frontend/grupo08-feat/e2e` sem commits).
+- Integração final (ficha 8.9) e o roteiro de aceitação de 17 passos: nunca executados.
+- Teste fim a fim do BFF rodado **duas vezes seguidas** (exigência do professor): nunca rodou nem uma.
+- Verificação visual das telas em 360, 768 e 1280: nunca feita.
+- Merge em branches principais: só o `bff/grupo08` recebeu merge. `frontend/grupo08` está no ponto da `main` (sem código nosso); `grupo08` do rooms não recebeu as correções; `base/grupo08` nem foi criada.
+- PRs para a `main` e atualização dos ponteiros de submódulo no repositório base: nada feito (de propósito).
+- Shell, login e home oficiais: são do professor e ainda não foram entregues; o que existe de shell/login é provisório e estava na base antiga descartada.
+
 ---
 
 ## 1. Repositórios e branches (estado em 24/11/2026)
@@ -39,7 +74,7 @@ Em 24/11/2026, depois da primeira versão deste documento, o Lucas autorizou o p
 | --- | --- | --- | --- | --- |
 | BFF, núcleo (AG-02) | `bff/grupo08-feat/rooms-core` e já mergeada em `bff/grupo08` | `0eccfbe` / merge `bb0cd63` | **sim** | **Aprovado** (REV-1, REV-1b corroborou) |
 | BFF, testes e e2e (AG-03) | `bff/grupo08-feat/rooms-tests` | `9d672e8` | sim (push em 24/11) | pendente |
-| README do módulo BFF (AG-02) | `bff/grupo08-feat/rooms-readme` | ver `git branch -a` no `backend/bff` | sim (push em 24/11) | pendente |
+| README do módulo BFF (AG-02) | `bff/grupo08-feat/rooms-readme` | ver `git branch -a` no `backend/bff` | sim (push em 24/11) | **aprovado** pelo REV-1b (só documentação, `54dcb18`; **não mergeado** em `bff/grupo08`) |
 | Backend rooms, correções (AG-01) | `grupo08-feat/t3-fix-build-health` | `ef30cd0` (5 commits) | sim (push em 24/11) | relatório entregue, revisão não concluída |
 | Frontend, base antiga (AG-04) | `frontend/grupo08-feat/base` | `cd2ced5` | sim | reprovado 2x, corrigido; **base descartada** (ver abaixo) |
 | Frontend, base nova (AG-04b) | `frontend/grupo08-feat/base-v2` | `f13f4d1` (= scaffold do professor, **ainda sem trabalho nosso**) | não | não começou |
