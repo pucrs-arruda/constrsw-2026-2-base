@@ -76,3 +76,43 @@
 - source_spec: `_bmad-output/implementation-artifacts/spec-0-5-kit-compartilhado-tabela-lista-dialogs-banners-http-bff.md`
   summary: mapBffHttpError 401 always returns refusal bannerKind (no session-clear-only option)
   evidence: Edge review — callers that only clear session can ignore bannerKind
+
+- source_spec: `_bmad-output/implementation-artifacts/spec-0-6-lista-de-funcionarios-responsiva.md`
+  summary: Employees list uses parallel me()+list() without switchMap; create stubs lack Voltar CTA
+  evidence: Adversarial review 0.6 — polish for reload races and stub UX
+
+- source_spec: `_bmad-output/implementation-artifacts/spec-0-7-detalhe-employee-dependent-1-n.md`
+  summary: Falha de identidade/me (incl. 401) só desliga canWrite; não limpa sessão nem redireciona — mesmo padrão da lista 0.6
+  evidence: Adversarial/edge review 0.7 — alinhado a employees-list-page; unificar auth em story de sessão
+
+- source_spec: `_bmad-output/implementation-artifacts/spec-0-7-detalhe-employee-dependent-1-n.md`
+  summary: IDs de employee/dependent sem encodeURIComponent nos path segments do EmployeesApi
+  evidence: Edge review 0.7 — UUIDs atuais ok; reforçar se IDs opacos ganharem caracteres reservados
+
+- source_spec: `_bmad-output/implementation-artifacts/spec-0-7-detalhe-employee-dependent-1-n.md`
+  summary: Sem suite dedicada dependent-form-dialog.spec (validação/refusal/401 no write do dialog)
+  evidence: Adversarial review 0.7 — cobertura parcial via page + api specs; expandir depois
+
+- source_spec: `_bmad-output/implementation-artifacts/spec-0-8-criar-e-editar-employee-ciclo-de-vida.md`
+  summary: Sinal canWriteDependents no detalhe também gateia Editar funcionário (mesma role funcionario)
+  evidence: Adversarial review 0.8 — renomear para canWriteEmployee quando papéis divergirem
+
+- source_spec: `_bmad-output/implementation-artifacts/spec-0-8-criar-e-editar-employee-ciclo-de-vida.md`
+  summary: Sem timeout no save do EmployeeFormDialog; hang deixa disableClose ativo
+  evidence: Edge review 0.8 — padrão compartilhado de writes; tratar no kit se recorrente
+
+- source_spec: `_bmad-output/implementation-artifacts/spec-0-9-estados-de-recusa-e-employee-inativo-na-ui.md`
+  summary: problem+json `errors[]` (400 validation) ainda não entra no banner — só detail/title/code
+  evidence: Adversarial review 0.9 — mapear field errors no formulário quando UX pedir
+
+- source_spec: `_bmad-output/implementation-artifacts/spec-0-9-estados-de-recusa-e-employee-inativo-na-ui.md`
+  summary: Banner identity em falha isolada de identidade/me (503) não foi ligado nas páginas employees
+  evidence: Adversarial review 0.9 — evita esconder master; unificar em story de sessão/shell
+
+- source_spec: `_bmad-output/implementation-artifacts/spec-bff-employees-proxy.md`
+  summary: Contract tests for employees proxy use bare createNestApplication without bootstrap configureApp (CORS/bodyParser)
+  evidence: Review of employees proxy — same pattern as rooms; browser cookie/CORS not exercised in unit contract layer
+
+- source_spec: `_bmad-output/implementation-artifacts/spec-bff-employees-proxy.md`
+  summary: Full Playwright UX-EMPLOYEES suite green proof after removing BFF bridge was not re-run in this story
+  evidence: Spec Ask First limited live e2e beyond contract; smoke via curl/BFF + 9 contract tests covered the ship gate

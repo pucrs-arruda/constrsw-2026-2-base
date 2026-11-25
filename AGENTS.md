@@ -17,6 +17,12 @@ A VM padrão tem pouca memória para a stack inteira. Suba só os serviços da t
 docker compose up -d --build postgresql keycloak oauth
 ```
 
+**Imagens Docker:** todo serviço com `build:` neste compose usa `image: constrsw/<container_name>` (igual ao `container_name`, ex. container `api` → `constrsw/api`). Não use o nome do service quando ele divergir do container. Ao rebuildar um serviço só, evite retaggar irmãos:
+
+```bash
+docker compose build frontend && docker compose up -d --no-deps frontend
+```
+
 O Compose lê o `.env` da raiz. Não imprima esses valores em logs, pull requests ou respostas.
 
 Imagens e volumes permanecem em disco entre execuções. O daemon não permanece: o `start` sobe o Docker de novo a cada sessão. Confira com `docker info` antes de usar o Compose.
