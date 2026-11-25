@@ -64,3 +64,15 @@
 - source_spec: `_bmad-output/implementation-artifacts/spec-0-4-ux-home-app-shell-e-navegacao.md`
   summary: No timeout/loading state if identidade/me or logout HTTP hangs without emit
   evidence: Edge review — HttpClient normally completes; hang UX deferred
+
+- source_spec: `_bmad-output/implementation-artifacts/spec-0-5-kit-compartilhado-tabela-lista-dialogs-banners-http-bff.md`
+  summary: Edit/confirm dialogs do not re-apply fullscreen/stack classes when viewport crosses 600px while open
+  evidence: Adversarial review — panelClass fixed at open time
+
+- source_spec: `_bmad-output/implementation-artifacts/spec-0-5-kit-compartilhado-tabela-lista-dialogs-banners-http-bff.md`
+  summary: AlertBanner has no right-side action slot (EXPERIENCE “ação à direita”)
+  evidence: Adversarial review — text-only banner sufficient for 0.5; CTA slot later if needed
+
+- source_spec: `_bmad-output/implementation-artifacts/spec-0-5-kit-compartilhado-tabela-lista-dialogs-banners-http-bff.md`
+  summary: mapBffHttpError 401 always returns refusal bannerKind (no session-clear-only option)
+  evidence: Edge review — callers that only clear session can ignore bannerKind
