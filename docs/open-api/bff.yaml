@@ -237,20 +237,16 @@ paths:
       operationId: listResources
       summary: 'Lista resources e as reservations futuras'
       description: |
-        Mesmos filtros do GET de resources do serviço resources.
+        Aceita os filtros `code`, `type`, `active` e `tag`, combinados com AND.
 
-        Cada item inclui `reservations`: reservations futuras desse resource. Reservation futura: o id do resource está em `resourceIds` e o início da faixa (`data` mais o horário de início de `faixaId` no cânone de faixas do oauth) é posterior ao instante atual no fuso America/Sao_Paulo. A BFF não filtra `status`. Reservations com exclusão lógica não aparecem, porque o serviço reservations já as omite. Sem correspondência, `reservations` é um array vazio. Esta lista não embute `occurrences`; o GET por id é que devolve o agregado.
+        Cada item inclui `openOccurrenceCount` e `reservations`: reservations futuras desse resource. Reservation futura: o id do resource está em `resourceIds` e o início da faixa (`data` mais o horário de início de `faixaId` no cânone de faixas do oauth) é posterior ao instante atual no fuso America/Sao_Paulo. A BFF não filtra `status`. Reservations com exclusão lógica não aparecem, porque o serviço reservations já as omite. Sem correspondência, `reservations` é um array vazio. Esta lista não embute `occurrences`; o GET por id é que devolve o agregado.
 
-        503 quando o serviço reservations não puder ser consultado. As escritas deste caminho devolvem o corpo do serviço resources, sem `reservations`.
+        503 quando o serviço reservations não puder ser consultado. As escritas deste caminho devolvem o agregado composto do resource.
       parameters:
-        - $ref: './grupo06-resources-api.yaml#/paths/~1api~1v1~1resources/get/parameters/0'
-        - $ref: './grupo06-resources-api.yaml#/paths/~1api~1v1~1resources/get/parameters/1'
-        - $ref: './grupo06-resources-api.yaml#/paths/~1api~1v1~1resources/get/parameters/2'
-        - $ref: './grupo06-resources-api.yaml#/paths/~1api~1v1~1resources/get/parameters/3'
-        - $ref: './grupo06-resources-api.yaml#/paths/~1api~1v1~1resources/get/parameters/4'
-        - $ref: './grupo06-resources-api.yaml#/paths/~1api~1v1~1resources/get/parameters/5'
-        - $ref: './grupo06-resources-api.yaml#/paths/~1api~1v1~1resources/get/parameters/6'
-        - $ref: './grupo06-resources-api.yaml#/paths/~1api~1v1~1resources/get/parameters/7'
+        - $ref: './grupo06-resources-api.yaml#/components/parameters/ResourceCodeFilter'
+        - $ref: './grupo06-resources-api.yaml#/components/parameters/ResourceTypeFilter'
+        - $ref: './grupo06-resources-api.yaml#/components/parameters/ResourceActiveFilter'
+        - $ref: './grupo06-resources-api.yaml#/components/parameters/ResourceTagFilter'
       responses:
         '200':
           description: |
@@ -260,25 +256,59 @@ paths:
               schema:
                 $ref: '#/components/schemas/ResourceViewList'
         '401':
-          $ref: './grupo06-resources-api.yaml#/paths/~1api~1v1~1resources/get/responses/401'
+          $ref: './grupo06-resources-api.yaml#/components/responses/Unauthorized'
         '403':
-          $ref: './grupo06-resources-api.yaml#/paths/~1api~1v1~1resources/get/responses/403'
+          $ref: './grupo06-resources-api.yaml#/components/responses/Forbidden'
         '422':
-          $ref: './grupo06-resources-api.yaml#/paths/~1api~1v1~1resources/get/responses/422'
+          $ref: './grupo06-resources-api.yaml#/components/responses/Validation'
         '503':
-          $ref: './grupo06-resources-api.yaml#/paths/~1api~1v1~1resources/get/responses/503'
+          $ref: './grupo06-resources-api.yaml#/components/responses/DependencyUnavailable'
     post:
-      $ref: './grupo06-resources-api.yaml#/paths/~1api~1v1~1resources/post'
+      tags: [resources]
+      operationId: createResource
+      summary: 'Cria um resource'
+      description: |
+        Proxy da criação. A resposta é o agregado composto: o resource do serviço, `occurrences` vazias, `openOccurrenceCount` zero e `reservations` vazias.
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: './grupo06-resources-api.yaml#/components/schemas/ResourceCreate'
+      responses:
+        '201':
+          description: 'Resource criado.'
+          headers:
+            Location:
+              $ref: './grupo06-resources-api.yaml#/components/headers/Location'
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ResourceAggregateView'
+        '400':
+          $ref: './grupo06-resources-api.yaml#/components/responses/MalformedRequest'
+        '401':
+          $ref: './grupo06-resources-api.yaml#/components/responses/Unauthorized'
+        '403':
+          $ref: './grupo06-resources-api.yaml#/components/responses/Forbidden'
+        '409':
+          $ref: './grupo06-resources-api.yaml#/components/responses/Conflict'
+        '415':
+          $ref: './grupo06-resources-api.yaml#/components/responses/UnsupportedMediaType'
+        '422':
+          $ref: './grupo06-resources-api.yaml#/components/responses/Validation'
+        '503':
+          $ref: './grupo06-resources-api.yaml#/components/responses/DependencyUnavailable'
 
   '/api/v1/resources/{resourceId}':
     parameters:
-      - $ref: './grupo06-resources-api.yaml#/paths/~1api~1v1~1resources~1{resourceId}/parameters/0'
+      - $ref: './grupo06-resources-api.yaml#/components/parameters/ResourceId'
     get:
       tags: [resources]
       operationId: getResource
       summary: 'Recupera um resource e as reservations futuras'
       description: |
-        Recupera o agregado do serviço resources (o resource e as `occurrences`) e inclui `reservations`: reservations futuras desse resource. Reservation futura: o id do resource está em `resourceIds` e o início da faixa (`data` mais o horário de início de `faixaId` no cânone de faixas do oauth) é posterior ao instante atual no fuso America/Sao_Paulo. A BFF não filtra `status`. Reservations com exclusão lógica não aparecem, porque o serviço reservations já as omite. Sem correspondência, `reservations` é um array vazio.
+        Recupera o agregado do serviço resources (o resource e as `occurrences`) e inclui `openOccurrenceCount` e `reservations`: reservations futuras desse resource. Reservation futura: o id do resource está em `resourceIds` e o início da faixa (`data` mais o horário de início de `faixaId` no cânone de faixas do oauth) é posterior ao instante atual no fuso America/Sao_Paulo. A BFF não filtra `status`. Reservations com exclusão lógica não aparecem, porque o serviço reservations já as omite. Sem correspondência, `reservations` é um array vazio.
 
         404 quando o serviço resources não encontra o id. 503 quando o serviço reservations não puder ser consultado.
       responses:
@@ -290,27 +320,166 @@ paths:
               schema:
                 $ref: '#/components/schemas/ResourceAggregateView'
         '401':
-          $ref: './grupo06-resources-api.yaml#/paths/~1api~1v1~1resources~1{resourceId}/get/responses/401'
+          $ref: './grupo06-resources-api.yaml#/components/responses/Unauthorized'
         '403':
-          $ref: './grupo06-resources-api.yaml#/paths/~1api~1v1~1resources~1{resourceId}/get/responses/403'
+          $ref: './grupo06-resources-api.yaml#/components/responses/Forbidden'
         '404':
-          $ref: './grupo06-resources-api.yaml#/paths/~1api~1v1~1resources~1{resourceId}/get/responses/404'
+          $ref: './grupo06-resources-api.yaml#/components/responses/NotFound'
         '422':
-          $ref: './grupo06-resources-api.yaml#/paths/~1api~1v1~1resources~1{resourceId}/get/responses/422'
+          $ref: './grupo06-resources-api.yaml#/components/responses/Validation'
         '503':
-          $ref: './grupo06-resources-api.yaml#/paths/~1api~1v1~1resources~1{resourceId}/get/responses/503'
-    put:
-      $ref: './grupo06-resources-api.yaml#/paths/~1api~1v1~1resources~1{resourceId}/put'
+          $ref: './grupo06-resources-api.yaml#/components/responses/DependencyUnavailable'
     patch:
-      $ref: './grupo06-resources-api.yaml#/paths/~1api~1v1~1resources~1{resourceId}/patch'
+      tags: [resources]
+      operationId: updateResource
+      summary: 'Atualiza um resource'
+      description: |
+        Proxy da atualização. A resposta é o agregado composto com `openOccurrenceCount` e `reservations` futuras.
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: './grupo06-resources-api.yaml#/components/schemas/ResourcePatch'
+      responses:
+        '200':
+          description: 'Agregado atualizado.'
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ResourceAggregateView'
+        '400':
+          $ref: './grupo06-resources-api.yaml#/components/responses/MalformedRequest'
+        '401':
+          $ref: './grupo06-resources-api.yaml#/components/responses/Unauthorized'
+        '403':
+          $ref: './grupo06-resources-api.yaml#/components/responses/Forbidden'
+        '404':
+          $ref: './grupo06-resources-api.yaml#/components/responses/NotFound'
+        '415':
+          $ref: './grupo06-resources-api.yaml#/components/responses/UnsupportedMediaType'
+        '422':
+          $ref: './grupo06-resources-api.yaml#/components/responses/Validation'
+        '503':
+          $ref: './grupo06-resources-api.yaml#/components/responses/DependencyUnavailable'
     delete:
-      $ref: './grupo06-resources-api.yaml#/paths/~1api~1v1~1resources~1{resourceId}/delete'
+      tags: [resources]
+      operationId: deleteResource
+      summary: 'Exclui logicamente um resource'
+      description: |
+        Exclusão lógica no serviço resources: `enabled=false` no resource e nas suas occurrences, na mesma transação. As linhas e o histórico são mantidos e as leituras deixam de devolvê-las. Distinto de `active`, que libera ou bloqueia reservas.
+      responses:
+        '204':
+          description: 'Resource excluído.'
+        '401':
+          $ref: './grupo06-resources-api.yaml#/components/responses/Unauthorized'
+        '403':
+          $ref: './grupo06-resources-api.yaml#/components/responses/Forbidden'
+        '404':
+          $ref: './grupo06-resources-api.yaml#/components/responses/NotFound'
+        '422':
+          $ref: './grupo06-resources-api.yaml#/components/responses/Validation'
+        '503':
+          $ref: './grupo06-resources-api.yaml#/components/responses/DependencyUnavailable'
 
   '/api/v1/resources/{resourceId}/occurrences':
-    $ref: './grupo06-resources-api.yaml#/paths/~1api~1v1~1resources~1{resourceId}~1occurrences'
+    parameters:
+      - $ref: './grupo06-resources-api.yaml#/components/parameters/ResourceId'
+    post:
+      tags: [resources]
+      operationId: recordOccurrence
+      summary: 'Registra uma ocorrência'
+      description: |
+        Proxy do registro. A resposta é a ocorrência do serviço, sem a flag de exclusão lógica `enabled`.
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: './grupo06-resources-api.yaml#/components/schemas/OccurrenceCreate'
+      responses:
+        '201':
+          description: 'Ocorrência registrada.'
+          headers:
+            Location:
+              $ref: './grupo06-resources-api.yaml#/components/headers/Location'
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/OccurrenceView'
+        '400':
+          $ref: './grupo06-resources-api.yaml#/components/responses/MalformedRequest'
+        '401':
+          $ref: './grupo06-resources-api.yaml#/components/responses/Unauthorized'
+        '403':
+          $ref: './grupo06-resources-api.yaml#/components/responses/Forbidden'
+        '404':
+          $ref: './grupo06-resources-api.yaml#/components/responses/NotFound'
+        '415':
+          $ref: './grupo06-resources-api.yaml#/components/responses/UnsupportedMediaType'
+        '422':
+          $ref: './grupo06-resources-api.yaml#/components/responses/Validation'
+        '503':
+          $ref: './grupo06-resources-api.yaml#/components/responses/DependencyUnavailable'
 
   '/api/v1/resources/{resourceId}/occurrences/{occurrenceId}':
-    $ref: './grupo06-resources-api.yaml#/paths/~1api~1v1~1resources~1{resourceId}~1occurrences~1{occurrenceId}'
+    parameters:
+      - $ref: './grupo06-resources-api.yaml#/components/parameters/ResourceId'
+      - $ref: './grupo06-resources-api.yaml#/components/parameters/OccurrenceId'
+    patch:
+      tags: [resources]
+      operationId: resolveOccurrence
+      summary: 'Resolve uma ocorrência'
+      description: |
+        Proxy da resolução. A resposta é a ocorrência do serviço, sem a flag de exclusão lógica `enabled`.
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: './grupo06-resources-api.yaml#/components/schemas/OccurrencePatch'
+      responses:
+        '200':
+          description: 'Ocorrência resolvida.'
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/OccurrenceView'
+        '400':
+          $ref: './grupo06-resources-api.yaml#/components/responses/MalformedRequest'
+        '401':
+          $ref: './grupo06-resources-api.yaml#/components/responses/Unauthorized'
+        '403':
+          $ref: './grupo06-resources-api.yaml#/components/responses/Forbidden'
+        '404':
+          $ref: './grupo06-resources-api.yaml#/components/responses/NotFound'
+        '409':
+          $ref: './grupo06-resources-api.yaml#/components/responses/Conflict'
+        '415':
+          $ref: './grupo06-resources-api.yaml#/components/responses/UnsupportedMediaType'
+        '422':
+          $ref: './grupo06-resources-api.yaml#/components/responses/Validation'
+        '503':
+          $ref: './grupo06-resources-api.yaml#/components/responses/DependencyUnavailable'
+    delete:
+      tags: [resources]
+      operationId: deleteOccurrence
+      summary: 'Exclui logicamente uma ocorrência'
+      description: |
+        Exclusão lógica no serviço resources: `enabled=false`; a ocorrência e o histórico são mantidos e as leituras deixam de devolvê-la.
+      responses:
+        '204':
+          description: 'Ocorrência excluída.'
+        '401':
+          $ref: './grupo06-resources-api.yaml#/components/responses/Unauthorized'
+        '403':
+          $ref: './grupo06-resources-api.yaml#/components/responses/Forbidden'
+        '404':
+          $ref: './grupo06-resources-api.yaml#/components/responses/NotFound'
+        '422':
+          $ref: './grupo06-resources-api.yaml#/components/responses/Validation'
+        '503':
+          $ref: './grupo06-resources-api.yaml#/components/responses/DependencyUnavailable'
 
   '/api/v1/professors':
     get:
@@ -621,19 +790,56 @@ components:
     ResourceView:
       title: ResourceView
       description: |
-        Resource do serviço resources mais `reservations` futuras e `openOccurrenceCount`. Ambos são normativos nesta BFF, ainda que o schema de domínio feche `additionalProperties`.
-      allOf:
-        - $ref: './grupo06-resources-api.yaml#/components/schemas/Resource'
-        - type: object
-          required: [reservations, openOccurrenceCount]
-          properties:
-            reservations:
-              $ref: '#/components/schemas/FutureReservations'
-            openOccurrenceCount:
-              type: integer
-              minimum: 0
-              description: Número de occurrences do resource com status OPEN, calculado pela BFF.
-              example: 1
+        Resource do serviço resources mais `openOccurrenceCount` e `reservations` futuras. O schema é autocontido (sem `allOf` sobre o schema fechado do domínio) e omite a flag de exclusão lógica `enabled`.
+      type: object
+      additionalProperties: false
+      required: [id, code, name, type, active, tags, createdAt, updatedAt, openOccurrenceCount, reservations]
+      properties:
+        id:
+          type: string
+          format: uuid
+          readOnly: true
+        code:
+          type: string
+          minLength: 3
+          maxLength: 32
+          pattern: '^[A-Z0-9]+(-[A-Z0-9]+)*$'
+          example: PROJ-01
+        name:
+          type: string
+          minLength: 1
+          maxLength: 120
+          example: Projector 1
+        type:
+          $ref: './grupo06-resources-api.yaml#/components/schemas/ResourceType'
+        active:
+          type: boolean
+          example: true
+        tags:
+          type: array
+          maxItems: 10
+          uniqueItems: true
+          items:
+            type: string
+            minLength: 1
+            maxLength: 30
+            pattern: '^[a-z0-9]+(-[a-z0-9]+)*$'
+          example: [av, portable]
+        createdAt:
+          type: string
+          format: date-time
+          readOnly: true
+        updatedAt:
+          type: string
+          format: date-time
+          readOnly: true
+        openOccurrenceCount:
+          type: integer
+          minimum: 0
+          description: Número de occurrences do resource com status OPEN, calculado pela BFF.
+          example: 1
+        reservations:
+          $ref: '#/components/schemas/FutureReservations'
     ResourceViewList:
       type: array
       items:
@@ -641,19 +847,108 @@ components:
     ResourceAggregateView:
       title: ResourceAggregateView
       description: |
-        Agregado do serviço resources (`occurrences` inclusas) mais `reservations` futuras e `openOccurrenceCount`. Ambos são normativos nesta BFF, ainda que o schema de domínio feche `additionalProperties`.
-      allOf:
-        - $ref: './grupo06-resources-api.yaml#/components/schemas/ResourceAggregate'
-        - type: object
-          required: [reservations, openOccurrenceCount]
-          properties:
-            reservations:
-              $ref: '#/components/schemas/FutureReservations'
-            openOccurrenceCount:
-              type: integer
-              minimum: 0
-              description: Número de occurrences do resource com status OPEN, calculado pela BFF.
-              example: 1
+        Agregado do serviço resources (`occurrences` inclusas) mais `openOccurrenceCount` e `reservations` futuras. O schema é autocontido e omite a flag de exclusão lógica `enabled` no resource e nas ocorrências.
+      type: object
+      additionalProperties: false
+      required: [id, code, name, type, active, tags, createdAt, updatedAt, openOccurrenceCount, reservations, occurrences]
+      properties:
+        id:
+          type: string
+          format: uuid
+          readOnly: true
+        code:
+          type: string
+          minLength: 3
+          maxLength: 32
+          pattern: '^[A-Z0-9]+(-[A-Z0-9]+)*$'
+          example: PROJ-01
+        name:
+          type: string
+          minLength: 1
+          maxLength: 120
+          example: Projector 1
+        type:
+          $ref: './grupo06-resources-api.yaml#/components/schemas/ResourceType'
+        active:
+          type: boolean
+          example: true
+        tags:
+          type: array
+          maxItems: 10
+          uniqueItems: true
+          items:
+            type: string
+            minLength: 1
+            maxLength: 30
+            pattern: '^[a-z0-9]+(-[a-z0-9]+)*$'
+          example: [av, portable]
+        createdAt:
+          type: string
+          format: date-time
+          readOnly: true
+        updatedAt:
+          type: string
+          format: date-time
+          readOnly: true
+        openOccurrenceCount:
+          type: integer
+          minimum: 0
+          description: Número de occurrences do resource com status OPEN, calculado pela BFF.
+          example: 1
+        reservations:
+          $ref: '#/components/schemas/FutureReservations'
+        occurrences:
+          $ref: '#/components/schemas/OccurrenceViewList'
+    OccurrenceView:
+      title: OccurrenceView
+      description: |
+        Occurrence do serviço resources sem a flag de exclusão lógica `enabled`.
+      type: object
+      additionalProperties: false
+      required: [id, resourceId, description, type, priority, status, resolution, reportedBy, resolvedBy, createdAt, resolvedAt, updatedAt]
+      properties:
+        id:
+          type: string
+          format: uuid
+          readOnly: true
+        resourceId:
+          type: string
+          format: uuid
+          readOnly: true
+        description:
+          type: string
+          minLength: 1
+        type:
+          $ref: './grupo06-resources-api.yaml#/components/schemas/OccurrenceType'
+        priority:
+          $ref: './grupo06-resources-api.yaml#/components/schemas/OccurrencePriority'
+        status:
+          $ref: './grupo06-resources-api.yaml#/components/schemas/OccurrenceStatus'
+        resolution:
+          type: [string, 'null']
+        reportedBy:
+          type: string
+          format: uuid
+          readOnly: true
+        resolvedBy:
+          type: [string, 'null']
+          format: uuid
+          readOnly: true
+        createdAt:
+          type: string
+          format: date-time
+          readOnly: true
+        resolvedAt:
+          type: [string, 'null']
+          format: date-time
+        updatedAt:
+          type: string
+          format: date-time
+          readOnly: true
+    OccurrenceViewList:
+      type: array
+      items:
+        $ref: '#/components/schemas/OccurrenceView'
     ProfessorView:
       title: ProfessorView
       description: |

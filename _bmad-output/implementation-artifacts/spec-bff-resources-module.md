@@ -58,14 +58,14 @@ context: []
 ## Tasks & Acceptance
 
 **Execution:**
-- [ ] `backend/bff/src/modules/resources/resources.service.ts` -- implement forwarding, composition, shape mapping, 503 envelope, location rewrite -- core behavior.
-- [ ] `backend/bff/src/modules/resources/resources.controller.ts` -- expose exactly five routes; generate 401 before downstream -- route contract.
-- [ ] `backend/bff/src/modules/resources/resources.module.ts` -- wire `RESOURCES_DOWNSTREAM` from `RESOURCES_BASE_URL` with validated resilience settings -- configuration.
-- [ ] `backend/bff/src/app.module.ts` -- register module alphabetically -- integration.
-- [ ] `backend/bff/src/modules/resources/*.spec.ts`, `src/resources.integration.spec.ts`, `src/resources.contract.spec.ts` -- cover the matrix and required tests -- verification.
-- [ ] `backend/bff/openapi/` + `scripts/validate-contract.cjs` -- add browser and domain snapshots, validate offline -- contract.
-- [ ] `backend/bff/test/e2e/resources.e2e-spec.ts`, `package.json` -- add module E2E script -- stack verification.
-- [ ] `backend/bff/README.md` -- document module, `RESOURCES_BASE_URL`, and required base compose/.env changes -- operations.
+- [x] `backend/bff/src/modules/resources/resources.service.ts` -- implement forwarding, composition, shape mapping, 503 envelope, location rewrite -- core behavior.
+- [x] `backend/bff/src/modules/resources/resources.controller.ts` -- expose the eight routes (six composed/proxy reads and writes plus logical `DELETE` of resource and occurrence); generate 401 before downstream -- route contract.
+- [x] `backend/bff/src/modules/resources/resources.module.ts` -- wire `RESOURCES_DOWNSTREAM` from `RESOURCES_BASE_URL` with validated resilience settings -- configuration.
+- [x] `backend/bff/src/app.module.ts` -- register module alphabetically -- integration.
+- [x] `backend/bff/src/modules/resources/*.spec.ts`, `src/resources.integration.spec.ts`, `src/resources.contract.spec.ts` -- cover the matrix and required tests -- verification.
+- [x] `backend/bff/openapi/` + `scripts/validate-contract.cjs` -- add browser and domain snapshots, validate offline -- contract.
+- [x] `backend/bff/test/e2e/resources.e2e-spec.ts`, `package.json` -- add module E2E script -- stack verification.
+- [x] `backend/bff/README.md` -- document module, `RESOURCES_BASE_URL`, and required base compose/.env changes -- operations.
 
 **Acceptance Criteria:**
 - Given a session, when the list is read, then every item count equals its number of `OPEN` occurrences and no item exposes `enabled`.
@@ -79,12 +79,16 @@ context: []
 
 ## Implementation Notes
 
-- `src/bootstrap.ts` now keeps `/v1/resources` bodies raw (scoped middleware only) so malformed JSON and non-JSON content types reach the domain and its 400/415 problem+json pass through unchanged.
+- `src/bootstrap.ts` now keeps `/api/v1/resources` bodies raw (scoped middleware only) so malformed JSON and non-JSON content types reach the domain and its 400/415 problem+json pass through unchanged.
 - The list allowlists `code`, `type`, `active`, `tag`; forwarding `enabled=false` would expose soft-deleted rows and turn the detail fan-out into a 503. Identifiers are percent-encoded exactly once.
 - List items are summarized from the fetched aggregate (not the list snapshot), tags are deduplicated to honor the browser `uniqueItems`, and unexpected controller errors return a 500 `Problem` (`INTERNAL_ERROR`) instead of Nest's default body.
 - `resourcesDownstream` rejects a blank `RESOURCES_BASE_URL` with a labeled configuration error; the URL/path and integer guards are covered by `resources.module.spec.ts`.
-- E2E was not executed: the base `docker-compose.yml` has no `bff` service, and the running `resources` container is stale (`/health` answers but `/api/v1/health` is 404). `npm run test:e2e:resources` and `E2E_DOCKER=1` are in place but require a rebuilt resources container plus a running BFF.
-- Known divergences kept as documented, not invented: cookie `cras_session` in `bff-openapi.yaml` vs runtime `SESSION_COOKIE_NAME` default `closed_cras_session`; contract port 8088 vs the inherited top-level 8180 and the absent compose `bff` service.
+- E2E covers the full cycle through the BFF, including logical `DELETE` of the occurrence and the
+  resource. It requires a rebuilt resources container plus the `bff` service from the base
+  `docker-compose.yml`; the last run was not executed in this review session.
+- Cookie contract and runtime now agree on `closed_cras_session`. The remaining documented
+  divergence is the contract port 8088 vs the inherited top-level 8180, stated in the README and
+  `openapi/README.md`.
 
 ## Spec Change Log
 
@@ -94,6 +98,15 @@ context: []
   (future, read-only, composed from the reservations context). `Location` stays under
   `/api/v1/resources`. The `RESERVATIONS_BASE_URL` hop was added. Supersedes the `/v1` bullets in
   the frozen Boundaries section and the old `{items}` mapping.
+
+- **2026-11-25 — review round 2: `DELETE` e alinhamento do contrato.**
+  Adicionadas as rotas `DELETE /api/v1/resources/{resourceId}` e
+  `DELETE /api/v1/resources/{resourceId}/occurrences/{occurrenceId}` (exclusão lógica, `204`), com
+  testes de contrato, integração e E2E. O `docs/open-api/bff.yaml` passou a declarar apenas as oito
+  operações implementadas, com views autocontidas (sem `allOf` sobre schema fechado, sem `enabled`),
+  filtros `code`/`type`/`active`/`tag` e shapes de resposta iguais aos do runtime. O snapshot
+  `openapi.json` passou a documentar `closed_cras_session`, e o README deixou de afirmar que o
+  compose da base não tem serviço `bff`. Supersede os itens 1 e 10 da triagem anterior.
 
 ## Review Triage Log
 
