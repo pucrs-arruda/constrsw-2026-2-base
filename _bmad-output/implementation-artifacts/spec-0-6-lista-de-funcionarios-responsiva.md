@@ -96,3 +96,26 @@ Map OpenAPI Employee fields to columns (e.g. name, email/registration, status/en
 
 **Manual checks:**
 - `/funcionarios` at ~360 / 768 / 1280: list vs table; search filters; empty + 503 banners
+
+## Suggested Review Order
+
+**Lista**
+
+- Load, search, banners, 401→login, Nova/Abrir
+  [`employees-list-page.ts:76`](../../../frontend/src/app/surfaces/ux-employees/employees-list-page.ts#L76)
+
+- Header, toolbar, empty/search-empty, table
+  [`employees-list-page.html:1`](../../../frontend/src/app/surfaces/ux-employees/employees-list-page.html#L1)
+
+- BFF `GET /v1/employees`
+  [`employees-api.ts:20`](../../../frontend/src/app/surfaces/ux-employees/employees-api.ts#L20)
+
+**Rotas + stubs**
+
+- `funcionarios` / `novo` / `:id`
+  [`app.routes.ts:33`](../../../frontend/src/app/app.routes.ts#L33)
+
+**Tests**
+
+- I/O matrix lista
+  [`employees-list-page.spec.ts:40`](../../../frontend/src/app/surfaces/ux-employees/employees-list-page.spec.ts#L40)
