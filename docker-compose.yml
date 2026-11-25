@@ -664,18 +664,16 @@ services:
       start_period: 25s
     restart: always
 
-  # Frontend — Closed CRAS SPA
+  # Frontend — Closed CRAS SPA (Angular 22). Lab: FRONTEND_EXTERNAL_PORT=4200, INTERNAL=80
   frontend:
     container_name: frontend
     build:
       context: ./frontend
       dockerfile: Dockerfile
-      args:
-        VITE_OAUTH_BASE_URL: ${VITE_OAUTH_BASE_URL}
-        VITE_BFF_BASE_URL: ${VITE_BFF_BASE_URL}
     image: constrsw/frontend
     ports:
-      - "${FRONTEND_EXTERNAL_PORT}:${FRONTEND_INTERNAL_PORT}"
+      # Container nginx listens on 80; lab host port defaults to 4200
+      - "${FRONTEND_EXTERNAL_PORT:-4200}:80"
     networks:
       - constrsw
     depends_on:
