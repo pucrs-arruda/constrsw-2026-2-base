@@ -171,3 +171,25 @@ O repositório traz as skills em `.agents/skills/` (~85) e o motor em `_bmad/`. 
 
 ## 9. Agentes ainda abertos no Orca (fechar!)
 No Orca, projeto "G08 Rooms": REV-1b (Codex), REV-2 (Codex), AG-03, AG-04b, AG-05, AG-06, AG-07, AG-08 e AG-09a (Codex `gpt-6.2-sol`), mais agentes antigos do Antigravity esperando (AG-01 a AG-09) e um terminal "Coordenador". Eles consomem cota ao acordar. Endereços em `_bmad-output/implementation-artifacts/orca/agentes.md`. O terminal "Coordenador" (`term_e7327707-...`) é só a caixa de saída para mensagens do Orca.
+
+---
+
+## 10. Estado exato ao desligar os agentes (24/11/2026)
+
+Todos os agentes estavam parados (nenhum no meio de uma edição) e todo trabalho real está commitado e no GitHub. Resumo por agente:
+
+| Agente | Resultado final |
+| --- | --- |
+| AG-01 (rooms) | 5 commits de correção; relatório entregue; **não revisado**; `mvnw verify` e `docker build` a conferir |
+| AG-02 (BFF núcleo) | **aprovado e mergeado** em `bff/grupo08` (`bb0cd63`); README do módulo em `bff/grupo08-feat/rooms-readme` |
+| AG-03 (BFF testes) | commit `9d672e8` em `bff/grupo08-feat/rooms-tests`; **build e suíte completa passaram (203 testes)**; subiu a stack no Docker mas **o e2e não terminou de rodar** (esperava classes e BFF ficarem saudáveis); falta rodar o e2e 2x e a revisão |
+| AG-04 / AG-04b (base do frontend) | AG-04: base antiga descartada. AG-04b: **não produziu nada** (branch `base-v2` ainda igual ao scaffold do professor) |
+| AG-05 (login) | commit `35a575f` em `frontend/grupo08-feat/auth`; não revisado; precisa de rebase na base nova |
+| AG-06 (dados) | commit `db20174` em `frontend/grupo08-feat/rooms-data`; não revisado |
+| AG-07 (lista) | commits `216bb22` e `5c5a61f` em `frontend/grupo08-feat/rooms-list`; não revisado |
+| AG-08 (detalhe) | commit `f8a42e2` em `frontend/grupo08-feat/rooms-detail`; não revisado |
+| AG-09a (e2e Playwright) | **não produziu nada** (branch `e2e` sem commits novos) |
+
+Arquivos soltos que **não** devem ser commitados: nas pastas `G08-fe-ag07` e `G08-fe-ag08` há `src/app/shared/http/` e `src/app/surfaces/ux-rooms/data/` sem commit; são cópias provisórias da camada de dados do AG-06 (que está commitada em `rooms-data`). O `room-form.dialog.ts` solto em `G08-fe-ag08` é um stub do formulário do AG-07 (o real está em `rooms-list`).
+
+Containers do Docker que ficaram no ar (podem ser desligados com `docker compose down`): `api`, `otel-collector`, `prometheus`, `classes`, `rooms`, `oauth`, `keycloak`, `postgresql` e quatro `grupo08-rev2-ag04-*` (testes do REV-2). A imagem do rooms foi construída, o que indica que o Dockerfile corrigido compila, mas confirme com o `docker build`.
