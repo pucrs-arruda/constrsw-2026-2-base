@@ -52,3 +52,15 @@
 - source_spec: `_bmad-output/implementation-artifacts/spec-0-3-ux-login-responsivo.md`
   summary: App toolbar chrome still visible on UX-LOGIN alongside login-panel brand strip
   evidence: Adversarial review — EXPERIENCE login-panel is its own surface; hiding global chrome deferred to Story 0.4 shell work
+
+- source_spec: `_bmad-output/implementation-artifacts/spec-0-4-ux-home-app-shell-e-navegacao.md`
+  summary: routerLinkActive uses exact:true — nested routes (e.g. /funcionarios/:id) will not mark parent nav item
+  evidence: Adversarial review — acceptable until employees detail routes exist in later stories
+
+- source_spec: `_bmad-output/implementation-artifacts/spec-0-4-ux-home-app-shell-e-navegacao.md`
+  summary: No skip-link to #conteudo-principal; after modal nav item click focus returns to hamburger
+  evidence: Adversarial review — WCAG polish beyond Story 0.4 minimal shell
+
+- source_spec: `_bmad-output/implementation-artifacts/spec-0-4-ux-home-app-shell-e-navegacao.md`
+  summary: No timeout/loading state if identidade/me or logout HTTP hangs without emit
+  evidence: Edge review — HttpClient normally completes; hang UX deferred
