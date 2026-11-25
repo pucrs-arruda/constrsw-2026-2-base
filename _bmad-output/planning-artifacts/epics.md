@@ -53,7 +53,7 @@ FE-CAP-3: Superfícies de domínio lista/detalhe + secundárias 1–N via BFF, g
 
 FE-CAP-4: Leitura composta T3 + vistas sem join de nove OpenAPIs. Success: GETs students/professors/courses/rooms com `classes[]` (sem year/semester no cliente); resources com `reservations[]`; T3 falha→503 banner; UX-OCCUPANCY; UX-PROFESSOR-VIEW; UX-STUDENT-READ = composição cliente.
 
-FE-CAP-5: Hierarquia Turma→Aulas→Reservas no detalhe; Lessons/Reservations fora do menu. Success: UX-CLASSES abas Alunos|Aulas; ENROLLMENTS só associa existentes; CLASS-LESSONS CRUD+`/lessons/generate`; LESSON-RESERVATIONS CRUD; sem reviews UI v1.
+FE-CAP-5: Hierarquia Turma→(Alunos|Aulas|Reservas) no detalhe; Lessons/Reservations fora do menu. Success: UX-CLASSES abas Alunos|Aulas|Reservas (Figma R07/R08); ENROLLMENTS só associa existentes; CLASS-LESSONS CRUD+`/lessons/generate`; LESSON-RESERVATIONS = aba Reservas (grade) + CRUD no detalhe da aula; sem reviews UI v1.
 
 FE-CAP-6: Entrega paralela sem dono exclusivo da SPA. Success: ownership travado (Arruda + G01–G08 próprio serviço); contribution checklist; tokens DESIGN; Figma referência (spines vencem).
 
@@ -111,7 +111,7 @@ UX-DR6: hamburger-nav 10 itens; folha modal &lt;1024px; Esc/scrim; item ativo.
 UX-DR7: page-header + toolbar (busca + CTA); empty pt-BR + CTA.
 UX-DR8: data-table → lista 2 linhas + “Mais ações” em compact; TableRowActions; sem infinite scroll; sem scroll H (exceto ocupação).
 UX-DR9: master-detail-panel — 2 colunas ≥1280; empilhado abaixo; voltar em compact.
-UX-DR10: class-tabs — Alunos | Aulas; roláveis em compact.
+UX-DR10: class-tabs — Alunos | Aulas | Reservas (Figma R07/R08); roláveis em compact.
 UX-DR11: UX-CLASS-ENROLLMENTS — picker Students existentes; sem criar Student.
 UX-DR12: UX-CLASS-LESSONS — CRUD + generate; nav ao detalhe da aula.
 UX-DR13: UX-LESSON-RESERVATIONS — CRUD; faixa-picker A–E,F–N,P.
@@ -400,11 +400,11 @@ So that the offering is valid before generating lessons.
 **And** inactive Employee/Professor constraints surface when BFF refuses (FR-1a signal)
 **And** dialogs/forms meet UX-DR17 at 360 / 768 / 1280
 
-### Story 1.3: Detalhe Turma com abas Alunos | Aulas
+### Story 1.3: Detalhe Turma com abas Alunos | Aulas | Reservas
 
 As a coordenador,
-I want Class detail with exactly two tabs (Alunos matriculados | Aulas),
-So that enrollments and lessons stay nested under the turma.
+I want Class detail with three tabs (Alunos matriculados | Aulas | Reservas),
+So that enrollments, lessons and the period reservation hub stay nested under the turma (Figma R07/R08).
 
 **Refs:** SPEC-frontend FE-CAP-5; UX-CLASSES; ownership:Grupo 01; paths: frontend/src/app/surfaces/ux-classes/
 
@@ -412,7 +412,8 @@ So that enrollments and lessons stay nested under the turma.
 
 **Given** I open a Class
 **When** the detail loads
-**Then** `mat-tab-group` shows only **Alunos matriculados** and **Aulas** (UX-DR10)
+**Then** `mat-tab-group` shows **Alunos matriculados**, **Aulas** and **Reservas** (UX-DR10; Figma R07/R08)
+**And** the Reservas tab hosts UX-LESSON-RESERVATIONS hub content (Grupo 03; grade faixa×dia + Nova reserva)
 **And** tabs are scrollable/usable in compact; state preserved across viewport class changes
 **And** compact shows “← Voltar para Turmas”
 **And** verified at 360 / 768 / 1280
@@ -477,19 +478,22 @@ So that topics, `flagAvaliacao`, modality, and effective room stay coherent.
 
 ## Epic 3: Reservas da aula e ocupação (Grupo 03 / reservations)
 
-Operadores reservam recursos no detalhe da aula e consultam ocupação por data+faixa.
-**Owner:** Grupo 03 (`reservations`) · **FRs:** FE-CAP-4, FE-CAP-5, FR-SURF-RESERVATIONS, FR-SURF-OCCUPANCY · **UX:** UX-LESSON-RESERVATIONS, UX-OCCUPANCY · **Dep soft:** Epic 2 · **UX-DRs:** UX-DR13–14, 16–18
+Operadores reservam recursos pela aba Reservas da turma e no detalhe da aula; consultam ocupação por data+faixa.
+**Owner:** Grupo 03 (`reservations`) · **FRs:** FE-CAP-4, FE-CAP-5, FR-SURF-RESERVATIONS, FR-SURF-OCCUPANCY · **UX:** UX-LESSON-RESERVATIONS, UX-OCCUPANCY · **Dep soft:** Epic 2 · **UX-DRs:** UX-DR10, 13–14, 16–18
 
-### Story 3.1: UX-LESSON-RESERVATIONS — lista no detalhe da Aula
+### Story 3.1: UX-LESSON-RESERVATIONS — hub da aba Reservas + lista no detalhe da Aula
 
 As a professor,
-I want to see Reservations for the open Lesson,
-So that booking work stays nested under the aula.
+I want the Turma Reservas tab (period grid) and the open Lesson reservation list,
+So that booking work matches Figma R08C and frame 21.
 
 **Refs:** SPEC-frontend FE-CAP-5; UX-LESSON-RESERVATIONS; ownership:Grupo 03; paths: frontend/src/app/surfaces/ux-lesson-reservations/
 
 **Acceptance Criteria:**
 
+**Given** I open the **Reservas** tab on a Class (Figma R08C)
+**When** the hub loads
+**Then** I see a faixa×dia period grid with Livre/Ocup states and a **Nova reserva** CTA
 **Given** I open a Lesson detail from UX-CLASS-LESSONS (or documented stub route if Epic 2 shell is incomplete)
 **When** reservations load via BFF
 **Then** UX-LESSON-RESERVATIONS lists reservations for that Lesson only

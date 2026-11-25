@@ -54,8 +54,8 @@ sources:
   - **success:** Room tem capacidade obrigatória e ≥1 feature para FR-15/SALA; Resource ≠ Room; InventoryItem sem órfãos; Resource inativo não confirma Reservation.
 
 - **CAP-8**
-  - **intent:** No detalhe da Aula (UX-LESSON-RESERVATIONS), listar e fazer CRUD de Reservation daquela Lesson (ReservationLine: RECURSO no caminho feliz; SALA só na exceção ou ad hoc); conflitos resolvidos no escritor.
-  - **success:** CRUD de Reservation parte da Aula (não aba de Turma nem menu de topo); recusa Resource tomado/inativo, segunda SALA na mesma Lesson, sobreposição de sala efetiva/Resource/Professor; cancelar libera faixa e restaura sala efetiva à padrão; sem fila de aprovação (SM-5).
+  - **intent:** Em UX-LESSON-RESERVATIONS — **aba Reservas da Turma** (grade faixa×dia do período + Nova reserva; Figma R08C) e **detalhe da Aula** (lista/CRUD da Lesson; Figma 21) — reservar recursos daquela Lesson (ReservationLine: RECURSO no caminho feliz; SALA só na exceção ou ad hoc); conflitos resolvidos no escritor.
+  - **success:** CRUD de Reservation acessível pela aba Reservas da Turma e pelo detalhe da Aula (não no menu de topo); recusa Resource tomado/inativo, segunda SALA na mesma Lesson, sobreposição de sala efetiva/Resource/Professor; cancelar libera faixa e restaura sala efetiva à padrão; sem fila de aprovação (SM-5). Grade da aba Reservas ≠ UX-OCCUPANCY (`/ocupacao` = só recursos por data+faixa).
 
 - **CAP-9**
   - **intent:** Cada contexto publica OpenAPI 3.1 como fonte da verdade na língua do glossário, com IDs e envelopes uniformes.

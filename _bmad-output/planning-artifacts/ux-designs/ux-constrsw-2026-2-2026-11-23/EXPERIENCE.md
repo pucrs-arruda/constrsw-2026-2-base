@@ -17,7 +17,7 @@ updated: 2026-11-24
 
 Companion UX do **SPEC-closed-cras** (CAP-12) e do **SPEC-frontend** (`_bmad-output/specs/spec-frontend/`). UI web única Closed CRAS, ConstrSW PUCRS 2026/2. Identidade visual em `DESIGN.md` (tokens prevalecem sobre tema Material default). Autenticação só via `backend/oauth`; dados só via BFF. Sem Keycloak no browser. Sem chamar os nove serviços de domínio direto do browser.
 
-**Autoridade:** SPEC-frontend vence em partição/stack/contribuição; SPEC-closed-cras vence em FRs de produto; este spine vence em IA, fluxos e microcopy; `DESIGN.md` vence em tokens; Figma `FTSWNiR5rQHXqDizXFJYqp` é composição de referência (spines vencem o mockup).
+**Autoridade:** SPEC-frontend vence em partição/stack/contribuição; SPEC-closed-cras vence em FRs de produto; este spine vence em IA, fluxos e microcopy; `DESIGN.md` vence em tokens; Figma `FTSWNiR5rQHXqDizXFJYqp` é composição de referência (spines vencem o mockup). **Override (2026-11-24):** em `class-tabs` / hub da Turma, Figma R07C·R07M·R08C prevalece — abas **Alunos | Aulas | Reservas**.
 
 ## Foundation
 
@@ -50,10 +50,10 @@ Língua da UI: **português do Brasil**. Paths/tags do OpenAPI permanecem em ing
 | UX-ROOMS | Salas de Aula | CAP-7, CAP-10 | Grupo 08 | Menu | Lista + detalhe + accessibility-features + **Turmas do semestre** (`classes` T3; `roomId`) | `/api/v1/rooms` |
 | UX-RESOURCES | Recursos | CAP-7, CAP-10 | Grupo 06 | Menu | Lista + detalhe + occurrences + **reservations futuras** (T3) | `/api/v1/resources` |
 | UX-COURSES | Disciplinas | CAP-4, CAP-10 | Grupo 05 | Menu | Lista + detalhe + bibliographic-references + syllabus-items + **Turmas do semestre** (`classes` T3; `courseId`) | `/api/v1/courses` |
-| UX-CLASSES | Turmas | CAP-5 | Grupo 01 | Menu | Lista + detalhe com **2 abas** (Alunos \| Aulas) | `/api/v1/classes` (+ reviews/import) |
+| UX-CLASSES | Turmas | CAP-5 | Grupo 01 | Menu | Lista + detalhe com **3 abas** (Alunos \| Aulas \| Reservas) — Figma R07/R08 | `/api/v1/classes` (+ reviews/import) |
 | UX-CLASS-ENROLLMENTS | Turma · Alunos matriculados | CAP-5, CAP-3 | Grupo 01 | Detalhe turma | Associa Students **já cadastrados** à Class (`studentIds`); sem criar Student aqui | `/api/v1/classes` + lista students |
 | UX-CLASS-LESSONS | Turma · Aulas | CAP-6 | Grupo 02 | Detalhe turma | Lista + **CRUD** de Lesson da turma (gerar/criar/editar/excluir + tópicos) | `/api/v1/lessons` |
-| UX-LESSON-RESERVATIONS | Aula · Reservas | CAP-8 | Grupo 03 | Detalhe da aula (a partir da lista de Aulas) | Lista + **CRUD** de Reservation daquela Lesson | `/api/v1/reservations` |
+| UX-LESSON-RESERVATIONS | Turma · Reservas / Aula · Reservas | CAP-8 | Grupo 03 | Aba **Reservas** da turma (grade faixa×dia do período + Nova reserva) **e** detalhe da aula | Grade do período (Figma R08C) + lista/**CRUD** de Reservation da Lesson (Figma 21) | `/api/v1/reservations` |
 | UX-OCCUPANCY | Ocupação | CAP-10 (FR-29) | Grupo 03 | Menu | Recursos ocupados em **data + faixa**; **não nominativo** de Student | `GET /api/v1/reservations/ocupacao?data=&faixaId=` |
 | UX-PROFESSOR-VIEW | Plano + roster | CAP-10 (FR-31) | Grupo 07 | Menu | Leitura composta plano + roster — **cliente** junta courses + classes (sem endpoint BFF dedicado) | proxy `/courses`, `/classes` |
 | UX-STUDENT-READ | Minhas aulas | CAP-6 (FR-19) | Grupo 04 | Menu | Sala efetiva / tópico / avaliação + plano — **cliente** junta lessons + `classes` do student (sem endpoint BFF dedicado) | proxy `/lessons`, `/students`, `/courses` |
@@ -70,9 +70,9 @@ Língua da UI: **português do Brasil**. Paths/tags do OpenAPI permanecem em ing
 9. Plano + roster → BFF composição (FR-31)
 10. Minhas aulas → BFF lessons (FR-19)
 
-**Hierarquia de escrita:** Turma → (Alunos + Lessons CRUD) → Detalhe da Aula → Reservations CRUD. Lessons e Reservations **não** são itens de menu de topo. Ocupação / Plano+roster / Minhas aulas são superfícies de **leitura SPEC** no menu.
+**Hierarquia de escrita:** Turma → (Alunos + Aulas + Reservas) → Detalhe da Aula (CRUD da Lesson e das reservations daquela Lesson). Lessons e Reservations **não** são itens de menu de topo. Ocupação / Plano+roster / Minhas aulas são superfícies de **leitura SPEC** no menu.
 
-Cada contexto de domínio: **lista + detalhe/master-detail** cobrindo POST/PUT/PATCH/DELETE e secundárias 1–N do OpenAPI. **Turma · Alunos:** só associa/desassocia Students existentes. **Turma · Aulas:** CRUD de Lesson. **Aula · Reservas:** CRUD de Reservation da aula aberta.
+Cada contexto de domínio: **lista + detalhe/master-detail** cobrindo POST/PUT/PATCH/DELETE e secundárias 1–N do OpenAPI. **Turma · Alunos:** só associa/desassocia Students existentes. **Turma · Aulas:** CRUD de Lesson. **Turma · Reservas:** hub do período (grade faixa×dia + Nova reserva, Figma R08C). **Aula · Reservas:** CRUD de Reservation da aula aberta (Figma 21). **Ocupação (menu)** continua sendo só recursos via `/ocupacao` — distinta da grade da aba Reservas.
 
 **Composição BFF T3 (leitura):** o cliente **não** envia `year`/`semester` (fuso America/Sao_Paulo; semestre 1 se mês &lt; agosto, senão 2).
 
@@ -119,8 +119,8 @@ Padrões de experiência ↔ Angular Material (CAP-12). Tokens de `DESIGN.md` pr
 | login-panel | `mat-form-field` + `mat-button` | UX-LOGIN | Submit → `POST /login`. `201` → Bearer + Home. `401` banner sem enumerar conta. `503`/rede → “Identidade indisponível.” |
 | data-table | `mat-table` (+ CDK) | Listas | Linha abre detalhe. Sem infinite scroll. |
 | master-detail-panel | layout + `mat-card` opcional | Detalhes | Secundária 1–N só da principal selecionada. |
-| class-tabs | `mat-tab-group` | Detalhe turma | Alunos matriculados \| Aulas. (Reservas vivem no detalhe da Aula.) |
-| lesson-reservations | `mat-table` + actions | Detalhe aula | Tabela de reservations da Lesson + Nova reserva / editar / cancelar. |
+| class-tabs | `mat-tab-group` | Detalhe turma | Alunos matriculados \| Aulas \| Reservas (Figma R07/R08). Caption do hub: “alunos, aulas e reservas do período.” |
+| lesson-reservations | `mat-table` + grade faixa×dia + actions | Aba Reservas da turma **e** detalhe aula | Hub turma: grade do período + Nova reserva (R08C). Detalhe aula: tabela da Lesson + editar / cancelar (frame 21). |
 | faixa-picker | `mat-select` / chips | Aulas / reservas / ocupação | Códigos canônicos A–E, F–N, P; sem time picker livre (Constraints SPEC). |
 | refusal-banner | `mat-snack-bar` ou banner inline | Escritas / login 401 | `role="alert"`; prosa travada; `code` = id do FR quando o BFF devolver problem+json. |
 | identity-banner | banner inline | Login 503; BFF 503 composição | Mensagem institucional, sem nomear microsserviço (`BFF-DEPENDENCY` onde aplicável). |
@@ -160,7 +160,7 @@ Padrões de experiência ↔ Angular Material (CAP-12). Tokens de `DESIGN.md` pr
 
 ## Responsive & Platform
 
-**Gate de implementação (CAP-12):** o frontend **não** está pronto para merge de superfície alguma sem passar compact **e** medium **e** expanded. Isso inclui scaffold/shell, Login, Home, todos os contextos de menu, **UX-CLASS-LESSONS** (Aulas dentro de Turma) e **UX-LESSON-RESERVATIONS** (Reservas dentro de Aula).
+**Gate de implementação (CAP-12):** o frontend **não** está pronto para merge de superfície alguma sem passar compact **e** medium **e** expanded. Isso inclui scaffold/shell, Login, Home, todos os contextos de menu, **UX-CLASS-LESSONS** (aba Aulas), **UX-LESSON-RESERVATIONS** (aba Reservas da Turma + detalhe da Aula; refs Figma R07/R08 + frame 21).
 
 Uma única SPA Angular, **responsiva de 360px a 1440px+**. Todas as superfícies do inventário (UX-LOGIN…UX-STUDENT-READ) funcionam em todas as classes; nenhuma tarefa é "só desktop". Classes de janela seguem a nomenclatura M3 (compact / medium / expanded), mantendo o pivô de navegação em **1024px** já decidido neste spine (o M3 padrão usa 840px).
 

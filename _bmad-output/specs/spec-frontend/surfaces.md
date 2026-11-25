@@ -29,10 +29,10 @@ Lessons e Reservations **não** entram no menu de topo.
 | UX-ROOMS | Salas de Aula | Menu | Lista + detalhe + accessibility-features + turmas (`classes` T3) | `/api/v1/rooms` |
 | UX-RESOURCES | Recursos | Menu | Lista + detalhe + occurrences + reservations futuras (T3) | `/api/v1/resources` |
 | UX-COURSES | Disciplinas | Menu | Lista + detalhe + bibliographic-references + syllabus-items + turmas (`classes` T3) | `/api/v1/courses` |
-| UX-CLASSES | Turmas | Menu | Lista + detalhe (abas Alunos \| Aulas) | `/api/v1/classes` |
+| UX-CLASSES | Turmas | Menu | Lista + detalhe (**3 abas** Alunos \| Aulas \| Reservas — Figma R07/R08) | `/api/v1/classes` |
 | UX-CLASS-ENROLLMENTS | Turma · Alunos | Detalhe turma | Associa/desassocia Students **já cadastrados** | `/api/v1/classes` + lista students |
 | UX-CLASS-LESSONS | Turma · Aulas | Detalhe turma | CRUD Lesson (+ `POST /api/v1/lessons/generate`) | `/api/v1/lessons` |
-| UX-LESSON-RESERVATIONS | Aula · Reservas | Detalhe da aula | CRUD Reservation da Lesson | `/api/v1/reservations` |
+| UX-LESSON-RESERVATIONS | Turma · Reservas / Aula · Reservas | Aba **Reservas** da turma **e** detalhe da aula | Grade do período + Nova reserva (R08C); CRUD Reservation da Lesson (frame 21) | `/api/v1/reservations` |
 | UX-OCCUPANCY | Ocupação | Menu | Recursos ocupados em data + faixa (FR-29) | `GET /api/v1/reservations/ocupacao?data=&faixaId=` |
 | UX-PROFESSOR-VIEW | Plano + roster | Menu | Leitura composta (FR-31) — cliente junta courses + classes | proxy `/courses`, `/classes` |
 | UX-STUDENT-READ | Minhas aulas | Menu | Sala efetiva / tópico / avaliação + plano (FR-19) | proxy `/lessons`, `/students`, `/courses` |
@@ -42,8 +42,9 @@ Lessons e Reservations **não** entram no menu de topo.
 ```
 Turma (UX-CLASSES)
   ├── Alunos matriculados (UX-CLASS-ENROLLMENTS)
-  └── Aulas (UX-CLASS-LESSONS)
-        └── Reservas da aula (UX-LESSON-RESERVATIONS)
+  ├── Aulas (UX-CLASS-LESSONS)
+  │     └── (detalhe) Reservas da aula (UX-LESSON-RESERVATIONS)
+  └── Reservas (aba) — hub do período (UX-LESSON-RESERVATIONS / Figma R08C)
 ```
 
 ## Composição T3 (leitura)

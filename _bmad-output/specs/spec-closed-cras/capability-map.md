@@ -13,7 +13,7 @@ Traceability do kernel SPEC para PRD, Architecture Spine e EXPERIENCE **2026-11-
 | CAP-5 | Abrir Class + associar Students + gerar Lesson | FR-13, FR-14, FR-15, FR-16, FR-9* | AD-5, AD-9, OV-10 | UX-CLASSES; roster UX-CLASS-ENROLLMENTS; `POST /api/v1/lessons/generate` | SM-2, SM-5 |
 | CAP-6 | Lesson CRUD na Turma + sala efetiva + leitura Student | FR-17, FR-18, FR-19 | AD-5, AD-6 | UX-CLASS-LESSONS (CRUD); FR-19 = UX-STUDENT-READ (cliente + proxy lessons) | SM-2, SM-3 |
 | CAP-7 | Room + Resource mestres | FR-20, FR-21, FR-22 | AD-2 | UX-ROOMS + UX-RESOURCES | SM-4 |
-| CAP-8 | Reservation CRUD na Aula + linhas + cancelar | FR-23, FR-24, FR-30 | AD-5 | UX-LESSON-RESERVATIONS | SM-5 |
+| CAP-8 | Reservation: aba Reservas da Turma + CRUD na Aula + linhas + cancelar | FR-23, FR-24, FR-30 | AD-5 | UX-LESSON-RESERVATIONS | SM-5 |
 | CAP-9 | OpenAPI contract-first | FR-25 | AD-2, AD-3, AD-11 | — (contrato) | SM-4 |
 | CAP-10 | BFF proxy + composição + ocupação + vistas | FR-26, FR-29, FR-31 | AD-6, AD-10, OV-10 | T3 classes/reservations; UX-OCCUPANCY=`/reservations/ocupacao`; FR-31=UX-PROFESSOR-VIEW (cliente); 503 | SM-3, SM-4 |
 | CAP-11 | oauth/Keycloak + resource-server | FR-27 | AD-4 | UX-LOGIN | SM-3, SM-4 |
@@ -52,10 +52,10 @@ Traceability do kernel SPEC para PRD, Architecture Spine e EXPERIENCE **2026-11-
 | UX-ROOMS | CAP-7 / CAP-10 | Grupo 08 (`rooms`) | Lista + detalhe + accessibility + **Turmas semestre** (`classes` T3) |
 | UX-RESOURCES | CAP-7 / CAP-10 | Grupo 06 (`resources`) | Lista + detalhe + ocorrências + **reservations futuras** (T3) |
 | UX-COURSES | CAP-4 / CAP-10 | Grupo 05 (`courses`) | Lista + detalhe + plano + **Turmas semestre** (`classes` T3) |
-| UX-CLASSES | CAP-5 | Grupo 01 (`classes`) | Lista + detalhe (abas Alunos \| Aulas) |
+| UX-CLASSES | CAP-5 | Grupo 01 (`classes`) | Lista + detalhe (abas Alunos \| Aulas \| Reservas — Figma R07/R08) |
 | UX-CLASS-ENROLLMENTS | CAP-5 / CAP-3 | Grupo 01 (`classes`) | Aba Alunos matriculados — associa Students já existentes |
 | UX-CLASS-LESSONS | CAP-6 | Grupo 02 (`lessons`) | Aba Aulas — lista + CRUD de Lesson da turma |
-| UX-LESSON-RESERVATIONS | CAP-8 | Grupo 03 (`reservations`) | Detalhe da Aula — lista + CRUD de Reservation da aula |
+| UX-LESSON-RESERVATIONS | CAP-8 | Grupo 03 (`reservations`) | Aba Reservas da Turma (grade período) + detalhe da Aula (CRUD) |
 | UX-OCCUPANCY | CAP-10 (FR-29) | Grupo 03 (`reservations`) | `GET /api/v1/reservations/ocupacao` — recursos ocupados (data+faixa) |
 | UX-PROFESSOR-VIEW | CAP-10 (FR-31) | Grupo 07 (`professors`) | Plano + roster — composição cliente (courses + classes) |
 | UX-STUDENT-READ | CAP-6 (FR-19) | Grupo 04 (`students`) | Minhas aulas — composição cliente (lessons + classes) |

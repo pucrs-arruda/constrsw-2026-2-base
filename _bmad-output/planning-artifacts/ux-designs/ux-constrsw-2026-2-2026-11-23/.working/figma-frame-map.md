@@ -27,9 +27,9 @@ Menu hambúrguer (ordem fixa): Funcionários → Professores → Alunos → Sala
 | 16 | Disciplinas — lista (com classes compostas) | `3:528` |
 | 17 | Disciplinas — detalhe + referências + itens de plano | `3:579` |
 | 18 | Turmas — lista | `3:633` |
-| 19 | Turma — detalhe, aba Alunos matriculados (associar existentes) | `3:684` |
-| 20 | Turma — detalhe, aba Aulas (CRUD lessons) | `3:739` |
-| 21 | Aula — detalhe + reservas (CRUD reservations) | `3:801` |
+| 19 | Turma — detalhe, aba Alunos matriculados (associar existentes); class-tabs = Alunos \| Aulas \| Reservas | `3:684` |
+| 20 | Turma — detalhe, aba Aulas (CRUD lessons); hub copy alinha a R07 | `3:739` |
+| 21 | Aula — detalhe + reservas (CRUD); aba Reservas da turma = R08C | `3:801` |
 | 22 | Estado de erro BFF 503 composição | `3:860` |
 | 23 | Ocupação — recursos (GET /reservations/ocupacao) | `85:744` |
 | 24 | Professor — plano + roster (FR-31) | `85:958` |
@@ -63,9 +63,9 @@ Variantes editáveis (auto-layout + instances). Larguras: compact **360**, mediu
 | R05C | Salas — detalhe (compact) | `39:792` |
 | R05M | Salas — detalhe (medium) | `39:875` |
 | R06C | Funcionários — detalhe (compact) | `39:960` |
-| R07C | Turma — aba Aulas (compact) | `39:1021` |
-| R07M | Turma — aba Aulas (medium) | `39:1122` |
-| R08C | Turma — aba Reservas (compact) | `39:1208` |
+| R07C | Turma — aba Aulas (compact); hub “alunos, aulas e reservas do período” — **canônico** | `39:1021` |
+| R07M | Turma — aba Aulas (medium); mesmo hub — **canônico** | `39:1122` |
+| R08C | Turma — aba Reservas (compact); grade faixa×dia + Nova reserva — **canônico** (spines alinham a este frame) | `39:1208` |
 | R09C | BFF 503 composição (compact) | `39:1321` |
 | R10C | Edição — dialog tela cheia (compact) | `39:1349` |
 | R10M | Edição — dialog 560 (medium) | `39:1380` |

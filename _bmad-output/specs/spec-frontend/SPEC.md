@@ -49,12 +49,12 @@ IDs estáveis `CAP-1`…`CAP-6`. Em épicos/stories cite **`FE-CAP-N`** (= o mes
   - **success:** GETs T3 de students/professors/courses/rooms exibem `classes` do semestre (cliente **não** envia `year`/`semester`); resources exibem `reservations` futuras; falha T3 → 503 + banner “Serviço de composição indisponível.” sem payload pela metade. UX-OCCUPANCY = `GET /api/v1/reservations/ocupacao`; UX-PROFESSOR-VIEW (FR-31) e UX-STUDENT-READ (FR-19) = composição **cliente** sobre proxies BFF.
 
 - **CAP-5** (`FE-CAP-5`)
-  - **intent:** Hierarquia Turma → Aulas → Reservas opera no detalhe, sem Lessons/Reservations no menu de topo.
-  - **success:** UX-CLASSES com abas Alunos \| Aulas; UX-CLASS-ENROLLMENTS só associa Students existentes; UX-CLASS-LESSONS faz CRUD de Lesson (`POST /api/v1/lessons/generate` incluso); UX-LESSON-RESERVATIONS faz CRUD de Reservation da aula aberta. Reviews de Class fora da UI v1.
+  - **intent:** Hierarquia Turma → (Alunos \| Aulas \| Reservas) opera no detalhe, sem Lessons/Reservations no menu de topo.
+  - **success:** UX-CLASSES com abas **Alunos \| Aulas \| Reservas** (Figma R07/R08 prevalece); UX-CLASS-ENROLLMENTS só associa Students existentes; UX-CLASS-LESSONS faz CRUD de Lesson (`POST /api/v1/lessons/generate` incluso); UX-LESSON-RESERVATIONS cobre a **aba Reservas** da turma (grade faixa×dia + Nova reserva) e o CRUD no detalhe da aula. Reviews de Class fora da UI v1.
 
 - **CAP-6** (`FE-CAP-6`)
   - **intent:** Prof. Arruda e cada grupo entregam as superfícies do mapa fechado sem ser dono exclusivo da SPA.
-  - **success:** Donos = `ownership.md` (**travado 2026-11-24**, próprio serviço — não cruzado): Arruda → UX-LOGIN, UX-HOME, UX-EMPLOYEES; G01 classes → UX-CLASSES, UX-CLASS-ENROLLMENTS; G02 lessons → UX-CLASS-LESSONS; G03 reservations → UX-LESSON-RESERVATIONS, UX-OCCUPANCY; G04 students → UX-STUDENTS, UX-STUDENT-READ; G05 courses → UX-COURSES; G06 resources → UX-RESOURCES; G07 professors → UX-PROFESSORS, UX-PROFESSOR-VIEW; G08 rooms → UX-ROOMS. Checklist `contribution.md`; tokens `DESIGN.md` prevalecem; Figma `FTSWNiR5rQHXqDizXFJYqp` é composição de referência (spines vencem mockup).
+  - **success:** Donos = `ownership.md` (**travado 2026-11-24**, próprio serviço — não cruzado): Arruda → UX-LOGIN, UX-HOME, UX-EMPLOYEES; G01 classes → UX-CLASSES, UX-CLASS-ENROLLMENTS; G02 lessons → UX-CLASS-LESSONS; G03 reservations → UX-LESSON-RESERVATIONS, UX-OCCUPANCY; G04 students → UX-STUDENTS, UX-STUDENT-READ; G05 courses → UX-COURSES; G06 resources → UX-RESOURCES; G07 professors → UX-PROFESSORS, UX-PROFESSOR-VIEW; G08 rooms → UX-ROOMS. Checklist `contribution.md`; tokens `DESIGN.md` prevalecem; Figma `FTSWNiR5rQHXqDizXFJYqp` é composição de referência (spines vencem mockup, **exceto** `class-tabs` / hub Turma — Figma R07/R08 prevalece).
 
 ## Constraints
 
@@ -65,7 +65,7 @@ IDs estáveis `CAP-1`…`CAP-6`. Em épicos/stories cite **`FE-CAP-N`** (= o mes
 - Responsivo 360px–1440px+ (compact / medium / expanded); pivô de nav em **1024px**. Regras: companion EXPERIENCE § Responsive.
 - WCAG 2.2 AA; banners `role="alert"`; alvos ≥ 24px (toque ≥ 48px em compact/medium).
 - Bearer em memória de sessão (não `localStorage` longo); cookie httpOnly do oauth pode coexistir no transporte.
-- Autoridade: este SPEC vence em partição/stack/contribuição; EXPERIENCE vence em IA/fluxos/microcopy; DESIGN vence em tokens; produto closed-cras vence em FRs/invariantes.
+- Autoridade: este SPEC vence em partição/stack/contribuição; EXPERIENCE vence em IA/fluxos/microcopy; DESIGN vence em tokens; produto closed-cras vence em FRs/invariantes. **Exceção (override 2026-11-24):** `class-tabs` / hub Turma — Figma R07/R08 prevalece (Alunos \| Aulas \| Reservas).
 - Épicos/stories FE e `bmad-quick-dev` **devem** apontar este SPEC + companions como contrato; cada story carrega `Refs: FE-CAP-N; UX-*; ownership; path frontend/`. Ver `traceability.md` e `contribution.md`.
 
 ## Non-goals
@@ -74,7 +74,7 @@ IDs estáveis `CAP-1`…`CAP-6`. Em épicos/stories cite **`FE-CAP-N`** (= o mes
 - Frontend cruzado (grupo implementando UX de outro serviço) — supersedido por CAP-6 / ownership.md.
 - `keycloak-js` / adapter JS ao IdP; join de nove OpenAPIs no browser.
 - UI de `classes/.../reviews`; GET `/health` da BFF como tela.
-- Grade de ocupação de **salas** distinta de `reservations/ocupacao` (v1 = recursos por data+faixa).
+- Grade de ocupação de **salas** no path `reservations/ocupacao` (v1 = só recursos por data+faixa). A **aba Reservas** da Turma (Figma R08C) é hub de reservations do período — distinta de UX-OCCUPANCY.
 - Modo offline / fila local; app nativo / totem.
 - Implementação dos writers de domínio, BFF ou Keycloak admin (apontar `spec-bff` / OpenAPI do contexto).
 
