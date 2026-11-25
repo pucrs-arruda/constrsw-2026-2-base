@@ -92,3 +92,11 @@
 - source_spec: `_bmad-output/implementation-artifacts/spec-0-7-detalhe-employee-dependent-1-n.md`
   summary: Sem suite dedicada dependent-form-dialog.spec (validação/refusal/401 no write do dialog)
   evidence: Adversarial review 0.7 — cobertura parcial via page + api specs; expandir depois
+
+- source_spec: `_bmad-output/implementation-artifacts/spec-0-8-criar-e-editar-employee-ciclo-de-vida.md`
+  summary: Sinal canWriteDependents no detalhe também gateia Editar funcionário (mesma role funcionario)
+  evidence: Adversarial review 0.8 — renomear para canWriteEmployee quando papéis divergirem
+
+- source_spec: `_bmad-output/implementation-artifacts/spec-0-8-criar-e-editar-employee-ciclo-de-vida.md`
+  summary: Sem timeout no save do EmployeeFormDialog; hang deixa disableClose ativo
+  evidence: Edge review 0.8 — padrão compartilhado de writes; tratar no kit se recorrente
