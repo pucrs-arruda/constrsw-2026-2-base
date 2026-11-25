@@ -13,6 +13,9 @@ Nenhuma linha abaixo foi apagada. A coluna **Decisão** é o que esta SPEC execu
 | Lista / envelope | Spine Consistency: `items` | OpenAPIs de domínio + BFF: array JSON | **Array JSON** (como os writers). |
 | Display name Employee×Professor | closed-cras default BFF | OpenAPI professors sem nome/e-mail | **Composição BFF** (`employeeName` / `employeeEmail`); OpenAPI professors intacto (OQ-ARCH-2 fechada). |
 | Dono BFF | — | Equidade ConstrSW / closed-cras | **Sem dono exclusivo**; contribuição por módulo. |
+| Prefixo browser resources | `docs/open-api/bff.yaml` + spec-frontend: `/api/v1/resources` | `backend/bff/src/modules/resources/`: `/v1/resources` | **`/api/v1/resources`**; G06 alinha o módulo (2026-11-25). |
+| T3 resources | spec-bff/spec-frontend + `bff.yaml`: `reservations` futuras | módulo resources: só `openOccurrenceCount`; spec-resources domain sem reservations | **BFF compõe** no módulo resources (G06); domínio resources intacto. |
+| Envelope resources | `docs/open-api/bff.yaml` + outros módulos: array JSON | módulo resources: `{items}` | **Array JSON**; G06 alinha o módulo (2026-11-25). |
 
 ## Wrapper-only (não preservado no kernel)
 

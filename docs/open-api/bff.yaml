@@ -12,7 +12,7 @@ info:
     Há dois tipos de operação:
 
     - **Proxy.** POST, PUT, PATCH, DELETE e os GET sem observação T3 repetem o contrato do contexto. O caminho público é o mesmo path `/api/v1/...` documentado no OpenAPI daquele serviço (courses e lessons publicam o path sem o prefixo porque o server deles já inclui `/api/v1`). Status, corpo, filtros e erros são os do documento referenciado. Estas operações não acrescentam `classes` nem `reservations`.
-    - **Composição de leitura (observações T3).** Os GET da coleção e do item de students, courses, professors e rooms acrescentam `classes` do semestre em curso. Os GET da coleção e do item de resources acrescentam `reservations` futuras. GET de coleção secundária (matrículas, referências, ocorrências, titulações, recursos de acessibilidade e demais) permanece proxy.
+    - **Composição de leitura (observações T3).** Os GET da coleção e do item de students, courses, professors e rooms acrescentam `classes` do semestre em curso. Os GET da coleção e do item de resources acrescentam `reservations` futuras e `openOccurrenceCount`. GET de coleção secundária (matrículas, referências, ocorrências, titulações, recursos de acessibilidade e demais) permanece proxy.
 
     Semestre em curso, calculado pela BFF no fuso America/Sao_Paulo: `year` é o ano civil atual; `semester` é 1 quando o mês é anterior a agosto e 2 quando o mês é agosto ou posterior.
 
@@ -34,7 +34,7 @@ tags:
   - name: courses
     description: Proxy de courses. GET da coleção e do item incluem as classes do semestre em curso.
   - name: resources
-    description: Proxy de resources. GET da coleção e do item incluem as reservations futuras.
+    description: Proxy de resources. GET da coleção e do item incluem as reservations futuras e openOccurrenceCount.
   - name: professors
     description: Proxy de professors. GET da coleção e do item incluem as classes do semestre em curso.
   - name: rooms
@@ -621,14 +621,19 @@ components:
     ResourceView:
       title: ResourceView
       description: |
-        Resource do serviço resources mais `reservations` futuras. `reservations` é normativo nesta BFF, ainda que o schema de domínio feche `additionalProperties`.
+        Resource do serviço resources mais `reservations` futuras e `openOccurrenceCount`. Ambos são normativos nesta BFF, ainda que o schema de domínio feche `additionalProperties`.
       allOf:
         - $ref: './grupo06-resources-api.yaml#/components/schemas/Resource'
         - type: object
-          required: [reservations]
+          required: [reservations, openOccurrenceCount]
           properties:
             reservations:
               $ref: '#/components/schemas/FutureReservations'
+            openOccurrenceCount:
+              type: integer
+              minimum: 0
+              description: Número de occurrences do resource com status OPEN, calculado pela BFF.
+              example: 1
     ResourceViewList:
       type: array
       items:
@@ -636,14 +641,19 @@ components:
     ResourceAggregateView:
       title: ResourceAggregateView
       description: |
-        Agregado do serviço resources (`occurrences` inclusas) mais `reservations` futuras. `reservations` é normativo nesta BFF, ainda que o schema de domínio feche `additionalProperties`.
+        Agregado do serviço resources (`occurrences` inclusas) mais `reservations` futuras e `openOccurrenceCount`. Ambos são normativos nesta BFF, ainda que o schema de domínio feche `additionalProperties`.
       allOf:
         - $ref: './grupo06-resources-api.yaml#/components/schemas/ResourceAggregate'
         - type: object
-          required: [reservations]
+          required: [reservations, openOccurrenceCount]
           properties:
             reservations:
               $ref: '#/components/schemas/FutureReservations'
+            openOccurrenceCount:
+              type: integer
+              minimum: 0
+              description: Número de occurrences do resource com status OPEN, calculado pela BFF.
+              example: 1
     ProfessorView:
       title: ProfessorView
       description: |

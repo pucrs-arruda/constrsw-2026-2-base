@@ -60,6 +60,8 @@ Uma reservation é futura quando:
 
 `status` **não** é filtrado. Sem match → `reservations: []`.
 
+Implementação: módulo `src/modules/resources/` (Grupo 06), que lê a coleção de reservations do contexto `reservations`; o contexto `resources` não expõe reservations, availability ou occupancy e não muda por causa desta composição. Falha do hop `reservations` → **503** sem resource pela metade (mesmo envelope do 503 de resources).
+
 ## Falha da composição
 
 | Situação | Resposta |
