@@ -13,6 +13,7 @@ Quem vai continuar: comece **por este arquivo**. Ele resume o que existe, em que
 4. **O que o professor cobra no T3:** os dois GETs de rooms no BFF (`/api/v1/rooms` e `/api/v1/rooms/{id}`) devolvem as classes sediadas na sala no **semestre em curso** (`year` = ano atual; `semester` = 1 antes de agosto, 2 de agosto em diante; fuso America/Sao_Paulo; o cliente nunca manda year/semester). Se o serviço de classes cair, resposta 503 `application/problem+json` com `code: "BFF-DEPENDENCY"`, nunca a sala pela metade. Exclusão lógica (`enabled=false`) em tudo.
 5. **O e-mail do professor também pede:** teste fim a fim do BFF que percorra **todos** os endpoints de rooms e seja **idempotente**, e frontend de cada grupo só do próprio serviço (nós: salas).
 6. **Os agentes do Orca ainda podem estar abertos e gastando cota.** Feche todos (seção 9) antes de começar.
+7. **O plano `rooms-t3-t4-plano-orca.md` foi escrito para vários agentes trabalhando em paralelo** (fichas AG-01 a AG-09, revisores REV). Quem assume sozinho pode **ignorar a parte de orquestração** (ondas, "LIBERADO", correio entre agentes) e usar as fichas apenas como **lista de tarefas com critérios de aceite**. O que continua valendo integralmente: seção 0 (specs do professor), seção 3.1 (regra de branches), seção 4 (fatos de contrato) e seção 6 (interfaces).
 
 ## 0.1 Status de revisão e o que ainda NÃO existe (leia antes de confiar em qualquer branch)
 
@@ -61,7 +62,7 @@ Nos repositórios `constrsw-2026-2-base`, `-bff` e `-frontend`, o professor crio
 | Repositório | Principal do grupo (recebe merges) | Branch de desenvolvimento | Estado da principal no GitHub |
 | --- | --- | --- | --- |
 | `constrsw-2026-2-base` | `base/grupo08` (**ainda não criada no GitHub**) | `base/grupo08-feat/<slug>` | não existe |
-| `constrsw-2026-2-rooms` (`backend/rooms`) | `grupo08` | `grupo08-feat/<slug>` | existe (conferir) |
+| `constrsw-2026-2-rooms` (`backend/rooms`) | `grupo08` | `grupo08-feat/<slug>` | **NÃO existe no GitHub** (conferido em 24/11). Criar a partir de `origin/main` (`ce07d8c`, que é o commit apontado pelo submódulo no repo base). O `origin/grupo08` que aparece em clones antigos é referência velha (`f660712`). |
 | `constrsw-2026-2-bff` (`backend/bff`) | `bff/grupo08` | `bff/grupo08-feat/<slug>` | `bb0cd63` (já tem o merge do AG-02) |
 | `constrsw-2026-2-frontend` (`frontend`) | `frontend/grupo08` | `frontend/grupo08-feat/<slug>` | `d6ee998` (só nasceu da main, **sem código nosso**) |
 
@@ -135,7 +136,7 @@ Os relatórios dos que entregaram estão em `orca/`. **Nenhuma dessas entregas f
    - capacidade obrigatória no formulário; confirmação ao descartar formulário com alterações; foco no `h1` ao trocar de rota; link "← Voltar para Salas de Aula" no celular;
    - microcopy do `EXPERIENCE.md` (ex.: "Serviço de composição indisponível." + "Tentar novamente", "Nenhuma sala cadastrada ainda.").
 4. **Fechar o BFF**: revisar `rooms-tests` (e2e completo + idempotente, duas execuções verdes, `GET /health`, criar uma class com o `roomId` da sala para provar `classes`, login via `POST {oauth}/login` e não direto no Keycloak), mergear em `bff/grupo08`, push. Documentar no README do módulo as exceções fora de `src/modules/rooms/` (linha em `bootstrap.ts`, `openapi/*`, `scripts/validate-contract.cjs`, script `test:e2e:rooms`, `compose.rooms.yaml`).
-5. **Backend rooms**: revisar as 5 correções, rodar `./mvnw verify` e `docker build`, mergear em `grupo08` e dar push.
+5. **Backend rooms**: revisar as 5 correções, rodar `./mvnw verify` e `docker build`. **Atenção à base:** a branch `grupo08-feat/t3-fix-build-health` partiu de `f660712`, que está **1 commit atrás** da `main` do rooms (`ce07d8c`: "Lê a porta da variável de ambiente e corrige a quebra de linha do Maven wrapper"). Simulei o merge (`git merge-tree`) e ele é **limpo, sem conflito**. Sequência: `git checkout -b grupo08 origin/main` → `git merge --no-ff grupo08-feat/t3-fix-build-health` → rodar os testes → `git push -u origin grupo08`. A migração V4 (exclusão lógica) existe nas duas.
 6. **E2E do frontend (Playwright)**: não começou. Jornada: login → lista → criar sala → detalhe → recurso de acessibilidade → editar → excluir; idempotente; nas 3 larguras. Senha só por variável de ambiente, nunca no código.
 7. **Integração final**: subir a stack e rodar o roteiro de aceitação (ficha 8.9 do plano, 17 passos). Depois, `base/grupo08` com os ponteiros dos submódulos (só **depois** do push de cada submódulo; ponteiro para commit local quebra o clone dos colegas) e os PRs para a `main` abertos à mão pelo grupo.
 
