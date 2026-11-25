@@ -33,20 +33,20 @@ Nos repositórios `constrsw-2026-2-base`, `-bff` e `-frontend`, o professor crio
 Fluxo: atualiza a principal → cria `<principal>-feat/<slug>` a partir dela → codifica e commita → depois de revisado, `git merge --no-ff` na principal e `git push` da principal. Não existe `git push --force`.
 
 ### Onde está cada trabalho (hashes)
-Local = só no computador do Lucas (pasta `C:/Users/Lucas/orca/workspaces/constrsw-2026-2-base/`), **não está no GitHub**.
+Em 24/11/2026, depois da primeira versão deste documento, o Lucas autorizou o push e **todas as branches de desenvolvimento com trabalho foram enviadas ao GitHub** (nenhuma da `main`, sem force). A única que não foi: `base-v2` e `e2e` do frontend, que ainda não têm trabalho nosso.
 
 | Peça | Branch | Último commit | No GitHub? | Revisão |
 | --- | --- | --- | --- | --- |
 | BFF, núcleo (AG-02) | `bff/grupo08-feat/rooms-core` e já mergeada em `bff/grupo08` | `0eccfbe` / merge `bb0cd63` | **sim** | **Aprovado** (REV-1, REV-1b corroborou) |
-| BFF, testes e e2e (AG-03) | `bff/grupo08-feat/rooms-tests` | `9d672e8` | **não (só local)** | pendente |
-| README do módulo BFF (AG-02) | `bff/grupo08-feat/rooms-readme` | ver `git branch -a` no `backend/bff` | não confirmado | pendente |
-| Backend rooms, correções (AG-01) | `grupo08-feat/t3-fix-build-health` | `ef30cd0` (5 commits) | **não (só local)** | relatório entregue, revisão não concluída |
+| BFF, testes e e2e (AG-03) | `bff/grupo08-feat/rooms-tests` | `9d672e8` | sim (push em 24/11) | pendente |
+| README do módulo BFF (AG-02) | `bff/grupo08-feat/rooms-readme` | ver `git branch -a` no `backend/bff` | sim (push em 24/11) | pendente |
+| Backend rooms, correções (AG-01) | `grupo08-feat/t3-fix-build-health` | `ef30cd0` (5 commits) | sim (push em 24/11) | relatório entregue, revisão não concluída |
 | Frontend, base antiga (AG-04) | `frontend/grupo08-feat/base` | `cd2ced5` | sim | reprovado 2x, corrigido; **base descartada** (ver abaixo) |
 | Frontend, base nova (AG-04b) | `frontend/grupo08-feat/base-v2` | `f13f4d1` (= scaffold do professor, **ainda sem trabalho nosso**) | não | não começou |
-| Frontend, login e sessão (AG-05) | `frontend/grupo08-feat/auth` | `35a575f` | **não (só local)** | pendente |
+| Frontend, login e sessão (AG-05) | `frontend/grupo08-feat/auth` | `35a575f` | sim (push em 24/11) | pendente |
 | Frontend, dados de rooms (AG-06) | `frontend/grupo08-feat/rooms-data` | `db20174` | sim | pendente |
 | Frontend, lista de salas (AG-07) | `frontend/grupo08-feat/rooms-list` | `5c5a61f` (2 commits) | sim | pendente |
-| Frontend, detalhe de sala (AG-08) | `frontend/grupo08-feat/rooms-detail` | `f8a42e2` | **não (só local)** | pendente |
+| Frontend, detalhe de sala (AG-08) | `frontend/grupo08-feat/rooms-detail` | `f8a42e2` | sim (push em 24/11) | pendente |
 | Frontend, e2e Playwright (AG-09a) | `frontend/grupo08-feat/e2e` | `cd2ced5` (nada novo ainda) | não | não começou |
 | Plano, specs e relatórios (base) | `base/grupo08-feat/orquestracao` | ver `git log` | só se for feito push | n/a |
 
@@ -56,7 +56,7 @@ Atenção: as branches do frontend `rooms-data`, `rooms-list`, `auth`, `rooms-de
 Se o Lucas mandar a pasta inteira, o amigo tem tudo:
 - `G08-Rooms/` é o repo base (branch `base/grupo08-feat/orquestracao`), com os submódulos baixados.
 - `G08-fe-ag04b`, `G08-fe-ag05` … `G08-fe-ag09` são `git worktree` do frontend, uma por branch acima.
-Se o amigo vai trabalhar em outro computador, **precisa de push** das branches marcadas "só local" (peça ao Lucas, que decide).
+Em outro computador basta `git fetch` e `git checkout` das branches da tabela: tudo que tem trabalho já está no GitHub.
 
 ---
 
@@ -163,7 +163,7 @@ O repositório traz as skills em `.agents/skills/` (~85) e o motor em `_bmad/`. 
 ## 8. Ordem sugerida para quem assume (poucas peças, sem fila)
 
 1. Fechar os agentes do Orca (seção 9) e conferir `git status` em cada pasta da seção 1.
-2. Pedir ao Lucas o push das branches "só local" (ou receber a pasta toda).
+2. `git fetch` nos 4 repositórios (as branches de trabalho já estão no GitHub desde 24/11).
 3. Frontend: criar `base-v2` (seção 3, item 1) → rebase das 4 branches → build e testes.
 4. Em paralelo, num segundo terminal: revisar e mergear BFF (`rooms-tests`) e rooms (`t3-fix-build-health`).
 5. Playwright e roteiro de aceitação com a stack no ar.
